@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getOrderDataSource } from "@/lib/supabase-order";
+import { supabaseSelect } from "@/lib/supabase-client";
 
 const ds = getOrderDataSource();
 
@@ -126,14 +127,59 @@ export async function GET(req: NextRequest) {
     }
 
     if (storeId) {
+      const noCacheHeaders = { "Cache-Control": "no-store, no-cache, must-revalidate", "CDN-Cache-Control": "no-store" };
+
+      // [PERF] 오늘 주문만 조회 — PostgREST 직접 쿼리로 RPC보다 빠름 (날짜 필터 + embedded items)
+      if (searchParams.get("today") === "true" && process.env.NEXT_PUBLIC_SUPABASE_URL) {
+        try {
+          const now = new Date();
+          const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+          const t0 = Date.now();
+
+          const rows = await supabaseSelect<any[]>(
+            "orders",
+            `store_id=eq.${storeId}&created_at=gte.${todayStr}T00:00:00.000Z&select=*,order_items(*)&order=created_at.desc`
+          );
+
+          const dbTime = Date.now() - t0;
+          const orders = rows.map((r: any) => ({
+            id: r.id,
+            storeId: r.store_id,
+            orderNumber: r.order_number,
+            orderType: r.order_type,
+            status: r.status,
+            paymentStatus: r.payment_status,
+            paymentMethod: r.payment_method || null,
+            totalAmount: r.total_amount,
+            memo: r.memo || undefined,
+            customerPhone: r.customer_phone || undefined,
+            items: (r.order_items || []).map((i: any) => ({
+              id: i.id,
+              orderId: i.order_id,
+              itemName: i.item_name,
+              optionName: i.option_name,
+              quantity: i.quantity,
+              unitPrice: i.unit_price,
+              subtotal: i.subtotal,
+              selectedFlavors: i.selected_flavors || undefined,
+            })),
+            createdAt: r.created_at,
+            updatedAt: r.updated_at,
+          }));
+
+          return NextResponse.json({ orders }, {
+            headers: { ...noCacheHeaders, "Server-Timing": `db;dur=${dbTime}` },
+          });
+        } catch {
+          // PostgREST embedded resource 실패 시 RPC로 폴백
+        }
+      }
+
       const orders = await ds.getOrders(
         storeId,
         status as "pending" | "confirmed" | "preparing" | "ready" | "completed" | "cancelled" | undefined
       );
-      // [PERF] 캐싱 방지 — 폴링이 항상 최신 데이터를 가져오도록
-      return NextResponse.json({ orders }, {
-        headers: { "Cache-Control": "no-store, no-cache, must-revalidate", "CDN-Cache-Control": "no-store" },
-      });
+      return NextResponse.json({ orders }, { headers: noCacheHeaders });
     }
 
     return NextResponse.json({ error: "orderId 또는 storeId가 필요합니다" }, { status: 400 });

@@ -62,6 +62,7 @@ export default function AdminOrdersPage() {
   const isPrinting = useRef(false); // [FIX3] 인쇄 중복 방지 락
   const isFetching = useRef(false); // [PERF] 폴링 중복 방지 — 이전 fetch 끝나기 전 다음 fetch 시작 차단
   const printWinRef = useRef<Window | null>(null); // [PERF] 팝업 재사용 — 매번 새 팝업 열지 않음
+  const ordersRef = useRef<Order[]>([]); // [PERF] 변경 감지용 — setOrders 불필요한 호출 방지
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // ============================================
@@ -231,7 +232,8 @@ export default function AdminOrdersPage() {
     if (isFetching.current) return;
     isFetching.current = true;
     try {
-      const res = await fetch(`/api/order?storeId=${selectedStore}`);
+      // [PERF] today=true — 오늘 주문만 PostgREST 직접 쿼리 (RPC JOIN보다 빠름)
+      const res = await fetch(`/api/order?storeId=${selectedStore}&today=true`);
       if (res.ok) {
         const data = await res.json();
         const newOrders: Order[] = data.orders || [];
@@ -248,6 +250,7 @@ export default function AdminOrdersPage() {
             if (o.status !== "pending") printedIds.current.add(o.id);
           });
           prevOrderCount.current = pendingCount;
+          ordersRef.current = newOrders;
           setOrders(newOrders);
           return;
         }
@@ -286,7 +289,7 @@ export default function AdminOrdersPage() {
               if (!printedIds.current.has(order.id)) {
                 printReceipt(order);
               }
-              // 자동으로 주문 확인 처리
+              // 자동으로 주문 확인 처리 (fire-and-forget)
               fetch("/api/order", {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
@@ -298,7 +301,15 @@ export default function AdminOrdersPage() {
 
         prevOrderIds.current = currentIds;
         prevOrderCount.current = pendingCount;
-        setOrders(newOrders);
+
+        // [PERF] 주문 데이터가 실제로 바뀌었을 때만 React state 업데이트 (Win7 POS 리렌더링 절감)
+        const prev = ordersRef.current;
+        const changed = newOrders.length !== prev.length ||
+          newOrders.some((o, i) => o.id !== prev[i]?.id || o.status !== prev[i]?.status || o.updatedAt !== prev[i]?.updatedAt);
+        if (changed) {
+          ordersRef.current = newOrders;
+          setOrders(newOrders);
+        }
       }
     } catch (e) {
       console.error("Failed to fetch orders:", e);
@@ -314,11 +325,16 @@ export default function AdminOrdersPage() {
     setLoading(false);
   }, [fetchOrders]);
 
-  // [PERF] 500ms 폴링 (700ms→500ms) + 절전모드/탭 복귀 시 즉시 폴링
-  // 중복 fetch 방지(isFetching ref)로 요청 쌓임 없이 안전하게 간격 축소
+  // [PERF] setTimeout 재귀 폴링 — fetch 완료 후 100ms 뒤 다음 폴링
+  // setInterval(500)보다 빠름: 실질 간격 = fetch소요시간 + 100ms (약 500-900ms)
+  // setInterval은 fetch가 500ms 넘으면 한 틱 건너뛰어 실질 1000ms+ 됨
   useEffect(() => {
-    fetchOrders();
-    const interval = setInterval(fetchOrders, 500);
+    let active = true;
+    const poll = async () => {
+      await fetchOrders();
+      if (active) setTimeout(poll, 100);
+    };
+    poll();
 
     // 화면이 다시 보일 때 (절전모드 해제, 탭 복귀) 즉시 새 주문 확인
     const handleVisibility = () => {
@@ -329,10 +345,17 @@ export default function AdminOrdersPage() {
     document.addEventListener("visibilitychange", handleVisibility);
 
     return () => {
-      clearInterval(interval);
+      active = false;
       document.removeEventListener("visibilitychange", handleVisibility);
     };
   }, [fetchOrders]);
+
+  // [PERF] 매장 변경 시 상태 리셋
+  useEffect(() => {
+    isFirstLoad.current = true;
+    prevOrderIds.current = new Set();
+    ordersRef.current = [];
+  }, [selectedStore]);
 
   // 관리자 기기 표시 + 브라우저 알림 권한
   useEffect(() => {

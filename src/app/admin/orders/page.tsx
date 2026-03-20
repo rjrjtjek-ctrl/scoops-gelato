@@ -60,8 +60,9 @@ export default function AdminOrdersPage() {
   const isFirstLoad = useRef(true); // [FIX1] 첫 로딩 구분용
   const printedIds = useRef<Set<string>>(new Set()); // [FIX1] 이미 인쇄한 주문 추적
   const isPrinting = useRef(false); // [FIX3] 인쇄 중복 방지 락
+  const isFetching = useRef(false); // [PERF] 폴링 중복 방지 — 이전 fetch 끝나기 전 다음 fetch 시작 차단
+  const printWinRef = useRef<Window | null>(null); // [PERF] 팝업 재사용 — 매번 새 팝업 열지 않음
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const printFrameRef = useRef<HTMLIFrameElement | null>(null);
 
   // ============================================
   // 영수증 인쇄 — 주방용 + 손님용을 CSS page-break로 분리
@@ -149,10 +150,16 @@ export default function AdminOrdersPage() {
   }, [buildReceiptPage]);
 
   // popup 방식 인쇄 — 별도 창에서 print()하므로 메인 페이지 블로킹 없음
-  // [PERF] 팝업 1개 + print() 1번으로 주방용+손님용 2장 출력
+  // [PERF] 팝업 재사용 + print() 1번으로 주방용+손님용 2장 출력
+  // Win7/Chrome 109에서 window.open()이 느리므로 팝업을 닫지 않고 재사용
   const printViaPopup = useCallback((html: string): Promise<void> => {
     return new Promise<void>((resolve) => {
-      const printWin = window.open("", "_blank", "width=320,height=600");
+      // [PERF] 기존 팝업이 살아있으면 재사용, 없으면 새로 열기
+      let printWin = printWinRef.current;
+      if (!printWin || printWin.closed) {
+        printWin = window.open("", "scoops_receipt", "width=320,height=600");
+        printWinRef.current = printWin;
+      }
       if (!printWin || printWin.closed) {
         setPrintError("⚠️ 팝업이 차단되었습니다! 주소창의 팝업 차단 아이콘을 클릭하여 허용해주세요.");
         resolve();
@@ -166,15 +173,14 @@ export default function AdminOrdersPage() {
       const doPrint = () => {
         if (printed) return;
         printed = true;
-        try { printWin.print(); } catch {}
-        setTimeout(() => {
-          try { printWin.close(); } catch {}
-          resolve();
-        }, 100);
+        try { printWin!.print(); } catch {}
+        // [PERF] 팝업을 닫지 않고 재사용 — Win7에서 window.open() 비용 절약
+        setTimeout(() => resolve(), 50);
       };
 
+      // [FIX6] onload + setTimeout 중 먼저 실행된 것만 호출
       printWin.onload = () => doPrint();
-      setTimeout(doPrint, 100);
+      setTimeout(doPrint, 60);
     });
   }, []);
 
@@ -209,17 +215,21 @@ export default function AdminOrdersPage() {
       }
       return [...prev, { order: ord, copy: "kitchen" as const }];
     });
-    setTimeout(() => processNextPrint(), 0);
+    // [PERF] setTimeout 제거 — 즉시 실행으로 1틱 지연 제거
+    processNextPrint();
   }, [processNextPrint]);
 
   // 수동 재인쇄
   const manualPrint = useCallback((ord: Order) => {
     setPrintQueue((prev) => [...prev, { order: ord, copy: "kitchen" as const }]);
-    setTimeout(() => processNextPrint(), 0);
+    processNextPrint();
   }, [processNextPrint]);
 
   const fetchOrders = useCallback(async () => {
     if (!selectedStore) return;
+    // [PERF] 이전 fetch가 아직 진행 중이면 건너뜀 — 요청 쌓임 방지
+    if (isFetching.current) return;
+    isFetching.current = true;
     try {
       const res = await fetch(`/api/order?storeId=${selectedStore}`);
       if (res.ok) {
@@ -292,13 +302,23 @@ export default function AdminOrdersPage() {
       }
     } catch (e) {
       console.error("Failed to fetch orders:", e);
+    } finally {
+      isFetching.current = false;
     }
   }, [selectedStore, soundEnabled, autoPrint, printReceipt]);
 
-  // [PERF] 700ms 폴링 (1초→0.7초) + 절전모드/탭 복귀 시 즉시 폴링
+  // [PERF] 수동 새로고침 — 스피너 애니메이션 표시용 (폴링과 분리)
+  const manualRefresh = useCallback(async () => {
+    setLoading(true);
+    await fetchOrders();
+    setLoading(false);
+  }, [fetchOrders]);
+
+  // [PERF] 500ms 폴링 (700ms→500ms) + 절전모드/탭 복귀 시 즉시 폴링
+  // 중복 fetch 방지(isFetching ref)로 요청 쌓임 없이 안전하게 간격 축소
   useEffect(() => {
     fetchOrders();
-    const interval = setInterval(fetchOrders, 700);
+    const interval = setInterval(fetchOrders, 500);
 
     // 화면이 다시 보일 때 (절전모드 해제, 탭 복귀) 즉시 새 주문 확인
     const handleVisibility = () => {
@@ -455,7 +475,7 @@ export default function AdminOrdersPage() {
             ))}
           </select>
           <button
-            onClick={fetchOrders}
+            onClick={manualRefresh}
             className="p-2 rounded-lg hover:bg-gray-100"
             title="새로고침"
           >

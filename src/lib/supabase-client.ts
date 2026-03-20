@@ -15,6 +15,7 @@ function headers() {
     Authorization: `Bearer ${SUPABASE_KEY}`,
     "Content-Type": "application/json",
     Prefer: "return=representation",
+    "Connection": "keep-alive",
   };
 }
 
@@ -85,4 +86,22 @@ export async function supabaseDelete(
     const text = await res.text();
     throw new Error(`Supabase DELETE ${table}: ${res.status} ${text}`);
   }
+}
+
+// ---------- RPC 호출 (DB 함수 실행) ----------
+export async function supabaseRpc<T>(
+  fn: string,
+  params: Record<string, unknown> = {}
+): Promise<T> {
+  const url = `${SUPABASE_URL}/rest/v1/rpc/${fn}`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: headers(),
+    body: JSON.stringify(params),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Supabase RPC ${fn}: ${res.status} ${text}`);
+  }
+  return (await res.json()) as T;
 }

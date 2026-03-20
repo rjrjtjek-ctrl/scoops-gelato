@@ -63,13 +63,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "금액이 일치하지 않습니다" }, { status: 400 });
     }
 
-    // 주문번호 생성
-    const orderNumber = await ds.getNextOrderNumber(storeId);
-
-    // 주문 생성
+    // 주문 생성 (Supabase RPC 사용 시 주문번호도 DB에서 자동 생성)
     const order = await ds.createOrder({
       storeId,
-      orderNumber,
+      orderNumber: "", // RPC에서 자동 생성, 인메모리에서는 아래에서 설정
       orderType,
       status: "pending",
       paymentStatus: orderType === "dine_in" ? "unpaid" : "unpaid",
@@ -133,7 +130,10 @@ export async function GET(req: NextRequest) {
         storeId,
         status as "pending" | "confirmed" | "preparing" | "ready" | "completed" | "cancelled" | undefined
       );
-      return NextResponse.json({ orders });
+      // [PERF] 캐싱 방지 — 폴링이 항상 최신 데이터를 가져오도록
+      return NextResponse.json({ orders }, {
+        headers: { "Cache-Control": "no-store, no-cache, must-revalidate", "CDN-Cache-Control": "no-store" },
+      });
     }
 
     return NextResponse.json({ error: "orderId 또는 storeId가 필요합니다" }, { status: 400 });

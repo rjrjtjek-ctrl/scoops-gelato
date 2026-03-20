@@ -1,14 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Suspense } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeft, Trash2, ShoppingCart, Plus } from "lucide-react";
+import { motion } from "framer-motion";
+import { ChevronLeft, Trash2, ShoppingCart, Plus, CheckCircle2, ArrowRight, RotateCcw } from "lucide-react";
 import { useCart } from "@/lib/cart-context";
 import { stores, formatPrice } from "@/lib/order-data";
 import type { OrderType } from "@/lib/order-types";
+import { PwaInstallBanner } from "@/components/PwaInstallBanner";
+
+// [PERF] Optimistic UI — 주문 완료 상태를 같은 컴포넌트에서 즉시 렌더링
+// 페이지 전환 없이 상태만 변경하여 0ms 전환
+interface OrderComplete {
+  orderNumber: string;
+  orderId: string;
+  confirmed: boolean; // API 응답 확인 여부
+  error?: string;
+}
 
 function CartContent() {
   const params = useParams();
@@ -19,6 +29,10 @@ function CartContent() {
   const { items, removeItem, totalAmount, clearCart, memo, setMemo } = useCart();
   const orderType = (searchParams.get("type") as OrderType) || "dine_in";
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // [PERF] Optimistic UI 상태 — null이면 장바구니, 값이 있으면 영수증 화면
+  const [orderComplete, setOrderComplete] = useState<OrderComplete | null>(null);
+  const savedItemsRef = useRef(items); // 영수증 표시용 아이템 스냅샷
 
   if (!store) {
     router.push("/order");
@@ -37,6 +51,9 @@ function CartContent() {
     }
 
     setIsSubmitting(true);
+
+    // [PERF] 아이템 스냅샷 저장 (clearCart 후에도 표시용)
+    savedItemsRef.current = [...items];
 
     const orderPayload = {
       storeId: store.id,
@@ -61,7 +78,16 @@ function CartContent() {
       totalAmount,
     };
 
-    // 최대 3회 자동 재시도 (네트워크 순간 끊김 대비)
+    // [PERF] ★ Optimistic UI — 버튼 클릭 즉시 영수증 화면 표시
+    // 주문번호는 API 응답 후 업데이트
+    setOrderComplete({
+      orderNumber: "...",
+      orderId: "",
+      confirmed: false,
+    });
+    clearCart();
+
+    // [PERF] API 호출은 백그라운드에서 처리
     const MAX_RETRIES = 3;
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
       try {
@@ -78,25 +104,129 @@ function CartContent() {
 
         const data = await res.json();
 
-        // 주문 완료 페이지로 이동 (clearCart보다 먼저 — 이동 실패 시 장바구니 보존)
-        const completeUrl = `/order/${storeCode}/complete?orderId=${data.orderId}&orderNumber=${data.orderNumber}&type=${orderType}`;
-        router.push(completeUrl);
-        // router.push 성공 후 장바구니 비우기
-        clearCart();
-        return; // 성공 시 함수 종료
+        // [PERF] API 성공 → 주문번호 업데이트 (영수증 화면은 이미 표시됨)
+        setOrderComplete({
+          orderNumber: data.orderNumber,
+          orderId: data.orderId,
+          confirmed: true,
+        });
+        return;
       } catch (err) {
         if (attempt < MAX_RETRIES) {
-          // 1초 대기 후 재시도
-          await new Promise((r) => setTimeout(r, 1000));
+          await new Promise((r) => setTimeout(r, 800));
           continue;
         }
-        // 3회 모두 실패 — 장바구니는 유지됨 (sessionStorage에 저장되어 있음)
-        alert("주문 전송에 실패했습니다.\n인터넷 연결을 확인하고 다시 시도해주세요.\n(장바구니는 유지됩니다)");
+        // 3회 실패 — 에러 표시하되 영수증 화면은 유지
+        setOrderComplete((prev) => prev ? {
+          ...prev,
+          orderNumber: "---",
+          error: "주문 전송에 실패했습니다. 카운터에 직접 말씀해주세요.",
+        } : null);
       }
     }
-    setIsSubmitting(false);
   };
 
+  // ================================
+  // [PERF] 주문 완료 화면 (인라인 렌더링 — 페이지 전환 없음)
+  // ================================
+  if (orderComplete) {
+    const isDineIn = orderType === "dine_in";
+    return (
+      <div className="min-h-dvh bg-[#FDFBF8] flex flex-col items-center">
+        <main className="w-full max-w-[480px] flex-1 px-5 flex flex-col items-center justify-center">
+          {/* 체크 아이콘 */}
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ type: "spring", stiffness: 300, damping: 20 }}
+            className="w-20 h-20 rounded-full bg-[#1B4332]/10 flex items-center justify-center mb-6"
+          >
+            <CheckCircle2 size={44} className="text-[#1B4332]" />
+          </motion.div>
+
+          <h1 className="text-xl font-bold text-[#2A2A2A] mb-2">주문 완료!</h1>
+
+          {/* 에러 메시지 */}
+          {orderComplete.error && (
+            <div className="bg-red-50 border border-red-200 rounded-2xl px-4 py-3 mb-4 w-full text-center">
+              <p className="text-sm text-red-600">{orderComplete.error}</p>
+            </div>
+          )}
+
+          {/* 주문번호 */}
+          <div className="bg-white rounded-2xl px-8 py-6 text-center shadow-sm border border-[#EDE6DD]/60 mb-6 w-full">
+            <p className="text-xs text-[#999] mb-1">주문번호</p>
+            <p className="text-4xl font-black text-[#1B4332] tracking-wider">
+              {orderComplete.orderNumber === "..." ? (
+                <span className="animate-pulse">...</span>
+              ) : (
+                orderComplete.orderNumber
+              )}
+            </p>
+          </div>
+
+          {/* 안내 */}
+          {isDineIn ? (
+            <div className="bg-[#1B4332]/5 rounded-2xl px-5 py-4 text-center mb-8 w-full">
+              <p className="text-sm text-[#1B4332] font-medium leading-relaxed">
+                나가실 때 카운터에서
+                <br />
+                주문번호를 말씀해주세요
+              </p>
+            </div>
+          ) : (
+            <div className="bg-[#1B4332]/5 rounded-2xl px-5 py-4 text-center mb-8 w-full">
+              <p className="text-sm text-[#1B4332] font-medium">
+                결제가 완료되었습니다
+              </p>
+              <p className="text-xs text-[#555] mt-1">
+                준비가 완료되면 카운터에서 픽업해주세요
+              </p>
+            </div>
+          )}
+
+          {/* 브랜드 링크 */}
+          <div className="w-full bg-white rounded-2xl p-5 border border-[#EDE6DD]/60 mb-4">
+            <p className="text-sm font-semibold text-[#2A2A2A] text-center mb-4">
+              스쿱스젤라또가 궁금하신가요?
+            </p>
+            <div className="space-y-2">
+              <Link
+                href="/story"
+                className="flex items-center justify-between px-4 py-3 rounded-xl bg-[#F5F0EB] text-sm text-[#2A2A2A] font-medium hover:bg-[#EDE6DD] transition-colors"
+              >
+                브랜드 스토리 보기
+                <ArrowRight size={16} className="text-[#999]" />
+              </Link>
+              <Link
+                href="/franchise"
+                className="flex items-center justify-between px-4 py-3 rounded-xl bg-[#F5F0EB] text-sm text-[#2A2A2A] font-medium hover:bg-[#EDE6DD] transition-colors"
+              >
+                가맹 사업 알아보기
+                <ArrowRight size={16} className="text-[#999]" />
+              </Link>
+            </div>
+          </div>
+
+          {/* 새 주문 */}
+          <Link
+            href={`/order/${storeCode}`}
+            className="flex items-center justify-center gap-2 w-full py-4 rounded-2xl border border-[#1B4332] text-[#1B4332] text-sm font-bold mt-2 mb-10 hover:bg-[#1B4332]/5 transition-colors"
+          >
+            <RotateCcw size={16} />
+            새 주문하기
+          </Link>
+        </main>
+
+        {/* PWA 설치 유도 배너 */}
+        <PwaInstallBanner />
+      </div>
+    );
+  }
+
+  // ================================
+  // 장바구니 화면 (기존)
+  // ================================
   return (
     <div className="min-h-dvh bg-[#FDFBF8] flex flex-col items-center">
       {/* 상단 */}

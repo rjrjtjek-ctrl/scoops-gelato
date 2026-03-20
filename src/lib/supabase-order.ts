@@ -23,6 +23,7 @@ import {
   supabaseInsert,
   supabaseUpdate,
   supabaseDelete,
+  supabaseRpc,
 } from "./supabase-client";
 
 // ============================================
@@ -120,35 +121,52 @@ const supabaseDataSource: OrderDataSource = {
     return gelatoPrices.sort((a, b) => a.sortOrder - b.sortOrder);
   },
 
-  // ---- 주문 CRUD → Supabase DB ----
+  // ---- 주문 CRUD → Supabase DB (RPC로 1회 호출) ----
   async createOrder(orderData) {
-    // 1) orders 테이블에 삽입
-    const [orderRow] = await supabaseInsert<OrderRow[]>("orders", {
-      store_id: orderData.storeId,
-      order_number: orderData.orderNumber,
-      order_type: orderData.orderType,
-      status: orderData.status,
-      payment_status: orderData.paymentStatus,
-      payment_method: orderData.paymentMethod,
-      total_amount: orderData.totalAmount,
-      memo: orderData.memo || null,
-      customer_phone: orderData.customerPhone || null,
-    });
+    // RPC 1회 호출로 주문번호 생성 + orders INSERT + order_items INSERT 수행
+    const rpcResult = await supabaseRpc<{ id: string; order_number: string; status: string }>(
+      "create_order_with_items",
+      {
+        p_store_id: orderData.storeId,
+        p_order_type: orderData.orderType,
+        p_total_amount: orderData.totalAmount,
+        p_memo: orderData.memo || null,
+        p_customer_phone: orderData.customerPhone || null,
+        p_items: orderData.items.map((item) => ({
+          item_name: item.itemName,
+          option_name: item.optionName,
+          quantity: item.quantity,
+          unit_price: item.unitPrice,
+          subtotal: item.subtotal,
+          selected_flavors: item.selectedFlavors || null,
+        })),
+      }
+    );
 
-    // 2) order_items 테이블에 삽입
-    const itemRows = orderData.items.map((item) => ({
-      order_id: orderRow.id,
-      item_name: item.itemName,
-      option_name: item.optionName,
-      quantity: item.quantity,
-      unit_price: item.unitPrice,
-      subtotal: item.subtotal,
-      selected_flavors: item.selectedFlavors || null,
-    }));
-
-    const insertedItems = await supabaseInsert<OrderItemRow[]>("order_items", itemRows);
-
-    return rowToOrder(orderRow, insertedItems);
+    return {
+      id: rpcResult.id,
+      storeId: orderData.storeId,
+      orderNumber: rpcResult.order_number,
+      orderType: orderData.orderType,
+      status: rpcResult.status as OrderStatus,
+      paymentStatus: "unpaid" as PaymentStatus,
+      paymentMethod: null as PaymentMethod,
+      totalAmount: orderData.totalAmount,
+      memo: orderData.memo,
+      customerPhone: orderData.customerPhone,
+      items: orderData.items.map((item, idx) => ({
+        id: `oi_${idx}`,
+        orderId: rpcResult.id,
+        itemName: item.itemName,
+        optionName: item.optionName,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        subtotal: item.subtotal,
+        selectedFlavors: item.selectedFlavors,
+      })),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    } as Order;
   },
 
   async getOrder(orderId: string) {
@@ -167,27 +185,15 @@ const supabaseDataSource: OrderDataSource = {
   },
 
   async getOrders(storeId: string, status?: OrderStatus) {
-    let query = `store_id=eq.${storeId}&order=created_at.desc`;
-    if (status) query += `&status=eq.${status}`;
-
-    const rows = await supabaseSelect<OrderRow[]>("orders", query);
-    if (rows.length === 0) return [];
-
-    // 모든 주문 ID로 아이템 일괄 조회
-    const orderIds = rows.map((r) => r.id);
-    const itemRows = await supabaseSelect<OrderItemRow[]>(
-      "order_items",
-      `order_id=in.(${orderIds.join(",")})`
+    // RPC 1회 호출로 orders + items 모두 가져옴
+    const result = await supabaseRpc<Order[] | null>(
+      "get_orders_with_items",
+      {
+        p_store_id: storeId,
+        p_status: status || null,
+      }
     );
-
-    // 주문별로 아이템 그룹핑
-    const itemsByOrder: Record<string, OrderItemRow[]> = {};
-    for (const ir of itemRows) {
-      if (!itemsByOrder[ir.order_id]) itemsByOrder[ir.order_id] = [];
-      itemsByOrder[ir.order_id].push(ir);
-    }
-
-    return rows.map((r) => rowToOrder(r, itemsByOrder[r.id] || []));
+    return result || [];
   },
 
   async updateOrderStatus(orderId: string, status: OrderStatus) {
@@ -265,9 +271,15 @@ const localDataSource: OrderDataSource = {
   async getGelatoPrices() { return gelatoPrices.sort((a, b) => a.sortOrder - b.sortOrder); },
   async createOrder(orderData) {
     const now = new Date().toISOString();
+    // orderNumber가 비어있으면 자체 생성
+    let orderNumber = orderData.orderNumber;
+    if (!orderNumber) {
+      orderNumber = await localDataSource.getNextOrderNumber(orderData.storeId);
+    }
     const order: Order = {
       ...orderData,
       id: `order_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+      orderNumber,
       createdAt: now,
       updatedAt: now,
     };

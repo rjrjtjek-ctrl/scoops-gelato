@@ -64,23 +64,12 @@ export default function AdminOrdersPage() {
   const printFrameRef = useRef<HTMLIFrameElement | null>(null);
 
   // ============================================
-  // 영수증 인쇄 기능 (fetchOrders보다 먼저 선언)
+  // 영수증 인쇄 — 주방용 + 손님용을 CSS page-break로 분리
+  // 팝업 1개 + print() 1번 = 프린터가 자동 절단하여 2장 출력
   // ============================================
-  const buildReceiptHtml = useCallback((order: Order, copy: "kitchen" | "customer" = "kitchen") => {
-    // HTML 이스케이프 — XSS 방지 (고객 입력값이 HTML로 실행되지 않도록)
+  const buildReceiptPage = useCallback((order: Order, copyLabel: string, storeName: string, timeStr: string) => {
     const esc = (s: string | undefined | null) =>
       String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-
-    const storeName = stores.find((s) => s.id === order.storeId)?.name || "스쿱스젤라또";
-    const now = new Date(order.createdAt);
-    const timeStr = now.toLocaleString("ko-KR", {
-      year: "numeric", month: "2-digit", day: "2-digit",
-      hour: "2-digit", minute: "2-digit",
-    });
-
-    const copyLabel = copy === "kitchen"
-      ? `<p style="font-size:11px;font-weight:bold;margin-top:4px;border:1px solid #000;display:inline-block;padding:1px 8px;">[주방용]</p>`
-      : `<p style="font-size:11px;font-weight:bold;margin-top:4px;border:1px solid #000;display:inline-block;padding:1px 8px;">[손님용]</p>`;
 
     const itemsHtml = (order.items || []).map((item) => {
       const qty = (item.quantity || 1) > 1 ? ` x${item.quantity}` : "";
@@ -94,27 +83,11 @@ export default function AdminOrdersPage() {
       `;
     }).join("");
 
-    return `<!DOCTYPE html><html><head><meta charset="utf-8"><style>
-      @page { margin: 0; padding: 0; size: 72mm 200mm; }
-      @media print {
-        html, body { width: 72mm; height: auto; margin: 0; padding: 0; overflow: hidden; }
-      }
-      * { margin: 0; padding: 0; box-sizing: border-box; }
-      body { font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif; width: 72mm; max-width: 72mm; padding: 3mm 4mm; font-size: 13px; color: #000; }
-      .center { text-align: center; }
-      .bold { font-weight: bold; }
-      .big { font-size: 28px; font-weight: 900; letter-spacing: 2px; }
-      .divider { border: none; border-top: 1px dashed #000; margin: 8px 0; }
-      .divider-thick { border: none; border-top: 2px solid #000; margin: 8px 0; }
-      table { width: 100%; border-collapse: collapse; }
-      .total-row td { font-size: 16px; font-weight: 900; padding: 6px 0; }
-      .memo { background: #f5f5f5; padding: 6px 8px; border-radius: 4px; font-size: 12px; margin-top: 6px; }
-      .footer { font-size: 10px; color: #000; margin-top: 12px; }
-    </style></head><body>
+    return `<div class="receipt">
       <div class="center">
         <p class="bold" style="font-size:15px;">SCOOPS GELATERIA</p>
         <p style="font-size:12px;color:#000;">${storeName}</p>
-        ${copyLabel}
+        <p style="font-size:11px;font-weight:bold;margin-top:4px;border:1px solid #000;display:inline-block;padding:1px 8px;">[${copyLabel}]</p>
       </div>
       <hr class="divider-thick">
       <div class="center">
@@ -137,78 +110,112 @@ export default function AdminOrdersPage() {
         <p>Tel. 1811-0259</p>
         <p style="margin-top:4px;">QR 모바일 주문</p>
       </div>
-    </body></html>`;
+    </div>`;
   }, []);
 
-  // [FIX3] 인쇄 큐 — 한 번에 하나씩 순차 인쇄 (동시 열림 방지)
-  // 큐 아이템: { order, copy } 형태 (copy: "kitchen" | "customer")
+  const buildCombinedReceiptHtml = useCallback((order: Order) => {
+    const storeName = stores.find((s) => s.id === order.storeId)?.name || "스쿱스젤라또";
+    const now = new Date(order.createdAt);
+    const timeStr = now.toLocaleString("ko-KR", {
+      year: "numeric", month: "2-digit", day: "2-digit",
+      hour: "2-digit", minute: "2-digit",
+    });
+
+    const kitchenPage = buildReceiptPage(order, "주방용", storeName, timeStr);
+    const customerPage = buildReceiptPage(order, "손님용", storeName, timeStr);
+
+    return `<!DOCTYPE html><html><head><meta charset="utf-8"><style>
+      @page { margin: 0; padding: 0; }
+      @media print {
+        html, body { width: 72mm; margin: 0; padding: 0; }
+      }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body { font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif; width: 72mm; max-width: 72mm; font-size: 13px; color: #000; }
+      .receipt { padding: 3mm 4mm; page-break-after: always; }
+      .receipt:last-child { page-break-after: auto; }
+      .center { text-align: center; }
+      .bold { font-weight: bold; }
+      .big { font-size: 28px; font-weight: 900; letter-spacing: 2px; }
+      .divider { border: none; border-top: 1px dashed #000; margin: 8px 0; }
+      .divider-thick { border: none; border-top: 2px solid #000; margin: 8px 0; }
+      table { width: 100%; border-collapse: collapse; }
+      .total-row td { font-size: 16px; font-weight: 900; padding: 6px 0; }
+      .memo { background: #f5f5f5; padding: 6px 8px; border-radius: 4px; font-size: 12px; margin-top: 6px; }
+      .footer { font-size: 10px; color: #000; margin-top: 12px; }
+    </style></head><body>
+      ${kitchenPage}
+      ${customerPage}
+    </body></html>`;
+  }, [buildReceiptPage]);
+
+  // popup 방식 인쇄 — 별도 창에서 print()하므로 메인 페이지 블로킹 없음
+  // [PERF] 팝업 1개 + print() 1번으로 주방용+손님용 2장 출력
+  const printViaPopup = useCallback((html: string): Promise<void> => {
+    return new Promise<void>((resolve) => {
+      const printWin = window.open("", "_blank", "width=320,height=600");
+      if (!printWin || printWin.closed) {
+        setPrintError("⚠️ 팝업이 차단되었습니다! 주소창의 팝업 차단 아이콘을 클릭하여 허용해주세요.");
+        resolve();
+        return;
+      }
+      printWin.document.open();
+      printWin.document.write(html);
+      printWin.document.close();
+
+      let printed = false;
+      const doPrint = () => {
+        if (printed) return;
+        printed = true;
+        try { printWin.print(); } catch {}
+        setTimeout(() => {
+          try { printWin.close(); } catch {}
+          resolve();
+        }, 100);
+      };
+
+      printWin.onload = () => doPrint();
+      setTimeout(doPrint, 100);
+    });
+  }, []);
+
+  // 인쇄 큐 — 주문 1건 = 큐 아이템 1개 (주방용+손님용 합본)
   const processNextPrint = useCallback(() => {
     setPrintQueue((queue) => {
       if (queue.length === 0 || isPrinting.current) return queue;
       isPrinting.current = true;
       const item = queue[0];
-      const order = item.order;
-      const copy = item.copy;
       const remaining = queue.slice(1);
 
-      const receiptHtml = buildReceiptHtml(order, copy);
-
-      // [FIX2] 팝업 차단 감지
-      const printWin = window.open("", "_blank", "width=320,height=600");
-      if (!printWin || printWin.closed) {
-        // 팝업 차단됨 — 사용자에게 알림
+      const receiptHtml = buildCombinedReceiptHtml(item.order);
+      printViaPopup(receiptHtml).then(() => {
         isPrinting.current = false;
-        setPrintError(`⚠️ 팝업이 차단되었습니다! 주소창의 팝업 차단 아이콘을 클릭하여 "이 사이트 팝업 허용"을 선택해주세요. (주문 ${order.orderNumber})`);
-        return queue; // 큐 유지 — 팝업 허용 후 재시도 가능
-      }
-
-      printWin.document.open();
-      printWin.document.write(receiptHtml);
-      printWin.document.close();
-
-      // [FIX6] print()를 한 번만 호출 — onload OR setTimeout 중 먼저 실행된 것만
-      let printed = false;
-      const doPrint = () => {
-        if (printed) return;
-        printed = true;
-        try {
-          printWin.print();
-        } catch {}
-        setTimeout(() => {
-          try { printWin.close(); } catch {}
-          isPrinting.current = false;
-          // 큐에 다음 것이 있으면 계속 처리
+        printedIds.current.add(item.order.id);
+        if (remaining.length > 0) {
           processNextPrint();
-        }, 800);
-      };
+        }
+      });
 
-      printWin.onload = () => setTimeout(doPrint, 200);
-      // onload가 안 먹히는 경우 대비 (Win7 Chrome 109)
-      setTimeout(doPrint, 600);
-
-      printedIds.current.add(order.id); // [FIX1] 인쇄 완료 기록
       return remaining;
     });
-  }, [buildReceiptHtml]);
+  }, [buildCombinedReceiptHtml, printViaPopup]);
 
-  // 인쇄 큐에 추가하는 함수 (외부에서 호출) — 주방용 + 손님용 2장
-  const MAX_PRINT_QUEUE = 30; // 인쇄 큐 최대 크기 — 오버플로우 방지
+  // 인쇄 큐에 추가 — 주문 1건 = 1개 아이템 (2장은 CSS page-break로 분리)
+  const MAX_PRINT_QUEUE = 30;
   const printReceipt = useCallback((ord: Order) => {
     setPrintQueue((prev) => {
-      if (prev.length + 2 >= MAX_PRINT_QUEUE) {
+      if (prev.length + 1 >= MAX_PRINT_QUEUE) {
         setPrintError(`⚠️ 인쇄 대기열이 ${MAX_PRINT_QUEUE}건을 초과했습니다. 프린터 상태를 확인하세요.`);
         return prev;
       }
-      return [...prev, { order: ord, copy: "kitchen" as const }, { order: ord, copy: "customer" as const }];
+      return [...prev, { order: ord, copy: "kitchen" as const }];
     });
-    // 큐 처리 시작
-    setTimeout(() => processNextPrint(), 100);
+    setTimeout(() => processNextPrint(), 0);
   }, [processNextPrint]);
 
-  // 수동 재인쇄용 (인쇄 기록 무시) — 주방용 + 손님용 2장
+  // 수동 재인쇄
   const manualPrint = useCallback((ord: Order) => {
-    setPrintQueue((prev) => [...prev, { order: ord, copy: "kitchen" as const }, { order: ord, copy: "customer" as const }]);
-    setTimeout(() => processNextPrint(), 100);
+    setPrintQueue((prev) => [...prev, { order: ord, copy: "kitchen" as const }]);
+    setTimeout(() => processNextPrint(), 0);
   }, [processNextPrint]);
 
   const fetchOrders = useCallback(async () => {
@@ -288,10 +295,10 @@ export default function AdminOrdersPage() {
     }
   }, [selectedStore, soundEnabled, autoPrint, printReceipt]);
 
-  // 3초마다 폴링 + [FIX5] 절전모드/탭 복귀 시 즉시 폴링
+  // [PERF] 700ms 폴링 (1초→0.7초) + 절전모드/탭 복귀 시 즉시 폴링
   useEffect(() => {
     fetchOrders();
-    const interval = setInterval(fetchOrders, 3000);
+    const interval = setInterval(fetchOrders, 700);
 
     // 화면이 다시 보일 때 (절전모드 해제, 탭 복귀) 즉시 새 주문 확인
     const handleVisibility = () => {

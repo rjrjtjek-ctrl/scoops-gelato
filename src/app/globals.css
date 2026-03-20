@@ -1,0 +1,52 @@
+@import "tailwindcss";
+
+:root {
+  /* 메인 컬러 — 딥 그린 브랜딩 */
+  --brand-primary: #1B4332;
+  --brand-secondary: #D4A574;
+  --brand-accent: #2D6A4F;
+  --brand-green-light: #40916C;
+
+  /* 배경 */
+  --bg-cream: #FAFAF5;
+  --bg-white: #FFFFFF;
+  --bg-green-soft: #F0F5F1;
+
+  /* 텍스트 */
+  --text-dark: #1A1A1A;
+  --text-light: #5C6B63;
+}
+
+@theme inline {
+  --color-brand-primary: var(--brand-primary);
+  --color-brand-secondary: var(--brand-secondary);
+  --color-brand-accent: var(--brand-accent);
+  --color-brand-green-light: var(--brand-green-light);
+  --color-bg-cream: var(--bg-cream);
+  --color-bg-green-soft: var(--bg-green-soft);
+  --color-text-dark: var(--text-dark);
+  --color-text-light: var(--text-light);
+  --font-sans: var(--font-ibm-plex), 'IBM Plex Sans KR', sans-serif;
+}
+
+body {
+  background: var(--bg-cream);
+  color: var(--text-dark);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-cream);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--brand-accent);
+  border-radius: 3px;
+}

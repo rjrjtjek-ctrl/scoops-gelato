@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>스쿱스젤라또</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'IBM Plex Sans KR', -apple-system, sans-serif;
+      background: #FDFBF8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 24px;
+    }
+    .wrap { text-align: center; max-width: 300px; }
+    .icon { font-size: 48px; margin-bottom: 20px; }
+    h1 { font-size: 18px; color: #2A2A2A; margin-bottom: 8px; }
+    p { font-size: 14px; color: #999; line-height: 1.6; margin-bottom: 24px; }
+    button {
+      background: #1B4332; color: white; border: none;
+      padding: 14px 32px; border-radius: 12px;
+      font-size: 14px; font-weight: 600; cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="icon">📡</div>
+    <h1>인터넷 연결을 확인해주세요</h1>
+    <p>주문을 위해 인터넷 연결이 필요합니다.<br>Wi-Fi 또는 데이터를 확인 후 다시 시도해주세요.</p>
+    <button onclick="location.reload()">다시 시도</button>
+  </div>
+</body>
+</html>

@@ -57,7 +57,7 @@ export default function AdminPage() {
   } | null>(null);
   const router = useRouter();
 
-  const getToken = () => typeof window !== "undefined" ? localStorage.getItem("admin_token") || "" : "";
+  const getToken = () => typeof window !== "undefined" ? sessionStorage.getItem("admin_token") || "" : "";
 
   const fetchData = useCallback(async (token: string) => {
     setLoading(true);
@@ -145,7 +145,7 @@ export default function AdminPage() {
   const pIcon: Record<string, string> = { "/": "🏠", "/menu": "🍨", "/story": "📖", "/franchise": "🤝", "/stores": "📍", "/franchise/conversion": "🔄", "/privacy": "🔒" };
   const p = (path: string) => pName[path] || path;
   const pi = (path: string) => pIcon[path] || "📄";
-  const logout = () => { localStorage.removeItem("admin_token"); setAuthenticated(false); setPassword(""); };
+  const logout = () => { sessionStorage.removeItem("admin_token"); setAuthenticated(false); setPassword(""); };
   const tabs = [
     { key: "home" as const, label: "홈", mLabel: "홈" },
     { key: "visitors" as const, label: "방문 기록", mLabel: "방문" },

@@ -37,7 +37,7 @@ function InquiriesContent() {
   const searchParams = useSearchParams();
   const filter = searchParams.get("filter");
 
-  const token = typeof window !== "undefined" ? localStorage.getItem("admin_token") : null;
+  const token = typeof window !== "undefined" ? sessionStorage.getItem("admin_token") : null;
 
   const fetchInquiries = useCallback(async () => {
     if (!token) {
@@ -49,7 +49,7 @@ function InquiriesContent() {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.status === 401) {
-        localStorage.removeItem("admin_token");
+        sessionStorage.removeItem("admin_token");
         router.push("/admin");
         return;
       }

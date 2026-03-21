@@ -94,24 +94,24 @@ function InquiriesContent() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F9F7F3]">
-      <header className="bg-white border-b border-gray-200 px-4 md:px-6 py-3 md:py-4 sticky top-0 z-30">
+    <div className="min-h-screen bg-[#F5F6F8]">
+      {/* 상단 바 — 대시보드와 통일된 브랜드 컬러 */}
+      <header className="bg-[#1B4332] text-white px-4 md:px-6 py-3 md:py-4 sticky top-0 z-30 shadow-lg">
         <div className="max-w-6xl mx-auto">
-          <div className="flex items-center justify-between mb-2 md:mb-0">
+          <div className="flex items-center justify-between mb-2 md:mb-3">
             <div className="flex items-center gap-2 md:gap-4">
               <button
                 onClick={() => router.push("/admin")}
-                className="text-gray-500 hover:text-[#1B4332] transition text-sm"
+                className="text-white/60 hover:text-white transition text-sm"
               >
                 ← 대시보드
               </button>
-              <h1 className="text-base md:text-xl font-bold text-[#1B4332]">가맹 문의</h1>
+              <h1 className="text-base md:text-xl font-bold">📝 가맹 문의</h1>
             </div>
-            {/* 모바일에서 상세보기 중일 때 뒤로가기 */}
             {selectedId && (
               <button
                 onClick={() => setSelectedId(null)}
-                className="lg:hidden text-sm text-gray-500 bg-gray-100 px-3 py-1.5 rounded-lg"
+                className="lg:hidden text-sm text-white/70 bg-white/10 px-3 py-1.5 rounded-lg"
               >
                 ← 목록
               </button>
@@ -121,7 +121,7 @@ function InquiriesContent() {
             <button
               onClick={() => router.push("/admin/inquiries")}
               className={`text-xs md:text-sm px-3 py-1.5 rounded-lg transition ${
-                !filter ? "bg-[#1B4332] text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                !filter ? "bg-white text-[#1B4332] font-semibold" : "bg-white/10 text-white/70 hover:bg-white/20"
               }`}
             >
               전체 ({inquiries.length})
@@ -129,7 +129,7 @@ function InquiriesContent() {
             <button
               onClick={() => router.push("/admin/inquiries?filter=kakao-fail")}
               className={`text-xs md:text-sm px-3 py-1.5 rounded-lg transition ${
-                filter === "kakao-fail" ? "bg-red-500 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                filter === "kakao-fail" ? "bg-red-500 text-white font-semibold" : "bg-white/10 text-white/70 hover:bg-white/20"
               }`}
             >
               카톡실패 ({inquiries.filter((i) => !i.kakaoSent).length})

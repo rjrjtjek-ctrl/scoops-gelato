@@ -518,23 +518,23 @@ export default function AdminOrdersPage() {
   const activeStores = stores.filter((s) => s.isActive);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* 상단 바 */}
-      <header className="bg-white border-b border-gray-200 px-4 py-3">
+    <div className="min-h-screen bg-[#F5F6F8]">
+      {/* 상단 바 — 대시보드와 통일된 브랜드 컬러 */}
+      <header className="bg-[#1B4332] text-white px-4 py-3 sticky top-0 z-40 shadow-lg">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link href="/admin" className="text-gray-500 text-sm hover:text-gray-700">
-              ← 관리자
+            <Link href="/admin" className="text-white/60 text-sm hover:text-white transition">
+              ← 대시보드
             </Link>
-            <h1 className="text-lg font-bold text-gray-900">주문 관리</h1>
+            <h1 className="text-lg font-bold">📦 주문 관리</h1>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             {/* Realtime 연결 상태 표시 */}
             <span
               className={`flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium ${
                 realtimeConnected
-                  ? "bg-green-50 text-green-700 border border-green-200"
-                  : "bg-orange-50 text-orange-600 border border-orange-200"
+                  ? "bg-white/15 text-green-300"
+                  : "bg-white/10 text-orange-300"
               }`}
               title={realtimeConnected ? "실시간 연결됨 (WebSocket)" : "실시간 미연결 (폴링 모드)"}
             >
@@ -545,8 +545,8 @@ export default function AdminOrdersPage() {
               onClick={() => setAutoPrint(!autoPrint)}
               className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                 autoPrint
-                  ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                  : "bg-gray-50 text-gray-400 border border-gray-200"
+                  ? "bg-emerald-500/20 text-emerald-300"
+                  : "bg-white/10 text-white/40"
               }`}
               title={autoPrint ? "자동 인쇄 켜짐" : "자동 인쇄 꺼짐"}
             >
@@ -555,18 +555,18 @@ export default function AdminOrdersPage() {
             </button>
             <button
               onClick={() => setSoundEnabled(!soundEnabled)}
-              className="p-2 rounded-lg hover:bg-gray-100"
+              className="p-2 rounded-lg hover:bg-white/10 transition"
               title={soundEnabled ? "알림 소리 끄기" : "알림 소리 켜기"}
             >
-              {soundEnabled ? <Volume2 size={18} /> : <VolumeX size={18} className="text-gray-400" />}
+              {soundEnabled ? <Volume2 size={18} /> : <VolumeX size={18} className="text-white/40" />}
             </button>
-            <Link href="/admin/orders/analytics" className="p-2 rounded-lg hover:bg-gray-100" title="분석">
+            <Link href="/admin/orders/analytics" className="p-2 rounded-lg hover:bg-white/10 transition" title="분석">
               <BarChart3 size={18} />
             </Link>
-            <Link href="/admin/orders/history" className="p-2 rounded-lg hover:bg-gray-100" title="주문 이력">
+            <Link href="/admin/orders/history" className="p-2 rounded-lg hover:bg-white/10 transition" title="주문 이력">
               <History size={18} />
             </Link>
-            <Link href="/admin/qr" className="p-2 rounded-lg hover:bg-gray-100" title="QR 관리">
+            <Link href="/admin/qr" className="p-2 rounded-lg hover:bg-white/10 transition" title="QR 관리">
               <QrCode size={18} />
             </Link>
           </div>

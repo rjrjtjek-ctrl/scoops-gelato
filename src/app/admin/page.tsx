@@ -198,11 +198,29 @@ export default function AdminPage() {
             </button>
           ))}
           <div className="h-px bg-white/10 my-3" />
+          <p className="px-3 text-[10px] text-white/30 font-medium mb-1">관리 도구</p>
+          <button onClick={() => router.push("/admin/orders")}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] text-white/60 hover:text-white/90 hover:bg-white/5 transition-all">
+            📦 주문 관리
+          </button>
+          <button onClick={() => router.push("/admin/orders/history")}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] text-white/60 hover:text-white/90 hover:bg-white/5 transition-all">
+            📋 주문 이력
+          </button>
           <button onClick={() => router.push("/admin/inquiries")}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] text-white/60 hover:text-white/90 hover:bg-white/5 transition-all">
             <span className="flex-1 text-left">📝 가맹 문의</span>
             {unreadCount > 0 && <span className="bg-red-500 text-[10px] font-bold rounded-full px-1.5 py-0.5 min-w-[20px] text-center">{unreadCount}</span>}
           </button>
+          <button onClick={() => router.push("/admin/customer")}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] text-white/60 hover:text-white/90 hover:bg-white/5 transition-all">
+            💬 고객의 소리
+          </button>
+          <button onClick={() => router.push("/admin/qr")}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] text-white/60 hover:text-white/90 hover:bg-white/5 transition-all">
+            📱 QR 코드
+          </button>
+          <div className="h-px bg-white/10 my-2" />
           <button onClick={refresh}
             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] text-white/60 hover:text-white/90 hover:bg-white/5 transition-all ${refreshing ? "animate-pulse" : ""}`}>
             🔄 새로고침
@@ -222,6 +240,7 @@ export default function AdminPage() {
             <span className="text-sm font-bold">SCOOPS</span>
           </div>
           <div className="flex gap-1.5">
+            <button onClick={() => router.push("/admin/orders")} className="px-2.5 py-1.5 text-[11px] bg-white/10 rounded-lg active:bg-white/20">주문</button>
             <button onClick={() => router.push("/admin/inquiries")} className="relative px-2.5 py-1.5 text-[11px] bg-white/10 rounded-lg active:bg-white/20">
               문의{unreadCount > 0 && <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{unreadCount}</span>}
             </button>

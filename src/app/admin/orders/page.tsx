@@ -19,9 +19,22 @@ import {
   Trash2,
   Smartphone,
   BarChart3,
+  Wifi,
+  WifiOff,
 } from "lucide-react";
 import { stores, formatPrice } from "@/lib/order-data";
 import type { Order, OrderStatus } from "@/lib/order-types";
+import { createClient } from "@supabase/supabase-js";
+
+// Supabase Realtime 클라이언트 (브라우저에서만 생성)
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+const SUPABASE_KEY =
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY ||
+  "";
+const supabase = SUPABASE_URL && SUPABASE_KEY
+  ? createClient(SUPABASE_URL, SUPABASE_KEY)
+  : null;
 
 const STATUS_LABELS: Record<OrderStatus, string> = {
   pending: "신규",
@@ -55,6 +68,7 @@ export default function AdminOrdersPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [printError, setPrintError] = useState<string | null>(null);
   const [printQueue, setPrintQueue] = useState<{ order: Order; copy: "kitchen" | "customer" }[]>([]);
+  const [realtimeConnected, setRealtimeConnected] = useState(false);
   const prevOrderCount = useRef(0);
   const prevOrderIds = useRef<Set<string>>(new Set());
   const isFirstLoad = useRef(true); // [FIX1] 첫 로딩 구분용
@@ -325,14 +339,58 @@ export default function AdminOrdersPage() {
     setLoading(false);
   }, [fetchOrders]);
 
-  // [PERF] setTimeout 재귀 폴링 — fetch 완료 후 100ms 뒤 다음 폴링
-  // setInterval(500)보다 빠름: 실질 간격 = fetch소요시간 + 100ms (약 500-900ms)
-  // setInterval은 fetch가 500ms 넘으면 한 틱 건너뛰어 실질 1000ms+ 됨
+  // ============================================
+  // Supabase Realtime 구독 — 새 주문 INSERT 시 즉시 감지
+  // WebSocket으로 push 알림 → 폴링 대기 시간 제거
+  // ============================================
+  useEffect(() => {
+    if (!supabase || !selectedStore) return;
+
+    const channel = supabase
+      .channel(`orders-${selectedStore}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "orders",
+          filter: `store_id=eq.${selectedStore}`,
+        },
+        () => {
+          // 새 주문 INSERT 감지 → 즉시 전체 주문 목록 fetch
+          // payload를 직접 쓰지 않고 fetchOrders()로 items 포함 전체 데이터를 가져옴
+          fetchOrders();
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "orders",
+          filter: `store_id=eq.${selectedStore}`,
+        },
+        () => {
+          // 주문 상태 변경 시에도 즉시 반영
+          fetchOrders();
+        }
+      )
+      .subscribe((status) => {
+        setRealtimeConnected(status === "SUBSCRIBED");
+      });
+
+    return () => {
+      supabase.removeChannel(channel);
+      setRealtimeConnected(false);
+    };
+  }, [selectedStore, fetchOrders]);
+
+  // [PERF] Fallback 폴링 — Realtime 연결 시 5초, 미연결 시 100ms (기존 속도 유지)
   useEffect(() => {
     let active = true;
     const poll = async () => {
       await fetchOrders();
-      if (active) setTimeout(poll, 100);
+      if (active) setTimeout(poll, realtimeConnected ? 5000 : 100);
     };
     poll();
 
@@ -348,7 +406,7 @@ export default function AdminOrdersPage() {
       active = false;
       document.removeEventListener("visibilitychange", handleVisibility);
     };
-  }, [fetchOrders]);
+  }, [fetchOrders, realtimeConnected]);
 
   // [PERF] 매장 변경 시 상태 리셋
   useEffect(() => {
@@ -451,6 +509,18 @@ export default function AdminOrdersPage() {
             <h1 className="text-lg font-bold text-gray-900">주문 관리</h1>
           </div>
           <div className="flex items-center gap-2">
+            {/* Realtime 연결 상태 표시 */}
+            <span
+              className={`flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium ${
+                realtimeConnected
+                  ? "bg-green-50 text-green-700 border border-green-200"
+                  : "bg-orange-50 text-orange-600 border border-orange-200"
+              }`}
+              title={realtimeConnected ? "실시간 연결됨 (WebSocket)" : "실시간 미연결 (폴링 모드)"}
+            >
+              {realtimeConnected ? <Wifi size={12} /> : <WifiOff size={12} />}
+              {realtimeConnected ? "실시간" : "폴링"}
+            </span>
             <button
               onClick={() => setAutoPrint(!autoPrint)}
               className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${

@@ -108,6 +108,8 @@ export default function Footer() {
           </div>
         </div>
       </div>
+      {/* 모바일 하단 CTA 바 높이만큼 여백 */}
+      <div className="h-14 md:hidden" />
     </footer>
   );
 }

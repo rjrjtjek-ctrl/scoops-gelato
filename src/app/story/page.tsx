@@ -29,7 +29,7 @@ export default function StoryPage() {
   return (
     <>
       {/* ══════════ 섹션 1: 히어로 — 풀스크린 사진 배경 ══════════ */}
-      <section className="relative h-screen min-h-[600px]">
+      <section className="relative h-[100dvh] min-h-[600px]">
         <Image
           src="/images/store-yeouido-ext.jpg"
           alt="스쿱스 젤라떼리아 여의도점"

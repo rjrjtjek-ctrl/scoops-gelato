@@ -95,6 +95,11 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="theme-color" content="#1B4332" />
+        <meta name="format-detection" content="telephone=yes" />
         <JsonLd />
       </head>
       <body

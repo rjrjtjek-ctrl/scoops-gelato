@@ -7,9 +7,10 @@ import "./globals.css";
 
 const ibmPlexSansKR = IBM_Plex_Sans_KR({
   variable: "--font-ibm-plex",
-  subsets: ["latin"],
+  subsets: ["latin", "latin-ext"],
   weight: ["300", "400", "500", "600", "700"],
   display: "swap",
+  preload: true,
 });
 
 const SITE_URL = "https://scoopsgelato.kr";

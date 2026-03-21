@@ -32,7 +32,7 @@ export default function FranchiseInquiryPage() {
   };
 
   return (
-    <main className="pt-[80px] overflow-x-hidden">
+    <main className="pt-[80px]">
       <SubNav category="FRANCHISE" />
       {/* 히어로 */}
       <section className="bg-bg-warm section-padding">

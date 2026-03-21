@@ -28,7 +28,17 @@ export const metadata: Metadata = {
   creator: SITE_NAME,
   publisher: SITE_NAME,
   formatDetection: { telephone: true, email: true },
-  alternates: { canonical: SITE_URL },
+  alternates: {
+    canonical: SITE_URL,
+    languages: { "ko-KR": SITE_URL },
+  },
+  other: {
+    "Content-Language": "ko",
+    "geo.region": "KR-43",
+    "geo.placename": "청주시",
+    "geo.position": "36.6358;127.4595",
+    "ICBM": "36.6358, 127.4595",
+  },
   openGraph: {
     title: "SCOOPS GELATERIA | 스쿱스 젤라떼리아",
     description: DEFAULT_DESC,

@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "개인정보처리방침",
-  description: "스쿱스 젤라떼리아 개인정보처리방침",
+  description: "스쿱스 젤라떼리아 개인정보처리방침. 개인정보 수집, 이용, 보관, 파기에 관한 안내입니다.",
+  alternates: { canonical: "https://scoopsgelato.kr/privacy" },
+  robots: { index: true, follow: true },
 };
 
 export default function PrivacyPage() {

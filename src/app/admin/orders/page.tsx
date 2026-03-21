@@ -404,13 +404,12 @@ export default function AdminOrdersPage() {
     };
   }, [selectedStore]); // fetchOrders 제외 — ref로 참조
 
-  // [PERF] 폴링 — 항상 100ms (Realtime 상태와 무관)
-  // Realtime은 추가 보너스일 뿐, 폴링을 대체하지 않음
+  // [PERF] 폴링 — 700ms (Win7 Chrome 109 POS 안정성 + 빠른 감지 균형)
   useEffect(() => {
     let active = true;
     const poll = async () => {
       await fetchOrders();
-      if (active) setTimeout(poll, 100);
+      if (active) setTimeout(poll, 700);
     };
     poll();
 

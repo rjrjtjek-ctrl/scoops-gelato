@@ -5,7 +5,12 @@
       "Bash(npm install:*)",
       "Bash(npx next:*)",
       "mcp__Claude_Preview__preview_start",
-      "Bash(where npx:*)"
+      "Bash(where npx:*)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" \"https://yjsudpiedxacuejruuiv.supabase.co/rest/v1/inquiries?limit=1\" -H \"apikey: sb_publishable_aB7rXyB9TO2srgsuLAp03g_9llLDqfU\" -H \"Authorization: Bearer sb_publishable_aB7rXyB9TO2srgsuLAp03g_9llLDqfU\")",
+      "Bash(curl -s -X POST \"https://yjsudpiedxacuejruuiv.supabase.co/rest/v1/rpc/exec_sql\" -H \"apikey: sb_publishable_aB7rXyB9TO2srgsuLAp03g_9llLDqfU\" -H \"Authorization: Bearer sb_publishable_aB7rXyB9TO2srgsuLAp03g_9llLDqfU\" -H \"Content-Type: application/json\" -d '{\"\"query\"\": \"\"CREATE TABLE IF NOT EXISTS inquiries \\(id TEXT PRIMARY KEY, name TEXT NOT NULL, phone TEXT NOT NULL, email TEXT NOT NULL, region TEXT NOT NULL, message TEXT, time TEXT NOT NULL, kakao_sent BOOLEAN DEFAULT false, kakao_error TEXT, read BOOLEAN DEFAULT false, created_at TIMESTAMPTZ DEFAULT now\\(\\)\\)\"\"}')",
+      "Bash(curl -s \"https://yjsudpiedxacuejruuiv.supabase.co/rest/v1/inquiries?limit=1\" -H \"apikey: sb_publishable_aB7rXyB9TO2srgsuLAp03g_9llLDqfU\" -H \"Authorization: Bearer sb_publishable_aB7rXyB9TO2srgsuLAp03g_9llLDqfU\")",
+      "Bash(curl -s https://scoopsgelato.kr/order/cheongju)",
+      "Bash(curl -sI https://scoopsgelato.kr/order/cheongju)"
     ]
   }
 }

@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { ChevronDown } from "lucide-react";
 import SubNav from "@/components/SubNav";
 
 export default function FranchiseInquiryPage() {
   const [submitted, setSubmitted] = useState(false);
+  const [showExtra, setShowExtra] = useState(false);
   const [formData, setFormData] = useState({ name: "", phone: "", email: "", region: "", budget: "", message: "" });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -59,6 +61,7 @@ export default function FranchiseInquiryPage() {
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-6">
+              {/* 필수: 이름 + 전화번호 */}
               <div className="grid md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-brand-primary mb-2">이름 *</label>
@@ -70,31 +73,45 @@ export default function FranchiseInquiryPage() {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-brand-primary mb-2">이메일</label>
-                <input type="email" name="email" value={formData.email} onChange={handleChange} className="w-full px-4 py-3 rounded-xl border border-black/10 bg-bg-cream focus:outline-none focus:border-brand-primary text-sm" placeholder="example@email.com" />
-              </div>
+              {/* 선택사항 접이식 */}
+              <button
+                type="button"
+                onClick={() => setShowExtra(!showExtra)}
+                className="flex items-center gap-2 text-sm text-text-light hover:text-brand-primary transition"
+              >
+                <ChevronDown className={`w-4 h-4 transition-transform ${showExtra ? "rotate-180" : ""}`} />
+                추가 정보 입력 (선택)
+              </button>
 
-              <div>
-                <label className="block text-sm font-medium text-brand-primary mb-2">희망 지역 *</label>
-                <input type="text" name="region" required value={formData.region} onChange={handleChange} className="w-full px-4 py-3 rounded-xl border border-black/10 bg-bg-cream focus:outline-none focus:border-brand-primary text-sm" placeholder="예: 서울 강남구" />
-              </div>
+              {showExtra && (
+                <div className="space-y-6 animate-in fade-in duration-300">
+                  <div>
+                    <label className="block text-sm font-medium text-brand-primary mb-2">이메일</label>
+                    <input type="email" name="email" value={formData.email} onChange={handleChange} className="w-full px-4 py-3 rounded-xl border border-black/10 bg-bg-cream focus:outline-none focus:border-brand-primary text-sm" placeholder="example@email.com" />
+                  </div>
 
-              <div>
-                <label className="block text-sm font-medium text-brand-primary mb-2">예상 투자 금액</label>
-                <select name="budget" value={formData.budget} onChange={handleChange} className="w-full px-4 py-3 rounded-xl border border-black/10 bg-bg-cream focus:outline-none focus:border-brand-primary text-sm">
-                  <option value="">선택해주세요</option>
-                  <option>5,000만원 미만</option>
-                  <option>5,000만원 ~ 1억원</option>
-                  <option>1억원 ~ 2억원</option>
-                  <option>2억원 이상</option>
-                </select>
-              </div>
+                  <div>
+                    <label className="block text-sm font-medium text-brand-primary mb-2">희망 지역</label>
+                    <input type="text" name="region" value={formData.region} onChange={handleChange} className="w-full px-4 py-3 rounded-xl border border-black/10 bg-bg-cream focus:outline-none focus:border-brand-primary text-sm" placeholder="예: 서울 강남구" />
+                  </div>
 
-              <div>
-                <label className="block text-sm font-medium text-brand-primary mb-2">문의 내용</label>
-                <textarea name="message" rows={5} value={formData.message} onChange={handleChange} className="w-full px-4 py-3 rounded-xl border border-black/10 bg-bg-cream focus:outline-none focus:border-brand-primary text-sm resize-none" placeholder="궁금하신 사항을 자유롭게 작성해 주세요." />
-              </div>
+                  <div>
+                    <label className="block text-sm font-medium text-brand-primary mb-2">예상 투자 금액</label>
+                    <select name="budget" value={formData.budget} onChange={handleChange} className="w-full px-4 py-3 rounded-xl border border-black/10 bg-bg-cream focus:outline-none focus:border-brand-primary text-sm">
+                      <option value="">선택해주세요</option>
+                      <option>5,000만원 미만</option>
+                      <option>5,000만원 ~ 1억원</option>
+                      <option>1억원 ~ 2억원</option>
+                      <option>2억원 이상</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-brand-primary mb-2">문의 내용</label>
+                    <textarea name="message" rows={5} value={formData.message} onChange={handleChange} className="w-full px-4 py-3 rounded-xl border border-black/10 bg-bg-cream focus:outline-none focus:border-brand-primary text-sm resize-none" placeholder="궁금하신 사항을 자유롭게 작성해 주세요." />
+                  </div>
+                </div>
+              )}
 
               <div className="flex items-start gap-3">
                 <input type="checkbox" required className="mt-1" />
@@ -104,7 +121,7 @@ export default function FranchiseInquiryPage() {
               </div>
 
               <button type="submit" className="w-full btn-filled rounded-xl py-4">
-                상담 신청하기
+                무료 상담 신청 →
               </button>
             </form>
           )}

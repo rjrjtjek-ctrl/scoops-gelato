@@ -38,6 +38,12 @@ export async function GET() {
 // 방문 로그 기록
 export async function POST(req: NextRequest) {
   try {
+    // 관리자 기기 제외 (scoops_admin 쿠키가 있으면 기록 안 함)
+    const adminCookie = req.cookies.get("scoops_admin");
+    if (adminCookie?.value === "true") {
+      return NextResponse.json({ success: true });
+    }
+
     const body = await req.json();
     const { path } = body;
 

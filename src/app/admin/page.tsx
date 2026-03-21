@@ -51,6 +51,10 @@ export default function AdminPage() {
   const [expandedSession, setExpandedSession] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [orderSummary, setOrderSummary] = useState<{
+    todayOrders: number; todayRevenue: number; topItems: { name: string; count: number }[];
+    qrScans: number; orderCompletes: number;
+  } | null>(null);
   const router = useRouter();
 
   const getToken = () => typeof window !== "undefined" ? localStorage.getItem("admin_token") || "" : "";
@@ -58,9 +62,10 @@ export default function AdminPage() {
   const fetchData = useCallback(async (token: string) => {
     setLoading(true);
     try {
-      const [inqRes, anaRes] = await Promise.all([
+      const [inqRes, anaRes, trackRes] = await Promise.all([
         fetch("/api/admin/inquiries", { headers: { Authorization: `Bearer ${token}` } }),
         fetch("/api/admin/analytics", { headers: { Authorization: `Bearer ${token}` } }),
+        fetch("/api/tracking?days=1").catch(() => null),
       ]);
       if (inqRes.ok) {
         const data = await inqRes.json();
@@ -68,6 +73,45 @@ export default function AdminPage() {
         setKakaoFailCount(data.inquiries.filter((i: { kakaoSent: boolean }) => !i.kakaoSent).length);
       }
       if (anaRes.ok) setAnalytics(await anaRes.json());
+
+      // 주문 요약 (전체 활성 매장 합산)
+      try {
+        const storeIds = ["s1", "s2", "s3", "s12", "s16", "s17"];
+        const orderResults = await Promise.all(
+          storeIds.map(id => fetch(`/api/order?storeId=${id}&today=true`).then(r => r.ok ? r.json() : { orders: [] }).catch(() => ({ orders: [] })))
+        );
+        const allOrders = orderResults.flatMap(r => r.orders || []);
+        const todayRevenue = allOrders.reduce((sum: number, o: { totalAmount: number; status: string }) => o.status !== "cancelled" ? sum + o.totalAmount : sum, 0);
+
+        // 인기 메뉴 집계
+        const itemCounts: Record<string, number> = {};
+        allOrders.forEach((o: { items: { itemName: string; quantity: number }[] }) => {
+          (o.items || []).forEach((item) => {
+            itemCounts[item.itemName] = (itemCounts[item.itemName] || 0) + item.quantity;
+          });
+        });
+        const topItems = Object.entries(itemCounts)
+          .sort(([, a], [, b]) => b - a)
+          .slice(0, 3)
+          .map(([name, count]) => ({ name, count }));
+
+        // QR 이벤트 (스캔 수, 주문 완료 수)
+        let qrScans = 0, orderCompletes = 0;
+        if (trackRes && trackRes.ok) {
+          const trackData = await trackRes.json();
+          const events = trackData.events || [];
+          qrScans = events.filter((e: { event: string }) => e.event === "qr_scan").length;
+          orderCompletes = events.filter((e: { event: string }) => e.event === "order_complete").length;
+        }
+
+        setOrderSummary({
+          todayOrders: allOrders.filter((o: { status: string }) => o.status !== "cancelled").length,
+          todayRevenue,
+          topItems,
+          qrScans,
+          orderCompletes,
+        });
+      } catch { /* 주문 데이터 실패해도 대시보드는 정상 동작 */ }
     } finally { setLoading(false); }
   }, []);
 
@@ -229,6 +273,45 @@ export default function AdminPage() {
                 </Card>
               ))}
             </div>
+
+            {/* 주문 현황 */}
+            {orderSummary && (
+              <Card>
+                <SectionTitle title="오늘 QR 주문 현황" sub="전체 매장 합산" action={<Link href="/admin/orders" className="text-[11px] text-[#1B4332] font-semibold hover:underline">주문 관리 →</Link>} />
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+                  <div className="bg-[#1B4332]/5 rounded-xl p-3">
+                    <p className="text-[11px] text-gray-400">오늘 주문</p>
+                    <p className="text-2xl font-extrabold text-[#1B4332]">{orderSummary.todayOrders}<span className="text-sm font-medium text-gray-400 ml-0.5">건</span></p>
+                  </div>
+                  <div className="bg-[#1B4332]/5 rounded-xl p-3">
+                    <p className="text-[11px] text-gray-400">오늘 매출</p>
+                    <p className="text-2xl font-extrabold text-[#1B4332]">{(orderSummary.todayRevenue / 10000).toFixed(1)}<span className="text-sm font-medium text-gray-400 ml-0.5">만원</span></p>
+                  </div>
+                  <div className="bg-[#1B4332]/5 rounded-xl p-3">
+                    <p className="text-[11px] text-gray-400">QR 스캔</p>
+                    <p className="text-2xl font-extrabold text-[#1B4332]">{orderSummary.qrScans}<span className="text-sm font-medium text-gray-400 ml-0.5">회</span></p>
+                  </div>
+                  <div className="bg-[#1B4332]/5 rounded-xl p-3">
+                    <p className="text-[11px] text-gray-400">주문 전환율</p>
+                    <p className={`text-2xl font-extrabold ${orderSummary.qrScans > 0 && (orderSummary.orderCompletes / orderSummary.qrScans) < 0.3 ? "text-red-500" : "text-[#1B4332]"}`}>
+                      {orderSummary.qrScans > 0 ? Math.round((orderSummary.orderCompletes / orderSummary.qrScans) * 100) : 0}<span className="text-sm font-medium text-gray-400 ml-0.5">%</span>
+                    </p>
+                  </div>
+                </div>
+                {orderSummary.topItems.length > 0 && (
+                  <div>
+                    <p className="text-[11px] text-gray-400 mb-2">인기 메뉴 Top 3</p>
+                    <div className="flex gap-2 flex-wrap">
+                      {orderSummary.topItems.map((item, i) => (
+                        <span key={i} className="text-[12px] bg-[#A68B5B]/10 text-[#8B6914] px-3 py-1.5 rounded-full font-medium">
+                          {i === 0 ? "🥇" : i === 1 ? "🥈" : "🥉"} {item.name} ({item.count})
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </Card>
+            )}
 
             {/* 알림 */}
             {(unreadCount > 0 || kakaoFailCount > 0) && (

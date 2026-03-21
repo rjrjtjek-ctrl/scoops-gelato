@@ -91,9 +91,9 @@ html {
   display: none;
 }
 
-/* 전체 페이지 가로 스크롤 방지 */
-html, body {
-  overflow-x: hidden;
+/* 전체 페이지 가로 스크롤 방지 — overflow-y는 건드리지 않음 */
+html {
+  overflow-x: clip;
 }
 
 ::-webkit-scrollbar {

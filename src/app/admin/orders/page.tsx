@@ -34,7 +34,8 @@ try {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY ||
     "";
-  if (SUPABASE_URL && SUPABASE_KEY) {
+  // sb_publishable_* 키는 Realtime 미지원 → JWT(eyJ*) 키만 허용
+  if (SUPABASE_URL && SUPABASE_KEY && SUPABASE_KEY.startsWith("eyJ")) {
     supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
   }
 } catch {
@@ -83,6 +84,9 @@ export default function AdminOrdersPage() {
   const printWinRef = useRef<Window | null>(null); // [PERF] 팝업 재사용 — 매번 새 팝업 열지 않음
   const ordersRef = useRef<Order[]>([]); // [PERF] 변경 감지용 — setOrders 불필요한 호출 방지
   const fetchOrdersRef = useRef<(() => Promise<void>) | null>(null); // Realtime에서 참조용 (deps 회피)
+  const autoPrintRef = useRef(autoPrint); // [PERF] fetchOrders deps 안정화
+  const soundEnabledRef = useRef(soundEnabled); // [PERF] fetchOrders deps 안정화
+  const printReceiptRef = useRef<(ord: Order) => void>(() => {}); // [PERF] fetchOrders deps 안정화
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // ============================================
@@ -240,6 +244,11 @@ export default function AdminOrdersPage() {
     processNextPrint();
   }, [processNextPrint]);
 
+  // [PERF] ref 업데이트 — fetchOrders가 이 함수들에 의존하지 않도록 분리
+  useEffect(() => { printReceiptRef.current = printReceipt; }, [printReceipt]);
+  useEffect(() => { autoPrintRef.current = autoPrint; }, [autoPrint]);
+  useEffect(() => { soundEnabledRef.current = soundEnabled; }, [soundEnabled]);
+
   // 수동 재인쇄
   const manualPrint = useCallback((ord: Order) => {
     setPrintQueue((prev) => [...prev, { order: ord, copy: "kitchen" as const }]);
@@ -288,7 +297,7 @@ export default function AdminOrdersPage() {
 
         if (ordersToPrint.length > 0) {
           // 알림 소리
-          if (soundEnabled) {
+          if (soundEnabledRef.current) {
             playNotificationSound();
             if (Notification.permission === "granted") {
               new Notification(`새 주문 ${newOrderItems.length}건!`, {
@@ -303,11 +312,11 @@ export default function AdminOrdersPage() {
           }
 
           // 자동 영수증 인쇄 + 자동 주문 확인
-          if (autoPrint) {
+          if (autoPrintRef.current) {
             ordersToPrint.forEach((order: Order) => {
               // [FIX1] 이미 인쇄한 주문은 건너뜀
               if (!printedIds.current.has(order.id)) {
-                printReceipt(order);
+                printReceiptRef.current(order);
               }
               // 자동으로 주문 확인 처리 (fire-and-forget)
               fetch("/api/order", {
@@ -336,7 +345,7 @@ export default function AdminOrdersPage() {
     } finally {
       isFetching.current = false;
     }
-  }, [selectedStore, soundEnabled, autoPrint, printReceipt]);
+  }, [selectedStore]); // [PERF] soundEnabled, autoPrint, printReceipt는 ref로 분리 → 폴링 안정화
 
   // Realtime useEffect에서 fetchOrders를 deps 없이 참조하기 위한 ref
   useEffect(() => { fetchOrdersRef.current = fetchOrders; }, [fetchOrders]);

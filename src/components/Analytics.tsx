@@ -40,6 +40,8 @@ function saveJourney(journey: PageVisitLocal[]) {
 let lastSentAt = 0;
 
 function sendSessionComplete() {
+  // 개발환경은 전송 안 함
+  if (process.env.NODE_ENV !== "production") return;
   // 관리자 기기는 전송 안 함
   if (typeof document !== "undefined" && document.cookie.includes("scoops_admin=true")) return;
 
@@ -92,6 +94,12 @@ export default function Analytics() {
   // 페이지 변경 추적
   useEffect(() => {
     if (pathname.startsWith("/admin")) return;
+    // QR 주문 페이지는 방문자 통계에서 분리
+    if (pathname.startsWith("/order")) return;
+    // 개발환경은 추적 안 함
+    if (process.env.NODE_ENV !== "production") return;
+    // 봇/크롤러 제외
+    if (typeof navigator !== "undefined" && /bot|crawl|spider|slurp|Googlebot|Bingbot|Yandex|Baidu|DuckDuckBot|facebookexternalhit|LinkedInBot|Twitterbot|WhatsApp|Bytespider|GPTBot|ClaudeBot/i.test(navigator.userAgent)) return;
     // 관리자 기기는 추적 제외
     if (document.cookie.includes("scoops_admin=true")) return;
 

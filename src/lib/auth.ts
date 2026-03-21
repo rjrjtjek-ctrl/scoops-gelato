@@ -18,11 +18,20 @@ export async function setAdminSession() {
     maxAge: 60 * 60 * 24, // 24시간
     path: "/",
   });
+  // 클라이언트 JS에서 관리자 감지용 — Analytics 추적 제외
+  cookieStore.set("scoops_admin", "true", {
+    httpOnly: false,
+    secure: false,
+    sameSite: "lax",
+    maxAge: 60 * 60 * 24 * 365, // 1년
+    path: "/",
+  });
 }
 
 export async function clearAdminSession() {
   const cookieStore = await cookies();
   cookieStore.delete("admin_session");
+  cookieStore.delete("scoops_admin");
 }
 
 export async function isAdminAuthenticated(): Promise<boolean> {

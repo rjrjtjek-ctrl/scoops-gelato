@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useState } from "react";
+import SubNav from "@/components/SubNav";
 import {
   RefreshCw,
   Coffee,
@@ -84,6 +85,7 @@ export default function ConversionPage() {
 
   return (
     <>
+      <SubNav category="FRANCHISE" />
       {/* ════════════ 히어로 ════════════ */}
       <section className="relative h-[70vh] min-h-[500px] flex items-end">
         <Image src="/images/crowd-1.jpg" alt="스쿱스 매장" fill sizes="100vw" className="object-cover" priority unoptimized />

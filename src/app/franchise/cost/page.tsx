@@ -60,18 +60,18 @@ export default function FranchiseCostPage() {
         </div>
       </section>
 
-      {/* 수익성 */}
+      {/* 본사 지원 사항 */}
       <section className="bg-bg-cream section-padding">
         <div className="max-w-[1200px] mx-auto px-6 md:px-12">
           <div className="text-center mb-12">
-            <p className="text-[12px] tracking-[0.2em] text-brand-secondary uppercase mb-4">Profitability</p>
-            <h2 className="text-2xl md:text-3xl font-light text-brand-primary">수익성 분석</h2>
+            <p className="text-[12px] tracking-[0.2em] text-brand-secondary uppercase mb-4">Support</p>
+            <h2 className="text-2xl md:text-3xl font-light text-brand-primary">본사 지원 사항</h2>
           </div>
           <div className="grid md:grid-cols-3 gap-8">
             {[
-              { label: "월 평균 매출", value: "2,500만원~", sub: "매장 위치·규모에 따라 상이" },
-              { label: "평균 영업이익률", value: "25~35%", sub: "원가율·인건비 등 운영 조건에 따라 변동" },
-              { label: "투자금 회수기간", value: "12~18개월", sub: "매장별 상이" },
+              { label: "레시피 & 교육", value: "전 과정", sub: "젤라또 제조부터 매장 운영까지 체계적 교육" },
+              { label: "마케팅 지원", value: "본사 주도", sub: "SNS, 프로모션, 시즌 마케팅 지원" },
+              { label: "지속 관리", value: "정기 방문", sub: "품질 관리, 신메뉴 개발, 운영 컨설팅" },
             ].map((item, i) => (
               <div key={i} className="bg-bg-white rounded-2xl p-8 text-center">
                 <p className="text-sm text-text-body mb-3">{item.label}</p>
@@ -80,9 +80,6 @@ export default function FranchiseCostPage() {
               </div>
             ))}
           </div>
-          <p className="text-xs text-text-light mt-6 text-center">
-            * 위 수치는 기존 가맹점의 평균 데이터를 기반으로 한 참고 자료이며, 실제 수익은 보장되지 않습니다.
-          </p>
         </div>
       </section>
 

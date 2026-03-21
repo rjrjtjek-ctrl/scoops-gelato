@@ -704,6 +704,7 @@ function DrinkItemCard({
   const [pairingMode, setPairingMode] = useState(false);
   const [pairingGelatoCount, setPairingGelatoCount] = useState<1 | 2 | null>(null);
   const [pairingDrinkOption, setPairingDrinkOption] = useState<typeof prices[0] | null>(null);
+  const [pairingExtraFlavor, setPairingExtraFlavor] = useState<{ id: string; name: string } | null>(null); // 2가지맛 시 추가 맛
 
   const handleToggle = () => {
     if (isOpen) {
@@ -862,7 +863,7 @@ function DrinkItemCard({
                             <p className="text-[11px] text-[#555] mb-1.5">🍨 {pairingName} 몇 가지 맛?</p>
                             <div className="flex gap-2">
                               <button
-                                onClick={() => setPairingGelatoCount(1)}
+                                onClick={() => { setPairingGelatoCount(1); setPairingExtraFlavor(null); }}
                                 className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all ${
                                   pairingGelatoCount === 1
                                     ? "bg-[#1B4332] text-white"
@@ -872,7 +873,7 @@ function DrinkItemCard({
                                 1가지 맛<br /><span className="font-bold">5,000원</span>
                               </button>
                               <button
-                                onClick={() => setPairingGelatoCount(2)}
+                                onClick={() => { setPairingGelatoCount(2); setPairingExtraFlavor(null); }}
                                 className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all ${
                                   pairingGelatoCount === 2
                                     ? "bg-[#1B4332] text-white"
@@ -883,6 +884,32 @@ function DrinkItemCard({
                               </button>
                             </div>
                           </div>
+
+                          {/* 2가지맛 선택 시 — 추가 맛 선택 */}
+                          {pairingGelatoCount === 2 && (
+                            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}>
+                              <p className="text-[11px] text-[#555] mb-1.5">
+                                🍨 두 번째 맛을 골라주세요 <span className="text-[#999]">(1번째: {pairingName})</span>
+                              </p>
+                              <div className="grid grid-cols-3 gap-1.5 max-h-[140px] overflow-y-auto">
+                                {getAllFlavors()
+                                  .filter(f => f.id !== drinkInfo.gelatoPairingId)
+                                  .map(f => (
+                                    <button
+                                      key={f.id}
+                                      onClick={() => setPairingExtraFlavor(pairingExtraFlavor?.id === f.id ? null : { id: f.id, name: f.name })}
+                                      className={`py-2 px-1 rounded-lg text-[11px] font-medium transition-all ${
+                                        pairingExtraFlavor?.id === f.id
+                                          ? "bg-[#1B4332] text-white"
+                                          : "bg-white text-[#555] border border-[#EDE6DD]"
+                                      }`}
+                                    >
+                                      {f.name}
+                                    </button>
+                                  ))}
+                              </div>
+                            </motion.div>
+                          )}
 
                           {/* 주류 옵션 선택 */}
                           <div>
@@ -905,7 +932,7 @@ function DrinkItemCard({
                           </div>
 
                           {/* 합계 + 장바구니 담기 */}
-                          {pairingGelatoCount && pairingDrinkOption && (
+                          {pairingGelatoCount && pairingDrinkOption && (pairingGelatoCount === 1 || pairingExtraFlavor) && (
                             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                               <div className="flex justify-between text-xs text-[#555] mb-2">
                                 <span>합계</span>
@@ -918,12 +945,16 @@ function DrinkItemCard({
                               <button
                                 onClick={() => {
                                   // 젤라또 장바구니 추가
+                                  const flavors = [{ id: drinkInfo.gelatoPairingId!, name: pairingName }];
+                                  if (pairingGelatoCount === 2 && pairingExtraFlavor) {
+                                    flavors.push(pairingExtraFlavor);
+                                  }
                                   onAddToCart({
                                     cartId: `gelato_pair_${Date.now()}`,
                                     type: "gelato",
                                     orderGroup: "EAT NOW",
                                     flavorCount: pairingGelatoCount,
-                                    selectedFlavors: [{ id: drinkInfo.gelatoPairingId!, name: pairingName }],
+                                    selectedFlavors: flavors,
                                     quantity: 1,
                                     unitPrice: pairingGelatoCount === 1 ? 5000 : 6000,
                                     subtotal: pairingGelatoCount === 1 ? 5000 : 6000,
@@ -941,6 +972,7 @@ function DrinkItemCard({
                                   // 초기화 + 팝업 닫기
                                   setPairingMode(false);
                                   setPairingGelatoCount(null);
+                                  setPairingExtraFlavor(null);
                                   setPairingDrinkOption(null);
                                   setShowInfo(false);
                                 }}
@@ -952,7 +984,7 @@ function DrinkItemCard({
                           )}
 
                           <button
-                            onClick={() => { setPairingMode(false); setPairingGelatoCount(null); setPairingDrinkOption(null); }}
+                            onClick={() => { setPairingMode(false); setPairingGelatoCount(null); setPairingDrinkOption(null); setPairingExtraFlavor(null); }}
                             className="w-full text-center text-[11px] text-[#999] py-1"
                           >
                             취소

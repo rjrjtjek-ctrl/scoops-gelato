@@ -26,15 +26,20 @@ import { stores, formatPrice } from "@/lib/order-data";
 import type { Order, OrderStatus } from "@/lib/order-types";
 import { createClient } from "@supabase/supabase-js";
 
-// Supabase Realtime 클라이언트 (브라우저에서만 생성)
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-const SUPABASE_KEY =
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY ||
-  "";
-const supabase = SUPABASE_URL && SUPABASE_KEY
-  ? createClient(SUPABASE_URL, SUPABASE_KEY)
-  : null;
+// Supabase Realtime 클라이언트 — 실패해도 페이지 동작에 영향 없음
+let supabase: ReturnType<typeof createClient> | null = null;
+try {
+  const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+  const SUPABASE_KEY =
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY ||
+    "";
+  if (SUPABASE_URL && SUPABASE_KEY) {
+    supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+  }
+} catch {
+  // Supabase 클라이언트 생성 실패 → 폴링으로 정상 동작
+}
 
 const STATUS_LABELS: Record<OrderStatus, string> = {
   pending: "신규",
@@ -77,6 +82,7 @@ export default function AdminOrdersPage() {
   const isFetching = useRef(false); // [PERF] 폴링 중복 방지 — 이전 fetch 끝나기 전 다음 fetch 시작 차단
   const printWinRef = useRef<Window | null>(null); // [PERF] 팝업 재사용 — 매번 새 팝업 열지 않음
   const ordersRef = useRef<Order[]>([]); // [PERF] 변경 감지용 — setOrders 불필요한 호출 방지
+  const fetchOrdersRef = useRef<(() => Promise<void>) | null>(null); // Realtime에서 참조용 (deps 회피)
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // ============================================
@@ -332,6 +338,9 @@ export default function AdminOrdersPage() {
     }
   }, [selectedStore, soundEnabled, autoPrint, printReceipt]);
 
+  // Realtime useEffect에서 fetchOrders를 deps 없이 참조하기 위한 ref
+  useEffect(() => { fetchOrdersRef.current = fetchOrders; }, [fetchOrders]);
+
   // [PERF] 수동 새로고침 — 스피너 애니메이션 표시용 (폴링과 분리)
   const manualRefresh = useCallback(async () => {
     setLoading(true);
@@ -340,57 +349,59 @@ export default function AdminOrdersPage() {
   }, [fetchOrders]);
 
   // ============================================
-  // Supabase Realtime 구독 — 새 주문 INSERT 시 즉시 감지
-  // WebSocket으로 push 알림 → 폴링 대기 시간 제거
+  // Supabase Realtime 구독 — 새 주문 INSERT 시 즉시 감지 (보너스 속도)
+  // 실패해도 폴링이 100ms로 동작하므로 기존과 동일하게 작동
+  // fetchOrdersRef로 참조하여 deps에 fetchOrders를 넣지 않음 → 채널 재생성 방지
   // ============================================
   useEffect(() => {
     if (!supabase || !selectedStore) return;
 
-    const channel = supabase
-      .channel(`orders-${selectedStore}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "orders",
-          filter: `store_id=eq.${selectedStore}`,
-        },
-        () => {
-          // 새 주문 INSERT 감지 → 즉시 전체 주문 목록 fetch
-          // payload를 직접 쓰지 않고 fetchOrders()로 items 포함 전체 데이터를 가져옴
-          fetchOrders();
-        }
-      )
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "orders",
-          filter: `store_id=eq.${selectedStore}`,
-        },
-        () => {
-          // 주문 상태 변경 시에도 즉시 반영
-          fetchOrders();
-        }
-      )
-      .subscribe((status) => {
-        setRealtimeConnected(status === "SUBSCRIBED");
-      });
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    try {
+      channel = supabase
+        .channel(`orders-${selectedStore}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "orders",
+            filter: `store_id=eq.${selectedStore}`,
+          },
+          () => { fetchOrdersRef.current?.(); }
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "UPDATE",
+            schema: "public",
+            table: "orders",
+            filter: `store_id=eq.${selectedStore}`,
+          },
+          () => { fetchOrdersRef.current?.(); }
+        )
+        .subscribe((status) => {
+          setRealtimeConnected(status === "SUBSCRIBED");
+        });
+    } catch {
+      // Realtime 구독 실패 → 폴링으로 정상 동작
+    }
 
     return () => {
-      supabase.removeChannel(channel);
+      if (channel) {
+        try { supabase.removeChannel(channel); } catch {}
+      }
       setRealtimeConnected(false);
     };
-  }, [selectedStore, fetchOrders]);
+  }, [selectedStore]); // fetchOrders 제외 — ref로 참조
 
-  // [PERF] Fallback 폴링 — Realtime 연결 시 5초, 미연결 시 100ms (기존 속도 유지)
+  // [PERF] 폴링 — 항상 100ms (Realtime 상태와 무관)
+  // Realtime은 추가 보너스일 뿐, 폴링을 대체하지 않음
   useEffect(() => {
     let active = true;
     const poll = async () => {
       await fetchOrders();
-      if (active) setTimeout(poll, realtimeConnected ? 5000 : 100);
+      if (active) setTimeout(poll, 100);
     };
     poll();
 
@@ -406,7 +417,7 @@ export default function AdminOrdersPage() {
       active = false;
       document.removeEventListener("visibilitychange", handleVisibility);
     };
-  }, [fetchOrders, realtimeConnected]);
+  }, [fetchOrders]);
 
   // [PERF] 매장 변경 시 상태 리셋
   useEffect(() => {

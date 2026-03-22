@@ -103,9 +103,9 @@ export default function FranchisePage() {
               { step: "01", title: "매장식사 · 포장", img: "/images/demo/step1.jpg" },
               { step: "02", title: "젤라또 메뉴", img: "/images/demo/step2.jpg" },
               { step: "03", title: "맛 선택", img: "/images/demo/step3.jpg" },
-              { step: "04", title: "장바구니 추가", img: "/images/demo/step4.jpg" },
-              { step: "05", title: "주류 메뉴", img: "/images/demo/step5.jpg" },
-              { step: "06", title: "주문 내역", img: "/images/demo/step6.jpg" },
+              { step: "04", title: "맛 고르기", img: "/images/demo/step4.jpg" },
+              { step: "05", title: "장바구니 추가", img: "/images/demo/step5.jpg" },
+              { step: "06", title: "주류 메뉴", img: "/images/demo/step6.jpg" },
             ].map((item, i) => (
               <motion.div
                 key={i}

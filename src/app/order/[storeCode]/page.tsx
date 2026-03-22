@@ -686,7 +686,7 @@ function GelatoSection({
 }
 
 // ============================================
-// 주류 섹션 (위스키/와인/리큐르)
+// 주류 섹션 (위스키/와인/리큐르/소주)
 // ============================================
 function DrinkSection({
   categoryId,
@@ -704,6 +704,7 @@ function DrinkSection({
   showBottleNotice?: boolean;
 }) {
   const items = getItemsByCategory(categoryId);
+  const [openItemId, setOpenItemId] = useState<string | null>(null);
 
   if (!ageVerified) {
     return (
@@ -728,6 +729,8 @@ function DrinkSection({
             key={item.id}
             item={item}
             onAddToCart={onAddToCart}
+            isOpen={openItemId === item.id}
+            onToggle={(id) => setOpenItemId(openItemId === id ? null : id)}
           />
         ))}
       </div>
@@ -749,12 +752,15 @@ function DrinkSection({
 function DrinkItemCard({
   item,
   onAddToCart,
+  isOpen,
+  onToggle,
 }: {
   item: MenuItem;
   onAddToCart: (item: CartItem) => void;
+  isOpen: boolean;
+  onToggle: (id: string) => void;
 }) {
   const prices = getPricesForItem(item.id);
-  const [isOpen, setIsOpen] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
   const [selectedOption, setSelectedOption] = useState<typeof prices[0] | null>(null);
   const [quantity, setQuantity] = useState(1);
@@ -767,13 +773,10 @@ function DrinkItemCard({
 
   const handleToggle = () => {
     if (isOpen) {
-      // 접기 → 초기화
-      setIsOpen(false);
       setSelectedOption(null);
       setQuantity(1);
-    } else {
-      setIsOpen(true);
     }
+    onToggle(item.id);
   };
 
   const handleAdd = () => {
@@ -791,7 +794,7 @@ function DrinkItemCard({
 
     onAddToCart(cartItem);
     // 추가 후 접기
-    setIsOpen(false);
+    onToggle(item.id);
     setSelectedOption(null);
     setQuantity(1);
   };
@@ -1059,6 +1062,15 @@ function DrinkItemCard({
             className="overflow-hidden"
           >
             <div className="px-4 pb-4">
+              {/* 설명 버튼 */}
+              {drinkInfo && (
+                <button
+                  onClick={() => setShowInfo(true)}
+                  className="w-full mb-3 py-2 rounded-xl bg-[#F5F0EB] text-[#A68B5B] text-xs font-medium hover:bg-[#EDE6DD] transition-colors"
+                >
+                  설명 보기 · 함께 먹으면 좋은 젤라또
+                </button>
+              )}
               {/* 옵션 선택 */}
               <p className="text-xs text-[#555] mb-2">옵션을 선택해주세요</p>
               <div className="flex gap-2 mb-3">

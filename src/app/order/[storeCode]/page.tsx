@@ -49,9 +49,10 @@ export default function StoreMenuPage() {
   const [orderType, setOrderType] = useState<"dine_in" | "takeaway" | null>(null);
   const [ageVerified, setAgeVerified] = useState(false);
   const [showAgeModal, setShowAgeModal] = useState(false);
-  const [activeDrinkTab, setActiveDrinkTab] = useState<"cat3" | "cat4" | "cat5" | null>(null);
+  const [activeDrinkTab, setActiveDrinkTab] = useState<"cat3" | "cat4" | "cat5" | "cat6" | null>(null);
   const [pendingDrinkTab, setPendingDrinkTab] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [showCartPopup, setShowCartPopup] = useState(false);
 
   const drinkSectionRef = useRef<HTMLDivElement | null>(null);
 
@@ -83,7 +84,7 @@ export default function StoreMenuPage() {
       return;
     }
     addItem(item);
-    setToast("장바구니에 추가되었습니다");
+    setShowCartPopup(true);
     // 추적
     if (item.type === "gelato") {
       track("gelato_cart", storeCode, { flavors: item.selectedFlavors?.map(f => f.name), count: item.flavorCount });
@@ -99,7 +100,7 @@ export default function StoreMenuPage() {
     // 대기 중이던 아이템 장바구니에 추가
     if (pendingCartItem.current) {
       addItem(pendingCartItem.current);
-      setToast("장바구니에 추가되었습니다");
+      setShowCartPopup(true);
       pendingCartItem.current = null;
     }
   };
@@ -363,19 +364,56 @@ export default function StoreMenuPage() {
         )}
       </AnimatePresence>
 
-      {/* ---- 토스트 ---- */}
+      {/* ---- 장바구니 추가 팝업 ---- */}
       <AnimatePresence>
-        {toast && (
+        {showCartPopup && (
           <motion.div
-            initial={{ y: 80, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 80, opacity: 0 }}
-            className="fixed bottom-24 left-0 right-0 z-[70] flex justify-center pointer-events-none"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40"
+            onClick={() => setShowCartPopup(false)}
           >
-            <div className="bg-[#2A2A2A] text-white px-6 py-3 rounded-full text-sm font-medium shadow-lg">
-              <Check size={16} className="inline mr-2 -mt-0.5" />
-              {toast}
-            </div>
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white rounded-3xl mx-6 p-8 max-w-[340px] w-full text-center shadow-xl"
+            >
+              <div className="w-14 h-14 rounded-full bg-[#1B4332]/10 flex items-center justify-center mx-auto mb-4">
+                <Check size={28} className="text-[#1B4332]" />
+              </div>
+              <p className="text-lg font-bold text-[#2A2A2A] mb-2">장바구니에 담았습니다</p>
+              {orderType === "dine_in" && (
+                <p className="text-sm text-[#A68B5B] mb-6">🥃 위스키·와인도 함께 어떠세요?</p>
+              )}
+              {orderType !== "dine_in" && (
+                <p className="text-sm text-[#999] mb-6">다른 메뉴도 추가할 수 있습니다</p>
+              )}
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setShowCartPopup(false);
+                    if (orderType === "dine_in" && drinkSectionRef.current) {
+                      drinkSectionRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+                    }
+                  }}
+                  className="flex-1 py-3.5 rounded-xl border border-[#EDE6DD] text-[#555] font-medium text-sm"
+                >
+                  더 담기
+                </button>
+                <button
+                  onClick={() => {
+                    setShowCartPopup(false);
+                    router.push(`/order/${storeCode}/cart`);
+                  }}
+                  className="flex-1 py-3.5 rounded-xl bg-[#1B4332] text-white font-bold text-sm"
+                >
+                  주문하기 →
+                </button>
+              </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>

@@ -194,12 +194,12 @@ function CartContent() {
               <p className="text-xs text-[#555] leading-relaxed">
                 실제 매장에서는 QR코드를 스캔하면<br />이 화면에 주문번호가 표시되고<br />자동으로 영수증이 출력됩니다
               </p>
-              <Link
+              <a
                 href="/franchise"
                 className="inline-block mt-4 px-6 py-2.5 bg-[#1B4332] text-white text-sm font-bold rounded-xl"
               >
                 가맹 문의하기 →
-              </Link>
+              </a>
             </div>
           ) : (
             <div className="bg-white rounded-2xl px-8 py-6 text-center shadow-sm border border-[#EDE6DD]/60 mb-6 w-full">

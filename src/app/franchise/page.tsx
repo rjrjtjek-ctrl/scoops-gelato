@@ -89,38 +89,54 @@ export default function FranchisePage() {
     {/* QR 모바일 주문 체험 */}
     <section className="py-12 md:py-16 bg-bg-cream">
       <div className="max-w-[1400px] mx-auto px-6 md:px-12">
-        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="flex flex-col md:flex-row items-center gap-8 md:gap-16">
-          <motion.div variants={fadeUp} className="flex-1">
-            <p className="text-sm text-text-light tracking-[0.15em] uppercase mb-2">Smart Order</p>
-            <h2 className="text-2xl md:text-3xl font-bold text-brand-primary mb-4">QR 모바일 주문 시스템</h2>
-            <p className="text-text-body text-sm leading-[1.8] mb-3">
-              고객이 테이블에서 QR코드를 스캔하면 메뉴 선택부터 주문까지 자동으로 처리됩니다.
-              별도 인력 없이 1인 운영이 가능한 스마트 주문 시스템입니다.
-            </p>
-            <ul className="space-y-2 text-sm text-text-body mb-6">
-              <li className="flex items-start gap-2"><span className="text-brand-secondary font-bold">✓</span> 고객 QR 스캔 → 메뉴 선택 → 자동 주문 접수</li>
-              <li className="flex items-start gap-2"><span className="text-brand-secondary font-bold">✓</span> 영수증 자동 출력 — 직원 없이도 주문 처리</li>
-              <li className="flex items-start gap-2"><span className="text-brand-secondary font-bold">✓</span> 인건비 절감으로 수익성 향상</li>
-            </ul>
+        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger}>
+          <motion.p variants={fadeUp} className="text-sm text-text-light tracking-[0.15em] uppercase mb-2">Smart Order</motion.p>
+          <motion.h2 variants={fadeUp} className="text-2xl md:text-3xl font-bold text-brand-primary mb-3">QR 모바일 주문 시스템</motion.h2>
+          <motion.p variants={fadeUp} className="text-text-body text-sm leading-[1.8] mb-8 max-w-2xl">
+            고객이 테이블에서 QR코드를 스캔하면 메뉴 선택부터 주문까지 자동으로 처리됩니다.
+            별도 인력 없이 1인 운영이 가능한 스마트 주문 시스템입니다.
+          </motion.p>
+
+          {/* 6단계 플로우 카드 */}
+          <motion.div variants={fadeUp} className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+            {[
+              { step: "01", title: "QR 스캔", desc: "테이블 QR코드를\n스마트폰으로 스캔", icon: "📱", color: "bg-[#1B4332]" },
+              { step: "02", title: "주문 유형 선택", desc: "매장식사 또는\n포장 선택", icon: "🏠", color: "bg-[#2D6A4F]" },
+              { step: "03", title: "메뉴 선택", desc: "젤라또 맛 선택\n+ 주류 선택", icon: "🍨", color: "bg-[#40916C]" },
+              { step: "04", title: "장바구니", desc: "수량 조절\n주문 확인", icon: "🛒", color: "bg-[#52B788]" },
+              { step: "05", title: "주문 완료", desc: "주문번호 발급\n자동 접수", icon: "✅", color: "bg-[#74C69D]" },
+              { step: "06", title: "영수증 출력", desc: "POS 자동 감지\n영수증 자동 인쇄", icon: "🧾", color: "bg-[#95D5B2]" },
+            ].map((item, i) => (
+              <motion.div
+                key={i}
+                variants={fadeUp}
+                className="bg-white rounded-2xl p-4 text-center shadow-sm border border-[#EDE6DD]/60 hover:shadow-md transition-shadow"
+              >
+                <div className={`w-12 h-12 ${item.color} rounded-xl flex items-center justify-center mx-auto mb-3`}>
+                  <span className="text-2xl">{item.icon}</span>
+                </div>
+                <p className="text-[10px] text-brand-secondary font-bold mb-1">STEP {item.step}</p>
+                <p className="text-sm font-bold text-brand-primary mb-1">{item.title}</p>
+                <p className="text-[11px] text-text-body leading-[1.6] whitespace-pre-line">{item.desc}</p>
+              </motion.div>
+            ))}
+          </motion.div>
+
+          {/* 핵심 장점 + 체험 버튼 */}
+          <motion.div variants={fadeUp} className="flex flex-col md:flex-row items-center gap-6">
+            <div className="flex-1">
+              <ul className="space-y-2 text-sm text-text-body">
+                <li className="flex items-start gap-2"><span className="text-brand-secondary font-bold">✓</span> 고객 QR 스캔 → 메뉴 선택 → 자동 주문 접수</li>
+                <li className="flex items-start gap-2"><span className="text-brand-secondary font-bold">✓</span> 영수증 자동 출력 — 직원 없이도 주문 처리</li>
+                <li className="flex items-start gap-2"><span className="text-brand-secondary font-bold">✓</span> 인건비 절감으로 수익성 향상</li>
+              </ul>
+            </div>
             <Link
               href="/order/demo"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-brand-primary text-white font-bold text-sm rounded-xl hover:bg-brand-accent transition-colors"
+              className="inline-flex items-center gap-2 px-8 py-4 bg-brand-primary text-white font-bold text-base rounded-2xl hover:bg-brand-accent transition-colors shadow-lg"
             >
               📱 직접 체험해보기 →
             </Link>
-          </motion.div>
-          <motion.div variants={fadeUp} className="w-full md:w-[280px] flex-shrink-0">
-            <div className="bg-white rounded-3xl shadow-lg p-4 border border-[#EDE6DD]/60 mx-auto max-w-[280px]">
-              <div className="bg-[#FDFBF8] rounded-2xl p-4 text-center">
-                <p className="text-xs text-[#999] tracking-widest mb-1">SCOOPS GELATERIA</p>
-                <p className="text-sm font-bold text-brand-primary mb-3">체험 매장</p>
-                <div className="space-y-2">
-                  <div className="bg-brand-primary text-white py-3 rounded-xl text-sm font-bold">매장식사</div>
-                  <div className="border-2 border-brand-primary text-brand-primary py-3 rounded-xl text-sm font-bold">포장</div>
-                </div>
-                <p className="text-[10px] text-[#BBB] mt-3">실제 주문 화면을 미리 체험해보세요</p>
-              </div>
-            </div>
           </motion.div>
         </motion.div>
       </div>

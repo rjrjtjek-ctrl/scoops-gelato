@@ -396,7 +396,18 @@ export default function StoreMenuPage() {
               </div>
               <p className="text-lg font-bold text-[#2A2A2A] mb-2">장바구니에 담았습니다</p>
               {orderType === "dine_in" && (
-                <p className="text-sm text-[#A68B5B] mb-6">🥃 위스키·와인도 함께 어떠세요?</p>
+                <button
+                  onClick={() => {
+                    setShowCartPopup(false);
+                    setActiveDrinkTab("cat3");
+                    setTimeout(() => {
+                      drinkSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                    }, 100);
+                  }}
+                  className="text-sm text-[#A68B5B] mb-6 underline underline-offset-2"
+                >
+                  🥃 위스키·와인도 함께 어떠세요?
+                </button>
               )}
               {orderType !== "dine_in" && (
                 <p className="text-sm text-[#999] mb-6">다른 메뉴도 추가할 수 있습니다</p>

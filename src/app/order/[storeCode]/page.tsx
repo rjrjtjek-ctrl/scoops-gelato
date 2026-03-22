@@ -427,7 +427,7 @@ export default function StoreMenuPage() {
                 </button>
               )}
               {orderType !== "dine_in" && (
-                <p className="text-sm text-[#999] mb-6">다른 메뉴도 추가할 수 있습니다</p>
+                <p className="text-sm text-[#999] mb-6">다른 맛도 추가할 수 있습니다</p>
               )}
               <div className="flex gap-3">
                 <button

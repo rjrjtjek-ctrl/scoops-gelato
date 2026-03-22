@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -26,7 +26,7 @@ function CartContent() {
   const searchParams = useSearchParams();
   const storeCode = params.storeCode as string;
   const store = stores.find((s) => s.code === storeCode);
-  const { items, removeItem, totalAmount, clearCart, memo, setMemo } = useCart();
+  const { items, removeItem, updateItemQuantity, totalAmount, clearCart, memo, setMemo } = useCart();
   const orderType = (searchParams.get("type") as OrderType) || "dine_in";
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -85,6 +85,8 @@ function CartContent() {
       orderId: "",
       confirmed: false,
     });
+    // 뒤로가기 방지 — 주문 완료 후 뒤로가면 다시 주문되는 것 방지
+    window.history.replaceState(null, "", window.location.href);
     clearCart();
 
     // [PERF] API 호출은 백그라운드에서 처리
@@ -126,6 +128,19 @@ function CartContent() {
     }
   };
 
+  // 뒤로가기 방지 — 주문 완료 상태에서 뒤로가면 새 주문 페이지로 이동
+  useEffect(() => {
+    if (!orderComplete) return;
+    const handlePopState = () => {
+      window.history.pushState(null, "", window.location.href);
+      // 새 주문 페이지로 이동
+      router.replace(`/order/${storeCode}`);
+    };
+    window.history.pushState(null, "", window.location.href);
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [orderComplete, storeCode, router]);
+
   // ================================
   // [PERF] 주문 완료 화면 (인라인 렌더링 — 페이지 전환 없음)
   // ================================
@@ -165,8 +180,8 @@ function CartContent() {
             </p>
           </div>
 
-          {/* 계좌이체 안내 */}
-          <div className="bg-white rounded-2xl px-5 py-4 border border-[#EDE6DD]/60 mb-4 w-full">
+          {/* 계좌이체 안내 — 포장 주문에서만 표시 */}
+          {!isDineIn && <div className="bg-white rounded-2xl px-5 py-4 border border-[#EDE6DD]/60 mb-4 w-full">
             <p className="text-xs text-[#999] text-center mb-2">계좌이체 안내</p>
             <button
               type="button"
@@ -187,7 +202,7 @@ function CartContent() {
             <p id="copy-done" className="text-xs text-[#1B4332] text-center mt-2 transition-opacity duration-300" style={{ opacity: 0 }}>
               ✓ 계좌번호가 복사되었습니다
             </p>
-          </div>
+          </div>}
 
           {/* 안내 */}
           {isDineIn ? (
@@ -263,9 +278,10 @@ function CartContent() {
           >
             <ChevronLeft size={22} className="text-[#2A2A2A]" />
           </button>
-          <h1 className="flex-1 text-center text-[15px] font-bold text-[#2A2A2A]">
-            주문 내역
-          </h1>
+          <div className="flex-1 text-center">
+            <p className="text-xs text-[#999] tracking-widest">SCOOPS · {store.name}</p>
+            <p className="text-[15px] font-bold text-[#2A2A2A]">주문 내역</p>
+          </div>
           <div className="w-10" />
         </div>
       </header>
@@ -312,8 +328,24 @@ function CartContent() {
                             {item.menuItem?.name}
                           </p>
                           <p className="text-xs text-[#999] mt-1">
-                            {item.optionName} × {item.quantity}
+                            {item.optionName}
                           </p>
+                          {/* 주류 수량 변경 */}
+                          <div className="flex items-center gap-3 mt-2">
+                            <button
+                              onClick={() => updateItemQuantity(item.cartId, item.quantity - 1)}
+                              className="w-7 h-7 rounded-full bg-[#F5F0EB] flex items-center justify-center text-[#555] text-sm font-bold"
+                            >
+                              −
+                            </button>
+                            <span className="text-sm font-bold text-[#2A2A2A] min-w-[20px] text-center">{item.quantity}</span>
+                            <button
+                              onClick={() => updateItemQuantity(item.cartId, item.quantity + 1)}
+                              className="w-7 h-7 rounded-full bg-[#F5F0EB] flex items-center justify-center text-[#555] text-sm font-bold"
+                            >
+                              +
+                            </button>
+                          </div>
                         </>
                       )}
                       <p className="text-sm font-bold text-[#1B4332] mt-2">

@@ -112,8 +112,11 @@ function CartContent() {
           orderId: data.orderId,
           confirmed: true,
         });
-        // 주문번호 저장 — 메뉴 페이지에서 배너로 표시
-        try { sessionStorage.setItem("scoops_last_order", data.orderNumber); } catch {}
+        // 주문번호 저장 — 메뉴 페이지 + 공식홈페이지에서 배너로 표시
+        try {
+          sessionStorage.setItem("scoops_last_order", data.orderNumber);
+          sessionStorage.setItem("scoops_last_store", storeCode);
+        } catch {}
         return;
       } catch (err) {
         if (attempt < MAX_RETRIES) {
@@ -252,7 +255,7 @@ function CartContent() {
           {/* 새 주문 */}
           <button
             onClick={() => {
-              try { sessionStorage.removeItem("scoops_last_order"); } catch {}
+              try { sessionStorage.removeItem("scoops_last_order"); sessionStorage.removeItem("scoops_last_store"); } catch {}
               router.replace(`/order/${storeCode}`);
             }}
             className="flex items-center justify-center gap-2 w-full py-4 rounded-2xl border border-[#1B4332] text-[#1B4332] text-sm font-bold mt-2 mb-10 hover:bg-[#1B4332]/5 transition-colors"

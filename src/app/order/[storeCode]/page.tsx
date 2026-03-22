@@ -53,6 +53,8 @@ export default function StoreMenuPage() {
   const [pendingDrinkTab, setPendingDrinkTab] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [showCartPopup, setShowCartPopup] = useState(false);
+  const [lastAddedType, setLastAddedType] = useState<"gelato" | "drink" | null>(null);
+  const gelatoSectionRef = useRef<HTMLDivElement | null>(null);
 
   const drinkSectionRef = useRef<HTMLDivElement | null>(null);
 
@@ -84,6 +86,7 @@ export default function StoreMenuPage() {
       return;
     }
     addItem(item);
+    setLastAddedType(item.type === "gelato" ? "gelato" : "drink");
     setShowCartPopup(true);
     // 추적
     if (item.type === "gelato") {
@@ -100,6 +103,7 @@ export default function StoreMenuPage() {
     // 대기 중이던 아이템 장바구니에 추가
     if (pendingCartItem.current) {
       addItem(pendingCartItem.current);
+      setLastAddedType("drink");
       setShowCartPopup(true);
       pendingCartItem.current = null;
     }
@@ -210,7 +214,7 @@ export default function StoreMenuPage() {
       {/* ---- 메인 콘텐츠 (한 페이지 스크롤) ---- */}
       <main className="w-full max-w-[480px] flex-1 px-4 pb-28">
         {/* ▸ 젤라또·소르베또 섹션 */}
-        <div className="pt-6">
+        <div className="pt-6" ref={gelatoSectionRef}>
           <GelatoSection onAddToCart={handleAddToCart} orderType={orderType as "dine_in" | "takeaway"} />
         </div>
 
@@ -395,7 +399,7 @@ export default function StoreMenuPage() {
                 <Check size={28} className="text-[#1B4332]" />
               </div>
               <p className="text-lg font-bold text-[#2A2A2A] mb-2">장바구니에 담았습니다</p>
-              {orderType === "dine_in" && (
+              {orderType === "dine_in" && lastAddedType === "gelato" && (
                 <button
                   onClick={() => {
                     setShowCartPopup(false);
@@ -407,6 +411,19 @@ export default function StoreMenuPage() {
                   className="text-sm text-[#A68B5B] mb-6 underline underline-offset-2"
                 >
                   🥃 위스키·와인도 함께 어떠세요?
+                </button>
+              )}
+              {orderType === "dine_in" && lastAddedType === "drink" && (
+                <button
+                  onClick={() => {
+                    setShowCartPopup(false);
+                    setTimeout(() => {
+                      gelatoSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                    }, 100);
+                  }}
+                  className="text-sm text-[#A68B5B] mb-6 underline underline-offset-2"
+                >
+                  🍨 젤라또도 함께 어떠세요?
                 </button>
               )}
               {orderType !== "dine_in" && (

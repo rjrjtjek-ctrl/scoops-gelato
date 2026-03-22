@@ -23,6 +23,11 @@ interface AnalyticsData {
   dailyTrend: DailyStat[];
   journeyFlows: { from: string; to: string; count: number }[];
 }
+interface GeoData {
+  regionStats: { region: string; count: number }[];
+  cityStats: { city: string; count: number }[];
+  ispStats: { isp: string; count: number }[];
+}
 
 /* ── 공통 카드 컴포넌트 ── */
 function Card({ children, className = "", onClick }: { children: React.ReactNode; className?: string; onClick?: () => void }) {
@@ -46,6 +51,7 @@ export default function AdminPage() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [kakaoFailCount, setKakaoFailCount] = useState(0);
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
+  const [geoData, setGeoData] = useState<GeoData | null>(null);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState<"home" | "visitors" | "journey" | "tools">("home");
   const [expandedSession, setExpandedSession] = useState<string | null>(null);
@@ -62,10 +68,11 @@ export default function AdminPage() {
   const fetchData = useCallback(async (token: string) => {
     setLoading(true);
     try {
-      const [inqRes, anaRes, trackRes] = await Promise.all([
+      const [inqRes, anaRes, trackRes, geoRes] = await Promise.all([
         fetch("/api/admin/inquiries", { headers: { Authorization: `Bearer ${token}` } }),
         fetch("/api/admin/analytics", { headers: { Authorization: `Bearer ${token}` } }),
         fetch("/api/tracking?days=1").catch(() => null),
+        fetch("/api/analytics").catch(() => null),
       ]);
       if (inqRes.ok) {
         const data = await inqRes.json();
@@ -73,6 +80,7 @@ export default function AdminPage() {
         setKakaoFailCount(data.inquiries.filter((i: { kakaoSent: boolean }) => !i.kakaoSent).length);
       }
       if (anaRes.ok) setAnalytics(await anaRes.json());
+      if (geoRes?.ok) setGeoData(await geoRes.json());
 
       // 주문 요약 (전체 활성 매장 합산)
       try {
@@ -435,6 +443,63 @@ export default function AdminPage() {
                 ) : <p className="text-gray-300 text-xs py-4 text-center">데이터 없음</p>}
               </Card>
             </div>
+
+            {/* 지역 분석 */}
+            {geoData && (geoData.regionStats?.length > 0 || geoData.cityStats?.length > 0) && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Card>
+                <SectionTitle title="📍 지역별 방문자" sub="시/도 단위" />
+                <div className="space-y-2">
+                  {(geoData.regionStats || []).slice(0, 8).map((r) => {
+                    const max = geoData.regionStats[0]?.count || 1;
+                    return (
+                      <div key={r.region} className="flex items-center gap-2">
+                        <span className="text-xs text-gray-600 w-20 truncate">{r.region}</span>
+                        <div className="flex-1 bg-gray-100 rounded-full h-4 overflow-hidden">
+                          <div className="bg-[#1B4332] h-full rounded-full" style={{ width: `${(r.count / max) * 100}%` }} />
+                        </div>
+                        <span className="text-xs font-bold text-gray-700 w-8 text-right">{r.count}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </Card>
+              <Card>
+                <SectionTitle title="🏙️ 도시별 방문자" sub="구/시 단위" />
+                <div className="space-y-2">
+                  {(geoData.cityStats || []).slice(0, 8).map((c) => {
+                    const max = geoData.cityStats[0]?.count || 1;
+                    return (
+                      <div key={c.city} className="flex items-center gap-2">
+                        <span className="text-xs text-gray-600 w-20 truncate">{c.city}</span>
+                        <div className="flex-1 bg-gray-100 rounded-full h-4 overflow-hidden">
+                          <div className="bg-[#A68B5B] h-full rounded-full" style={{ width: `${(c.count / max) * 100}%` }} />
+                        </div>
+                        <span className="text-xs font-bold text-gray-700 w-8 text-right">{c.count}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </Card>
+              <Card>
+                <SectionTitle title="📡 통신사별" sub="ISP 분포" />
+                <div className="space-y-2">
+                  {(geoData.ispStats || []).slice(0, 6).map((isp) => {
+                    const max = geoData.ispStats[0]?.count || 1;
+                    return (
+                      <div key={isp.isp} className="flex items-center gap-2">
+                        <span className="text-xs text-gray-600 w-28 truncate">{isp.isp}</span>
+                        <div className="flex-1 bg-gray-100 rounded-full h-4 overflow-hidden">
+                          <div className="bg-[#2D6A4F] h-full rounded-full" style={{ width: `${(isp.count / max) * 100}%` }} />
+                        </div>
+                        <span className="text-xs font-bold text-gray-700 w-8 text-right">{isp.count}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </Card>
+            </div>
+            )}
 
             {/* 일별 추이 */}
             <Card>

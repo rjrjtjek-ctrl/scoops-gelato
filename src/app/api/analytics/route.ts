@@ -61,6 +61,26 @@ export async function GET() {
       browserStats[r.browser] = (browserStats[r.browser] || 0) + 1;
     });
 
+    // 영어 → 한국어 지역명 변환
+    const regionKo: Record<string, string> = {
+      "Seoul": "서울", "Gyeonggi-do": "경기도", "Incheon": "인천", "Busan": "부산",
+      "Daegu": "대구", "Daejeon": "대전", "Gwangju": "광주", "Ulsan": "울산", "Sejong": "세종",
+      "Gangwon-do": "강원도", "North Chungcheong": "충청북도", "South Chungcheong": "충청남도",
+      "North Jeolla": "전라북도", "South Jeolla": "전라남도", "Jeju-do": "제주도",
+      "Gyeongsangbuk-do": "경상북도", "Gyeongsangnam-do": "경상남도",
+      "North Gyeongsang": "경상북도", "South Gyeongsang": "경상남도",
+      "California": "미국(캘리포니아)", "Virginia": "미국(버지니아)",
+      "New York": "미국(뉴욕)", "Texas": "미국(텍사스)",
+    };
+    const cityKo: Record<string, string> = {
+      "Gangnam-gu": "강남구", "Seocho-gu": "서초구", "Songpa-gu": "송파구",
+      "Mapo-gu": "마포구", "Yongsan-dong": "용산동", "Gwanak-gu": "관악구",
+      "Yeongdeungpo-gu": "영등포구", "Seongnam-si": "성남시", "Suwon": "수원시",
+      "Cheongju-si": "청주시", "Yuseong-gu": "유성구", "Yongin-si": "용인시",
+      "Goyang-si": "고양시", "Bucheon-si": "부천시", "Anyang-si": "안양시",
+      "Santa Clara": "미국(산타클라라)", "Seoul": "서울",
+    };
+
     // 지역 분석 (session_id에 저장된 geo JSON 파싱)
     const regionStats: Record<string, number> = {};
     const cityStats: Record<string, number> = {};
@@ -69,8 +89,10 @@ export async function GET() {
       if (r.session_id) {
         try {
           const geo = JSON.parse(r.session_id);
-          if (geo.region) regionStats[geo.region] = (regionStats[geo.region] || 0) + 1;
-          if (geo.city) cityStats[geo.city] = (cityStats[geo.city] || 0) + 1;
+          const rName = regionKo[geo.region] || geo.region;
+          const cName = cityKo[geo.city] || geo.city;
+          if (rName) regionStats[rName] = (regionStats[rName] || 0) + 1;
+          if (cName) cityStats[cName] = (cityStats[cName] || 0) + 1;
           if (geo.isp) ispStats[geo.isp] = (ispStats[geo.isp] || 0) + 1;
         } catch {}
       }

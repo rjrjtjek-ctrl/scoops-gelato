@@ -165,6 +165,30 @@ function CartContent() {
             </p>
           </div>
 
+          {/* 계좌이체 안내 */}
+          <div className="bg-white rounded-2xl px-5 py-4 border border-[#EDE6DD]/60 mb-4 w-full">
+            <p className="text-xs text-[#999] text-center mb-2">계좌이체 안내</p>
+            <button
+              type="button"
+              onClick={() => {
+                navigator.clipboard.writeText("1005803459120").then(() => {
+                  const el = document.getElementById("copy-done");
+                  if (el) { el.style.opacity = "1"; setTimeout(() => { el.style.opacity = "0"; }, 2000); }
+                });
+              }}
+              className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-[#F5F0EB] hover:bg-[#EDE6DD] transition-colors"
+            >
+              <div className="text-left">
+                <p className="text-xs text-[#999]">우리은행 · 정석주</p>
+                <p className="text-sm font-bold text-[#2A2A2A] tracking-wide">1005-803-459120</p>
+              </div>
+              <span className="text-xs text-[#A68B5B] font-medium">복사</span>
+            </button>
+            <p id="copy-done" className="text-xs text-[#1B4332] text-center mt-2 transition-opacity duration-300" style={{ opacity: 0 }}>
+              ✓ 계좌번호가 복사되었습니다
+            </p>
+          </div>
+
           {/* 안내 */}
           {isDineIn ? (
             <div className="bg-[#1B4332]/5 rounded-2xl px-5 py-4 text-center mb-8 w-full">

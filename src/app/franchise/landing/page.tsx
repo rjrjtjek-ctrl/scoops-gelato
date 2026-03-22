@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { Phone, Check, Shield, GraduationCap, Handshake, Coffee, Wine, Smartphone, ChevronDown } from "lucide-react";
 
@@ -169,6 +170,14 @@ export default function FranchiseLandingPage() {
                 <div>
                   <p className="text-[#1B4332] font-bold mb-1">{item.title}</p>
                   <p className="text-[#555] text-sm">{item.desc}</p>
+                  {i === 2 && (
+                    <Link
+                      href="/order/demo"
+                      className="inline-block mt-2 px-4 py-1.5 border border-[#A68B5B] text-[#A68B5B] text-xs font-bold rounded-lg hover:bg-[#A68B5B] hover:text-white transition-colors"
+                    >
+                      👆 직접 체험해보기
+                    </Link>
+                  )}
                 </div>
               </motion.div>
             ))}

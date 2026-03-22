@@ -39,8 +39,22 @@ function CartContent() {
     return null;
   }
 
+  const isDemo = storeCode === "demo";
+
   const handleOrder = async () => {
     if (items.length === 0 || isSubmitting) return;
+
+    // 데모 매장 — 실제 주문 안 들어감
+    if (isDemo) {
+      savedItemsRef.current = [...items];
+      setOrderComplete({
+        orderNumber: "DEMO",
+        orderId: "demo",
+        confirmed: true,
+      });
+      clearCart();
+      return;
+    }
 
     // 포장(즉시결제) 선택 시 PG 키 없으면 폴백 안내
     if (orderType === "takeaway" && !process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY) {
@@ -164,7 +178,7 @@ function CartContent() {
             <CheckCircle2 size={44} className="text-[#1B4332]" />
           </motion.div>
 
-          <h1 className="text-xl font-bold text-[#2A2A2A] mb-2">주문 완료!</h1>
+          <h1 className="text-xl font-bold text-[#2A2A2A] mb-2">{isDemo ? "체험 완료!" : "주문 완료!"}</h1>
 
           {/* 에러 메시지 */}
           {orderComplete.error && (
@@ -174,16 +188,31 @@ function CartContent() {
           )}
 
           {/* 주문번호 */}
-          <div className="bg-white rounded-2xl px-8 py-6 text-center shadow-sm border border-[#EDE6DD]/60 mb-6 w-full">
-            <p className="text-xs text-[#999] mb-1">주문번호</p>
-            <p className="text-4xl font-black text-[#1B4332] tracking-wider">
-              {orderComplete.orderNumber === "..." ? (
-                <span className="animate-pulse">...</span>
-              ) : (
-                orderComplete.orderNumber
-              )}
-            </p>
-          </div>
+          {isDemo ? (
+            <div className="bg-[#1B4332]/5 rounded-2xl px-6 py-5 text-center mb-6 w-full">
+              <p className="text-sm font-bold text-[#1B4332] mb-2">데모 체험이 완료되었습니다</p>
+              <p className="text-xs text-[#555] leading-relaxed">
+                실제 매장에서는 QR코드를 스캔하면<br />이 화면에 주문번호가 표시되고<br />자동으로 영수증이 출력됩니다
+              </p>
+              <Link
+                href="/franchise"
+                className="inline-block mt-4 px-6 py-2.5 bg-[#1B4332] text-white text-sm font-bold rounded-xl"
+              >
+                가맹 문의하기 →
+              </Link>
+            </div>
+          ) : (
+            <div className="bg-white rounded-2xl px-8 py-6 text-center shadow-sm border border-[#EDE6DD]/60 mb-6 w-full">
+              <p className="text-xs text-[#999] mb-1">주문번호</p>
+              <p className="text-4xl font-black text-[#1B4332] tracking-wider">
+                {orderComplete.orderNumber === "..." ? (
+                  <span className="animate-pulse">...</span>
+                ) : (
+                  orderComplete.orderNumber
+                )}
+              </p>
+            </div>
+          )}
 
           {/* 계좌이체 안내 — 포장 주문에서만 표시 */}
           {!isDineIn && <div className="bg-white rounded-2xl px-5 py-4 border border-[#EDE6DD]/60 mb-4 w-full">

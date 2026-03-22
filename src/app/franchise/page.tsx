@@ -86,8 +86,48 @@ export default function FranchisePage() {
       </div>
     </section>
 
+    {/* QR 모바일 주문 체험 */}
+    <section className="py-12 md:py-16 bg-bg-cream">
+      <div className="max-w-[1400px] mx-auto px-6 md:px-12">
+        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="flex flex-col md:flex-row items-center gap-8 md:gap-16">
+          <motion.div variants={fadeUp} className="flex-1">
+            <p className="text-sm text-text-light tracking-[0.15em] uppercase mb-2">Smart Order</p>
+            <h2 className="text-2xl md:text-3xl font-bold text-brand-primary mb-4">QR 모바일 주문 시스템</h2>
+            <p className="text-text-body text-sm leading-[1.8] mb-3">
+              고객이 테이블에서 QR코드를 스캔하면 메뉴 선택부터 주문까지 자동으로 처리됩니다.
+              별도 인력 없이 1인 운영이 가능한 스마트 주문 시스템입니다.
+            </p>
+            <ul className="space-y-2 text-sm text-text-body mb-6">
+              <li className="flex items-start gap-2"><span className="text-brand-secondary font-bold">✓</span> 고객 QR 스캔 → 메뉴 선택 → 자동 주문 접수</li>
+              <li className="flex items-start gap-2"><span className="text-brand-secondary font-bold">✓</span> 영수증 자동 출력 — 직원 없이도 주문 처리</li>
+              <li className="flex items-start gap-2"><span className="text-brand-secondary font-bold">✓</span> 인건비 절감으로 수익성 향상</li>
+            </ul>
+            <Link
+              href="/order/demo"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-brand-primary text-white font-bold text-sm rounded-xl hover:bg-brand-accent transition-colors"
+            >
+              📱 직접 체험해보기 →
+            </Link>
+          </motion.div>
+          <motion.div variants={fadeUp} className="w-full md:w-[280px] flex-shrink-0">
+            <div className="bg-white rounded-3xl shadow-lg p-4 border border-[#EDE6DD]/60 mx-auto max-w-[280px]">
+              <div className="bg-[#FDFBF8] rounded-2xl p-4 text-center">
+                <p className="text-xs text-[#999] tracking-widest mb-1">SCOOPS GELATERIA</p>
+                <p className="text-sm font-bold text-brand-primary mb-3">체험 매장</p>
+                <div className="space-y-2">
+                  <div className="bg-brand-primary text-white py-3 rounded-xl text-sm font-bold">매장식사</div>
+                  <div className="border-2 border-brand-primary text-brand-primary py-3 rounded-xl text-sm font-bold">포장</div>
+                </div>
+                <p className="text-[10px] text-[#BBB] mt-3">실제 주문 화면을 미리 체험해보세요</p>
+              </div>
+            </div>
+          </motion.div>
+        </motion.div>
+      </div>
+    </section>
+
     {/* 매장 갤러리 */}
-    <section className="py-10 md:py-14 bg-bg-cream">
+    <section className="py-10 md:py-14 bg-bg-white">
       <div className="max-w-[1400px] mx-auto px-6 md:px-12">
         <motion.div className="mb-6" initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
           <p className="text-sm text-text-light tracking-[0.15em] uppercase mb-2">Real Stores</p>

@@ -10,6 +10,7 @@ import type {
 // 매장 데이터 (17개)
 // ============================================
 export const stores: Store[] = [
+  { id: "demo", name: "체험 매장", code: "demo", address: "데모 매장 (실제 주문 불가)", phone: "1811-0259", isActive: true, businessHours: "24시간" },
   { id: "s1", name: "청주본점", code: "cheongju", address: "충청북도 청주시 상당구 사직대로 366 1층", phone: "1811-0259", isActive: true, businessHours: "11:00-22:00" },
   { id: "s2", name: "여의도점", code: "yeouido", isActive: true },
   { id: "s3", name: "공덕점", code: "gongdeok", isActive: true },

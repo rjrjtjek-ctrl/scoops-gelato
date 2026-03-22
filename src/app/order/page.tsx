@@ -7,7 +7,7 @@ import { MapPin, ChevronRight } from "lucide-react";
 import { stores } from "@/lib/order-data";
 
 export default function OrderStorePage() {
-  const activeStores = stores.filter((s) => s.isActive);
+  const activeStores = stores.filter((s) => s.isActive && s.code !== "demo");
 
   return (
     <div className="min-h-dvh bg-[#FDFBF8] flex flex-col items-center">

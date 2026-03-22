@@ -97,27 +97,28 @@ export default function FranchisePage() {
             별도 인력 없이 1인 운영이 가능한 스마트 주문 시스템입니다.
           </motion.p>
 
-          {/* 6단계 플로우 카드 */}
-          <motion.div variants={fadeUp} className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+          {/* 6단계 실제 UI 캡쳐 */}
+          <motion.div variants={fadeUp} className="grid grid-cols-3 md:grid-cols-6 gap-3 mb-8">
             {[
-              { step: "01", title: "QR 스캔", desc: "테이블 QR코드를\n스마트폰으로 스캔", icon: "📱", color: "bg-[#1B4332]" },
-              { step: "02", title: "주문 유형 선택", desc: "매장식사 또는\n포장 선택", icon: "🏠", color: "bg-[#2D6A4F]" },
-              { step: "03", title: "메뉴 선택", desc: "젤라또 맛 선택\n+ 주류 선택", icon: "🍨", color: "bg-[#40916C]" },
-              { step: "04", title: "장바구니", desc: "수량 조절\n주문 확인", icon: "🛒", color: "bg-[#52B788]" },
-              { step: "05", title: "주문 완료", desc: "주문번호 발급\n자동 접수", icon: "✅", color: "bg-[#74C69D]" },
-              { step: "06", title: "영수증 출력", desc: "POS 자동 감지\n영수증 자동 인쇄", icon: "🧾", color: "bg-[#95D5B2]" },
+              { step: "01", title: "주문 유형 선택", img: "/images/demo/step1.jpg" },
+              { step: "02", title: "메뉴 화면", img: "/images/demo/step2.jpg" },
+              { step: "03", title: "맛 선택", img: "/images/demo/step3.jpg" },
+              { step: "04", title: "맛 고르기", img: "/images/demo/step4.jpg" },
+              { step: "05", title: "주류 메뉴", img: "/images/demo/step5.jpg" },
+              { step: "06", title: "장바구니 추가", img: "/images/demo/step6.jpg" },
             ].map((item, i) => (
               <motion.div
                 key={i}
                 variants={fadeUp}
-                className="bg-white rounded-2xl p-4 text-center shadow-sm border border-[#EDE6DD]/60 hover:shadow-md transition-shadow"
+                className="bg-white rounded-2xl overflow-hidden shadow-sm border border-[#EDE6DD]/60 hover:shadow-md transition-shadow"
               >
-                <div className={`w-12 h-12 ${item.color} rounded-xl flex items-center justify-center mx-auto mb-3`}>
-                  <span className="text-2xl">{item.icon}</span>
+                <div className="aspect-[9/16] relative overflow-hidden bg-[#FDFBF8]">
+                  <Image src={item.img} alt={item.title} fill sizes="(max-width: 768px) 33vw, 16vw" className="object-cover object-top" unoptimized />
                 </div>
-                <p className="text-[10px] text-brand-secondary font-bold mb-1">STEP {item.step}</p>
-                <p className="text-sm font-bold text-brand-primary mb-1">{item.title}</p>
-                <p className="text-[11px] text-text-body leading-[1.6] whitespace-pre-line">{item.desc}</p>
+                <div className="p-2 text-center">
+                  <p className="text-[9px] text-brand-secondary font-bold">STEP {item.step}</p>
+                  <p className="text-[11px] font-bold text-brand-primary">{item.title}</p>
+                </div>
               </motion.div>
             ))}
           </motion.div>

@@ -7,10 +7,10 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { name, phone, email, region, message } = body;
 
-    // 유효성 검사
-    if (!name || !phone || !email || !region) {
+    // 유효성 검사 — 전화번호만 필수 (랜딩페이지는 전화번호만 받음)
+    if (!phone) {
       return NextResponse.json(
-        { error: "필수 항목을 모두 입력해주세요." },
+        { error: "전화번호를 입력해주세요." },
         { status: 400 }
       );
     }

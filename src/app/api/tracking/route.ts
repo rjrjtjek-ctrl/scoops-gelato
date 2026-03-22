@@ -1,42 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import { supabaseInsert, supabaseSelect } from "@/lib/supabase-client";
 
 // ============================================
-// 추적 이벤트 로그 (Supabase 전환 전 인메모리)
+// 추적 이벤트 로그 — Supabase 영구 저장
 // ============================================
-export interface TrackingEvent {
-  id: string;
-  event: string; // 이벤트 타입
-  storeCode?: string;
-  data?: Record<string, unknown>;
-  userAgent: string;
-  timestamp: string;
-}
 
-const trackingLogs: TrackingEvent[] =
-  ((globalThis as Record<string, unknown>).__trackingLogs as TrackingEvent[]) || [];
-if (!(globalThis as Record<string, unknown>).__trackingLogs) {
-  (globalThis as Record<string, unknown>).__trackingLogs = trackingLogs;
-}
-
-// 이벤트 타입 목록
-// qr_scan        — QR 스캔 (매장 페이지 진입)
-// order_type     — 매장식사/포장 선택
-// gelato_select  — 젤라또 맛 수 선택
-// gelato_cart    — 젤라또 장바구니 추가
-// drink_view     — 주류 탭 열기
-// drink_item     — 주류 아이템 클릭
-// drink_cart     — 주류 장바구니 추가
-// drink_info     — 주류 설명 팝업 열기
-// pairing_cart   — 추천 페어링으로 장바구니 추가
-// age_confirm    — 연령 확인 완료
-// cart_view      — 장바구니 페이지 진입
-// order_complete — 주문 완료
-// pwa_banner     — PWA 배너 표시
-// pwa_install    — PWA 설치
-// pwa_dismiss    — PWA 다음에 하기
-// link_homepage  — 홈페이지 링크 클릭
-// link_instagram — 인스타 링크 클릭
-// link_brand     — 주문완료 후 브랜드 링크 클릭
+// 봇 필터링 — 허수 방지
+const BOT_PATTERN = /bot|crawl|spider|slurp|Googlebot|Bingbot|Yandex|Baidu|DuckDuckBot|facebookexternalhit|LinkedInBot|Twitterbot|WhatsApp|Bytespider|GPTBot|ClaudeBot|SemrushBot|AhrefsBot|MJ12bot|DotBot|PetalBot|YandexBot|Sogou|Exabot|ia_archiver|archive\.org|HeadlessChrome|PhantomJS|Selenium|puppeteer/i;
 
 // POST: 이벤트 기록
 export async function POST(req: NextRequest) {
@@ -48,20 +18,29 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "event 필수" }, { status: 400 });
     }
 
-    const log: TrackingEvent = {
-      id: `t_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-      event,
-      storeCode: storeCode || undefined,
-      data: data || undefined,
-      userAgent: req.headers.get("user-agent") || "",
-      timestamp: new Date().toISOString(),
-    };
+    const ua = req.headers.get("user-agent") || "";
+    const ip = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "unknown";
 
-    trackingLogs.push(log);
+    // 봇 필터링
+    if (BOT_PATTERN.test(ua)) {
+      return NextResponse.json({ success: true, filtered: "bot" });
+    }
 
-    // 메모리 관리: 최대 10000건 유지
-    if (trackingLogs.length > 10000) {
-      trackingLogs.splice(0, trackingLogs.length - 10000);
+    const id = `t_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+
+    // Supabase에 저장
+    try {
+      await supabaseInsert("tracking_events", {
+        id,
+        event,
+        store_code: storeCode || null,
+        data: data || null,
+        user_agent: ua,
+        ip,
+      });
+    } catch (err) {
+      console.error("[tracking] Supabase INSERT 실패:", err);
+      // Supabase 실패해도 클라이언트에는 성공 응답 (UX 영향 없음)
     }
 
     return NextResponse.json({ success: true });
@@ -79,7 +58,26 @@ export async function GET(req: NextRequest) {
   cutoff.setDate(cutoff.getDate() - days);
   const cutoffStr = cutoff.toISOString();
 
-  const filtered = trackingLogs.filter((l) => l.timestamp >= cutoffStr);
+  // Supabase에서 조회
+  let filtered: Array<{
+    id: string;
+    event: string;
+    store_code: string | null;
+    data: Record<string, unknown> | null;
+    user_agent: string;
+    ip: string;
+    created_at: string;
+  }> = [];
+
+  try {
+    filtered = await supabaseSelect<typeof filtered>(
+      "tracking_events",
+      `created_at=gte.${cutoffStr}&order=created_at.desc&limit=5000`
+    );
+  } catch (err) {
+    console.error("[tracking] Supabase SELECT 실패:", err);
+    return NextResponse.json({ error: "조회 실패" }, { status: 500 });
+  }
 
   // 이벤트별 카운트
   const eventCounts: Record<string, number> = {};
@@ -90,7 +88,7 @@ export async function GET(req: NextRequest) {
   // 일별 이벤트
   const dailyEvents: Record<string, Record<string, number>> = {};
   filtered.forEach((l) => {
-    const day = l.timestamp.slice(0, 10);
+    const day = l.created_at.slice(0, 10);
     if (!dailyEvents[day]) dailyEvents[day] = {};
     dailyEvents[day][l.event] = (dailyEvents[day][l.event] || 0) + 1;
   });
@@ -100,16 +98,16 @@ export async function GET(req: NextRequest) {
   filtered
     .filter((l) => l.event === "order_complete")
     .forEach((l) => {
-      const h = new Date(l.timestamp).getHours();
+      const h = new Date(l.created_at).getHours();
       hourlyOrders[h]++;
     });
 
   // 매장별 QR 스캔
   const storeScans: Record<string, number> = {};
   filtered
-    .filter((l) => l.event === "qr_scan" && l.storeCode)
+    .filter((l) => l.event === "qr_scan" && l.store_code)
     .forEach((l) => {
-      storeScans[l.storeCode!] = (storeScans[l.storeCode!] || 0) + 1;
+      storeScans[l.store_code!] = (storeScans[l.store_code!] || 0) + 1;
     });
 
   // 주문유형 비율
@@ -164,17 +162,17 @@ export async function GET(req: NextRequest) {
   // 디바이스 비율
   const devices: Record<string, number> = { iOS: 0, Android: 0, other: 0 };
   filtered.forEach((l) => {
-    if (/iPhone|iPad/.test(l.userAgent)) devices.iOS++;
-    else if (/Android/.test(l.userAgent)) devices.Android++;
+    if (/iPhone|iPad/.test(l.user_agent)) devices.iOS++;
+    else if (/Android/.test(l.user_agent)) devices.Android++;
     else devices.other++;
   });
 
   // 최근 이벤트 20건
-  const recent = filtered.slice(-20).reverse().map((l) => ({
+  const recent = filtered.slice(0, 20).map((l) => ({
     event: l.event,
-    storeCode: l.storeCode,
+    storeCode: l.store_code,
     data: l.data,
-    timestamp: l.timestamp,
+    timestamp: l.created_at,
   }));
 
   return NextResponse.json({

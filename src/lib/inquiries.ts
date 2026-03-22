@@ -1,10 +1,7 @@
 // 가맹문의 데이터 저장 유틸리티
-// Supabase 테이블 사용 (Edge Config에서 전환)
-// 테이블 없으면 인메모리 폴백
+// Supabase 테이블 사용 (인메모리 폴백 제거 — 데이터 유실 방지)
 
 import { supabaseSelect, supabaseInsert, supabaseUpdate } from "./supabase-client";
-
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 
 export interface Inquiry {
   id: string;
@@ -19,9 +16,6 @@ export interface Inquiry {
   read: boolean;
   createdAt: string;
 }
-
-// ── 인메모리 폴백 (Supabase 테이블 없을 때) ──
-let memoryInquiries: Inquiry[] = [];
 
 // ── Supabase DB 매핑 ──
 interface DbInquiry {
@@ -58,65 +52,38 @@ export async function saveInquiry(inquiry: Omit<Inquiry, "id" | "read" | "create
   const newId = `inq_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
   const now = new Date().toISOString();
 
-  // Supabase 시도
-  if (SUPABASE_URL) {
-    try {
-      const rows = await supabaseInsert<DbInquiry[]>("inquiries", {
-        id: newId,
-        name: inquiry.name,
-        phone: inquiry.phone,
-        email: inquiry.email,
-        region: inquiry.region,
-        message: inquiry.message || null,
-        time: inquiry.time,
-        kakao_sent: inquiry.kakaoSent,
-        kakao_error: inquiry.kakaoError || null,
-        read: false,
-        created_at: now,
-      });
-      if (rows && rows.length > 0) return dbToInquiry(rows[0]);
-    } catch (err) {
-      console.warn("[inquiries] Supabase INSERT 실패, 인메모리 폴백:", err);
-    }
-  }
+  const rows = await supabaseInsert<DbInquiry[]>("inquiries", {
+    id: newId,
+    name: inquiry.name,
+    phone: inquiry.phone,
+    email: inquiry.email,
+    region: inquiry.region,
+    message: inquiry.message || null,
+    time: inquiry.time,
+    kakao_sent: inquiry.kakaoSent,
+    kakao_error: inquiry.kakaoError || null,
+    read: false,
+    created_at: now,
+  });
 
-  // 인메모리 폴백
-  const newInquiry: Inquiry = {
+  if (rows && rows.length > 0) return dbToInquiry(rows[0]);
+
+  // Supabase 응답이 빈 경우 (INSERT 성공했지만 Prefer 헤더 없을 때)
+  return {
     ...inquiry,
     id: newId,
     read: false,
     createdAt: now,
   };
-  memoryInquiries.unshift(newInquiry);
-  if (memoryInquiries.length > 500) memoryInquiries.length = 500;
-  return newInquiry;
 }
 
 export async function getInquiries(): Promise<Inquiry[]> {
-  if (SUPABASE_URL) {
-    try {
-      const rows = await supabaseSelect<DbInquiry[]>("inquiries", "order=created_at.desc&limit=500");
-      return rows.map(dbToInquiry);
-    } catch (err) {
-      console.warn("[inquiries] Supabase SELECT 실패, 인메모리 폴백:", err);
-    }
-  }
-  return memoryInquiries;
+  const rows = await supabaseSelect<DbInquiry[]>("inquiries", "order=created_at.desc&limit=500");
+  return rows.map(dbToInquiry);
 }
 
 export async function markAsRead(id: string): Promise<boolean> {
-  if (SUPABASE_URL) {
-    try {
-      await supabaseUpdate("inquiries", `id=eq.${id}`, { read: true });
-      return true;
-    } catch (err) {
-      console.warn("[inquiries] Supabase UPDATE 실패:", err);
-    }
-  }
-  // 인메모리 폴백
-  const inquiry = memoryInquiries.find((i) => i.id === id);
-  if (!inquiry) return false;
-  inquiry.read = true;
+  await supabaseUpdate("inquiries", `id=eq.${id}`, { read: true });
   return true;
 }
 

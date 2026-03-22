@@ -26,7 +26,7 @@ export async function GET() {
     const todayStr = new Date().toISOString().split("T")[0];
     const rows = await supabaseSelect<Array<{
       id: string; path: string; device: string; browser: string;
-      ip: string; created_at: string;
+      ip: string; session_id: string | null; created_at: string;
     }>>("visit_logs", `order=created_at.desc&limit=2000`);
 
     // 일별 통계
@@ -61,6 +61,36 @@ export async function GET() {
       browserStats[r.browser] = (browserStats[r.browser] || 0) + 1;
     });
 
+    // 지역 분석 (session_id에 저장된 geo JSON 파싱)
+    const regionStats: Record<string, number> = {};
+    const cityStats: Record<string, number> = {};
+    const ispStats: Record<string, number> = {};
+    rows.forEach((r) => {
+      if (r.session_id) {
+        try {
+          const geo = JSON.parse(r.session_id);
+          if (geo.region) regionStats[geo.region] = (regionStats[geo.region] || 0) + 1;
+          if (geo.city) cityStats[geo.city] = (cityStats[geo.city] || 0) + 1;
+          if (geo.isp) ispStats[geo.isp] = (ispStats[geo.isp] || 0) + 1;
+        } catch {}
+      }
+    });
+
+    const regionArray = Object.entries(regionStats)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 15)
+      .map(([region, count]) => ({ region, count }));
+
+    const cityArray = Object.entries(cityStats)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 15)
+      .map(([city, count]) => ({ city, count }));
+
+    const ispArray = Object.entries(ispStats)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 10)
+      .map(([isp, count]) => ({ isp, count }));
+
     return NextResponse.json({
       totalVisits: rows.length,
       todayVisits: todayRows.length,
@@ -69,6 +99,9 @@ export async function GET() {
       pageStats: pageArray,
       deviceStats,
       browserStats,
+      regionStats: regionArray,
+      cityStats: cityArray,
+      ispStats: ispArray,
     });
   } catch (err) {
     console.error("[analytics] GET 실패:", err);
@@ -98,11 +131,25 @@ export async function POST(req: NextRequest) {
 
     const id = `v_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
 
+    // IP 지역 조회 (비동기 — 실패해도 방문 기록은 저장)
+    let geoInfo = "";
+    try {
+      const firstIp = ip.split(",")[0].trim();
+      if (firstIp && firstIp !== "unknown" && firstIp !== "::1" && firstIp !== "127.0.0.1") {
+        const geoRes = await fetch(`http://ip-api.com/json/${firstIp}?fields=country,regionName,city,isp&lang=ko`, { signal: AbortSignal.timeout(2000) });
+        if (geoRes.ok) {
+          const geo = await geoRes.json();
+          geoInfo = JSON.stringify({ region: geo.regionName, city: geo.city, isp: geo.isp, country: geo.country });
+        }
+      }
+    } catch {}
+
     await supabaseInsert("visit_logs", {
       id,
       path: path || "/",
       user_agent: ua,
       ip,
+      session_id: geoInfo || null,
       device: parseDevice(ua),
       browser: parseBrowser(ua),
       referrer: req.headers.get("referer") || "direct",

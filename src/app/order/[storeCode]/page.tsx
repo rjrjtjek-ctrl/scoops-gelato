@@ -752,6 +752,12 @@ function DrinkItemCard({
     <div className={`bg-white rounded-2xl border transition-all ${isOpen ? "border-[#1B4332]/30 shadow-sm" : "border-[#EDE6DD]/60"}`}>
       {/* 아이템 헤더 — 클릭하면 펼침/접힘 */}
       <div className="flex items-center p-4">
+        {/* 제품 이미지 */}
+        {item.image && (
+          <div className="w-12 h-12 rounded-lg overflow-hidden bg-[#F5F0EB] flex-shrink-0 mr-3">
+            <img src={item.image} alt={item.name} className="w-full h-full object-contain" />
+          </div>
+        )}
         <button
           onClick={handleToggle}
           className="flex-1 flex items-center justify-between text-left"

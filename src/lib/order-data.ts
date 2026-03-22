@@ -38,6 +38,7 @@ export const menuCategories: MenuCategory[] = [
   { id: "cat3", name: "위스키", sortOrder: 3, isActive: true },
   { id: "cat4", name: "와인", sortOrder: 4, isActive: true },
   { id: "cat5", name: "리큐르", sortOrder: 5, isActive: true },
+  { id: "cat6", name: "소주", sortOrder: 6, isActive: true },
 ];
 
 // ============================================
@@ -69,25 +70,30 @@ export const menuItems: MenuItem[] = [
   { id: "sb5", categoryId: "cat2", name: "귤", description: "상큼한 귤 과즙과 은은한 단맛이 입안에서 톡톡 터지는 산뜻한 소르베또", badge: null, isActive: true, sortOrder: 5 },
 
   // ---- 위스키 9종 ----
-  { id: "w1", categoryId: "cat3", name: "달모어 12y", nameEn: "Dalmore 12y", description: "달모어 12년", badge: "추천", isActive: true, sortOrder: 1 },
-  { id: "w2", categoryId: "cat3", name: "글렌피딕 12y", nameEn: "Glenfiddich 12y", description: "글렌피딕 12년", badge: null, isActive: true, sortOrder: 2 },
-  { id: "w3", categoryId: "cat3", name: "글렌리벳 12y", nameEn: "Glenlivet 12y", description: "글렌리벳 12년", badge: null, isActive: true, sortOrder: 3 },
-  { id: "w4", categoryId: "cat3", name: "글렌드로낙 12y", nameEn: "GlenDronach 12y", description: "글렌드로낙 12년", badge: null, isActive: true, sortOrder: 4 },
-  { id: "w5", categoryId: "cat3", name: "발베니 12y", nameEn: "Balvenie 12y", description: "발베니 12년", badge: null, isActive: true, sortOrder: 5 },
-  { id: "w6", categoryId: "cat3", name: "글렌알라키 8y", nameEn: "GlenAllachie 8y", description: "글렌알라키 8년", badge: "NEW", isActive: true, sortOrder: 6 },
-  { id: "w7", categoryId: "cat3", name: "보모어", nameEn: "Bowmore", description: "보모어", badge: null, isActive: true, sortOrder: 7 },
-  { id: "w8", categoryId: "cat3", name: "조니워커 블랙", nameEn: "Johnnie Walker Black", description: "조니워커 블랙라벨", badge: null, isActive: true, sortOrder: 8 },
-  { id: "w9", categoryId: "cat3", name: "닛카 프롬 더 배럴", nameEn: "Nikka From The Barrel", description: "닛카 위스키 프롬 더 배럴", badge: null, isActive: true, sortOrder: 9 },
+  { id: "w1", categoryId: "cat3", name: "달모어 12y", nameEn: "Dalmore 12y", description: "달모어 12년", badge: "추천", image: "/images/drinks/dalmore-12.webp", isActive: true, sortOrder: 1 },
+  { id: "w2", categoryId: "cat3", name: "글렌피딕 12y", nameEn: "Glenfiddich 12y", description: "글렌피딕 12년", badge: null, image: "/images/drinks/glenfiddich-12.webp", isActive: true, sortOrder: 2 },
+  { id: "w3", categoryId: "cat3", name: "글렌리벳 12y", nameEn: "Glenlivet 12y", description: "글렌리벳 12년", badge: null, image: "/images/drinks/glenlivet-12.webp", isActive: true, sortOrder: 3 },
+  { id: "w4", categoryId: "cat3", name: "글렌드로낙 12y", nameEn: "GlenDronach 12y", description: "글렌드로낙 12년", badge: null, image: "/images/drinks/glendronach.png", isActive: true, sortOrder: 4 },
+  { id: "w5", categoryId: "cat3", name: "발베니 12y", nameEn: "Balvenie 12y", description: "발베니 12년", badge: null, image: "/images/drinks/balvenie.png", isActive: true, sortOrder: 5 },
+  { id: "w6", categoryId: "cat3", name: "글렌알라키 8y", nameEn: "GlenAllachie 8y", description: "글렌알라키 8년", badge: "NEW", image: "/images/drinks/glenallachie.jpg", isActive: true, sortOrder: 6 },
+  { id: "w7", categoryId: "cat3", name: "보모어", nameEn: "Bowmore", description: "보모어", badge: null, image: "/images/drinks/bowmore.png", isActive: true, sortOrder: 7 },
+  { id: "w8", categoryId: "cat3", name: "조니워커 블랙", nameEn: "Johnnie Walker Black", description: "조니워커 블랙라벨", badge: null, image: "/images/drinks/johnnie-walker-black.jpg", isActive: true, sortOrder: 8 },
+  { id: "w9", categoryId: "cat3", name: "닛카 프롬 더 배럴", nameEn: "Nikka From The Barrel", description: "닛카 위스키 프롬 더 배럴", badge: null, image: "/images/drinks/nikka.png", isActive: true, sortOrder: 9 },
 
   // ---- 와인 3종 ----
-  { id: "wn1", categoryId: "cat4", name: "White 750ml Don Santiago", nameEn: "White Don Santiago", description: "화이트 와인", badge: "추천", isActive: true, sortOrder: 1 },
-  { id: "wn2", categoryId: "cat4", name: "Red 750ml Don Santiago", nameEn: "Red Don Santiago", description: "레드 와인", badge: null, isActive: true, sortOrder: 2 },
-  { id: "wn3", categoryId: "cat4", name: "Rose 750ml", nameEn: "Rose", description: "로제 와인", badge: null, isActive: true, sortOrder: 3 },
+  { id: "wn1", categoryId: "cat4", name: "White 750ml Don Santiago", nameEn: "White Don Santiago", description: "화이트 와인", badge: "추천", image: "/images/drinks/don-santiago-white-hq.jpg", isActive: true, sortOrder: 1 },
+  { id: "wn2", categoryId: "cat4", name: "Red 750ml Don Santiago", nameEn: "Red Don Santiago", description: "레드 와인", badge: null, image: "/images/drinks/don-santiago-red.jpg", isActive: true, sortOrder: 2 },
+  { id: "wn3", categoryId: "cat4", name: "Rose 750ml", nameEn: "Rose", description: "로제 와인", badge: null, image: "/images/drinks/quevedo-rose.webp", isActive: true, sortOrder: 3 },
 
   // ---- 리큐르 3종 ----
-  { id: "lq1", categoryId: "cat5", name: "서울의 밤", description: "서울의 밤", badge: null, isActive: true, sortOrder: 1 },
-  { id: "lq2", categoryId: "cat5", name: "도원결의 15도", description: "도원결의 15도", badge: null, isActive: true, sortOrder: 2 },
-  { id: "lq3", categoryId: "cat5", name: "도원결의 21도", description: "도원결의 21도", badge: null, isActive: true, sortOrder: 3 },
+  { id: "lq1", categoryId: "cat5", name: "서울의 밤", description: "서울의 밤", badge: null, image: "/images/drinks/seoul-night.jpg", isActive: true, sortOrder: 1 },
+  { id: "lq2", categoryId: "cat5", name: "도원결의 15도", description: "도원결의 15도", badge: null, image: "/images/drinks/dowon-15.webp", isActive: true, sortOrder: 2 },
+  { id: "lq3", categoryId: "cat5", name: "도원결의 21도", description: "도원결의 21도", badge: null, image: "/images/drinks/dowon-21.jpg", isActive: true, sortOrder: 3 },
+
+  // ---- 소주 3종 ----
+  { id: "sj1", categoryId: "cat6", name: "새로", description: "롯데 새로 소주", badge: null, image: "/images/drinks/sero-normal.png", isActive: true, sortOrder: 1 },
+  { id: "sj2", categoryId: "cat6", name: "가로", description: "롯데 새로 소주 (가로)", badge: null, image: "/images/drinks/sero-garo.png", isActive: true, sortOrder: 2 },
+  { id: "sj3", categoryId: "cat6", name: "거꾸로", description: "롯데 새로 소주 (거꾸로)", badge: null, image: "/images/drinks/sero-geokuro.png", isActive: true, sortOrder: 3 },
 ];
 
 // ============================================
@@ -138,6 +144,11 @@ export const menuPrices: MenuPrice[] = [
   { id: "lqp1", itemId: "lq1", optionName: "bottle", price: 9800, sortOrder: 1, isActive: true },
   { id: "lqp2", itemId: "lq2", optionName: "bottle", price: 9800, sortOrder: 1, isActive: true },
   { id: "lqp3", itemId: "lq3", optionName: "bottle", price: 9800, sortOrder: 1, isActive: true },
+
+  // ---- 소주 ----
+  { id: "sjp1", itemId: "sj1", optionName: "bottle", price: 4000, sortOrder: 1, isActive: true },
+  { id: "sjp2", itemId: "sj2", optionName: "bottle", price: 4000, sortOrder: 1, isActive: true },
+  { id: "sjp3", itemId: "sj3", optionName: "bottle", price: 4000, sortOrder: 1, isActive: true },
 ];
 
 // ============================================

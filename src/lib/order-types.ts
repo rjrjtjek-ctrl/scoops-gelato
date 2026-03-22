@@ -29,6 +29,7 @@ export interface MenuItem {
   nameEn?: string;
   description?: string;
   badge?: string | null; // "SIGNATURE", "BEST", "NEW", "추천" 등, 복수 가능 (공백 구분)
+  image?: string; // 제품 이미지 경로 (public/images/drinks/)
   isActive: boolean;
   sortOrder: number;
 }

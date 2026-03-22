@@ -49,7 +49,7 @@ export default function StoreMenuPage() {
   const [orderType, setOrderType] = useState<"dine_in" | "takeaway" | null>(null);
   const [ageVerified, setAgeVerified] = useState(false);
   const [showAgeModal, setShowAgeModal] = useState(false);
-  const [activeDrinkTab, setActiveDrinkTab] = useState<"cat3" | "cat4" | "cat5" | "cat6" | null>(null);
+  const [activeDrinkTab, setActiveDrinkTab] = useState<"cat3" | "cat4" | "cat5" | "cat6" | null>("cat3");
   const [pendingDrinkTab, setPendingDrinkTab] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [showCartPopup, setShowCartPopup] = useState(false);

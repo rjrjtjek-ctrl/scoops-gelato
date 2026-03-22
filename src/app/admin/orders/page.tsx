@@ -34,8 +34,8 @@ try {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY ||
     "";
-  // sb_publishable_* 키는 Realtime 미지원 → JWT(eyJ*) 키만 허용
-  if (SUPABASE_URL && SUPABASE_KEY && SUPABASE_KEY.startsWith("eyJ")) {
+  // sb_publishable_* 키도 Realtime 지원 확인됨 (2026-03-23 테스트 완료)
+  if (SUPABASE_URL && SUPABASE_KEY) {
     supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
   }
 } catch {
@@ -404,12 +404,13 @@ export default function AdminOrdersPage() {
     };
   }, [selectedStore]); // fetchOrders 제외 — ref로 참조
 
-  // [PERF] 폴링 — 700ms (Win7 Chrome 109 POS 안정성 + 빠른 감지 균형)
+  // [PERF] 폴링 — Realtime 연결 시 5초 백업, 미연결 시 700ms
   useEffect(() => {
     let active = true;
+    const interval = realtimeConnected ? 5000 : 700;
     const poll = async () => {
       await fetchOrders();
-      if (active) setTimeout(poll, 700);
+      if (active) setTimeout(poll, interval);
     };
     poll();
 
@@ -425,7 +426,7 @@ export default function AdminOrdersPage() {
       active = false;
       document.removeEventListener("visibilitychange", handleVisibility);
     };
-  }, [fetchOrders]);
+  }, [fetchOrders, realtimeConnected]);
 
   // [PERF] 매장 변경 시 상태 리셋
   useEffect(() => {

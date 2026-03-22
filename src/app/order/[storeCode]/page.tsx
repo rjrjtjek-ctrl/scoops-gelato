@@ -65,7 +65,7 @@ export default function StoreMenuPage() {
   }, [toast]);
 
   // 주류 서브탭 클릭 → 토글 (연령 확인 없이 메뉴 바로 보여줌)
-  const handleDrinkTabClick = (tabId: "cat3" | "cat4" | "cat5") => {
+  const handleDrinkTabClick = (tabId: "cat3" | "cat4" | "cat5" | "cat6") => {
     if (activeDrinkTab === tabId) {
       setActiveDrinkTab(null);
       return;
@@ -221,7 +221,7 @@ export default function StoreMenuPage() {
             <h2 className="text-lg font-bold text-[#2A2A2A]">주류</h2>
             <span className="text-[10px] text-[#999]">만 19세 이상</span>
           </div>
-          <p className="text-xs text-[#999] mb-4">위스키 · 와인 · 리큐르</p>
+          <p className="text-xs text-[#999] mb-4">위스키 · 와인 · 리큐르 · 소주</p>
 
           {/* 주류 서브탭 */}
           <div className="flex gap-2 mb-5">
@@ -229,12 +229,13 @@ export default function StoreMenuPage() {
               { id: "cat3" as const, name: "위스키" },
               { id: "cat4" as const, name: "와인" },
               { id: "cat5" as const, name: "리큐르" },
+              { id: "cat6" as const, name: "소주" },
             ]).map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => handleDrinkTabClick(tab.id)}
                 className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                  ageVerified && activeDrinkTab === tab.id
+                  activeDrinkTab === tab.id
                     ? "bg-[#1B4332] text-white shadow-sm"
                     : "bg-white text-[#555] border border-[#EDE6DD]"
                 }`}
@@ -268,6 +269,15 @@ export default function StoreMenuPage() {
             <DrinkSection
               categoryId="cat5"
               title="리큐르"
+              ageVerified={true}
+              onAddToCart={handleAddToCart}
+              onRequestAge={() => {}}
+            />
+          )}
+          {activeDrinkTab === "cat6" && (
+            <DrinkSection
+              categoryId="cat6"
+              title="소주"
               ageVerified={true}
               onAddToCart={handleAddToCart}
               onRequestAge={() => {}}
@@ -701,7 +711,7 @@ function DrinkSection({
 
   return (
     <section>
-      <div className="space-y-3">
+      <div className="grid grid-cols-3 gap-3">
         {items.map((item) => (
           <DrinkItemCard
             key={item.id}
@@ -787,44 +797,28 @@ function DrinkItemCard({
   };
 
   return (
-    <div className={`bg-white rounded-2xl border transition-all ${isOpen ? "border-[#1B4332]/30 shadow-sm" : "border-[#EDE6DD]/60"}`}>
-      {/* 아이템 헤더 — 클릭하면 펼침/접힘 */}
-      <div className="flex items-center p-4">
+    <div className={`bg-white rounded-2xl border transition-all ${isOpen ? "border-[#1B4332]/30 shadow-sm col-span-3" : "border-[#EDE6DD]/60"}`}>
+      {/* 카드형 헤더 — 이미지 + 이름 */}
+      <button
+        onClick={handleToggle}
+        className="w-full text-center p-3"
+      >
         {/* 제품 이미지 */}
         {item.image && (
-          <div className="w-12 h-12 rounded-lg overflow-hidden bg-[#F5F0EB] flex-shrink-0 mr-3">
-            <img src={item.image} alt={item.name} className="w-full h-full object-contain" />
+          <div className="w-full aspect-square rounded-xl overflow-hidden bg-[#F5F0EB] mb-2">
+            <img src={item.image} alt={item.name} className="w-full h-full object-contain p-1" />
           </div>
         )}
-        <button
-          onClick={handleToggle}
-          className="flex-1 flex items-center justify-between text-left"
-        >
-          <div>
-            <p className="text-sm font-bold text-[#2A2A2A]">{item.name}</p>
-            {item.nameEn && (
-              <p className="text-xs text-[#999]">{item.nameEn}</p>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
-            {item.badge && (
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#A68B5B]/10 text-[#A68B5B]">
-                {item.badge}
-              </span>
-          )}
-          <span className={`text-[#999] transition-transform ${isOpen ? "rotate-180" : ""}`}>▾</span>
-          </div>
-        </button>
-        {/* 주류 설명 버튼 */}
-        {drinkInfo && (
-          <button
-            onClick={(e) => { e.stopPropagation(); setShowInfo(true); }}
-            className="ml-2 px-2.5 py-1 rounded-lg bg-[#F5F0EB] text-[#A68B5B] text-[11px] font-medium hover:bg-[#EDE6DD] transition-colors flex-shrink-0"
-          >
-            설명
-          </button>
+        <p className="text-xs font-bold text-[#2A2A2A] leading-tight">{item.name}</p>
+        {item.nameEn && (
+          <p className="text-[10px] text-[#999] mt-0.5 leading-tight">{item.nameEn}</p>
         )}
-      </div>
+        {item.badge && (
+          <span className="inline-block text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-[#A68B5B]/10 text-[#A68B5B] mt-1">
+            {item.badge}
+          </span>
+        )}
+      </button>
 
       {/* 위스키 설명 팝업 */}
       <AnimatePresence>

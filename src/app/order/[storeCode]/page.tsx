@@ -211,6 +211,32 @@ export default function StoreMenuPage() {
 
       </header>
 
+      {/* ---- 주문번호 배너 (주문 완료 후 다른 페이지 갔다 돌아왔을 때) ---- */}
+      {(() => {
+        try {
+          const lastOrder = typeof window !== "undefined" ? sessionStorage.getItem("scoops_last_order") : null;
+          if (lastOrder) {
+            return (
+              <div className="w-full max-w-[480px] px-4 pt-3">
+                <div className="flex items-center justify-between bg-[#1B4332] rounded-2xl px-4 py-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-white/70 text-xs">내 주문번호</span>
+                    <span className="text-white font-black text-lg tracking-wider">{lastOrder}</span>
+                  </div>
+                  <button
+                    onClick={() => { try { sessionStorage.removeItem("scoops_last_order"); } catch {} window.location.reload(); }}
+                    className="text-white/50 text-xs underline"
+                  >
+                    닫기
+                  </button>
+                </div>
+              </div>
+            );
+          }
+        } catch {}
+        return null;
+      })()}
+
       {/* ---- 메인 콘텐츠 (한 페이지 스크롤) ---- */}
       <main className="w-full max-w-[480px] flex-1 px-4 pb-28">
         {/* ▸ 젤라또·소르베또 섹션 */}

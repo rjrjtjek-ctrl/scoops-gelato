@@ -112,6 +112,8 @@ function CartContent() {
           orderId: data.orderId,
           confirmed: true,
         });
+        // 주문번호 저장 — 메뉴 페이지에서 배너로 표시
+        try { sessionStorage.setItem("scoops_last_order", data.orderNumber); } catch {}
         return;
       } catch (err) {
         if (attempt < MAX_RETRIES) {
@@ -248,13 +250,16 @@ function CartContent() {
           </div>
 
           {/* 새 주문 */}
-          <Link
-            href={`/order/${storeCode}`}
+          <button
+            onClick={() => {
+              try { sessionStorage.removeItem("scoops_last_order"); } catch {}
+              router.replace(`/order/${storeCode}`);
+            }}
             className="flex items-center justify-center gap-2 w-full py-4 rounded-2xl border border-[#1B4332] text-[#1B4332] text-sm font-bold mt-2 mb-10 hover:bg-[#1B4332]/5 transition-colors"
           >
             <RotateCcw size={16} />
             새 주문하기
-          </Link>
+          </button>
         </main>
 
         {/* PWA 설치 유도 배너 */}
@@ -330,31 +335,36 @@ function CartContent() {
                           <p className="text-xs text-[#999] mt-1">
                             {item.optionName}
                           </p>
-                          {/* 주류 수량 변경 */}
-                          <div className="flex items-center gap-3 mt-2">
-                            <button
-                              onClick={() => updateItemQuantity(item.cartId, item.quantity - 1)}
-                              className="w-7 h-7 rounded-full bg-[#F5F0EB] flex items-center justify-center text-[#555] text-sm font-bold"
-                            >
-                              −
-                            </button>
-                            <span className="text-sm font-bold text-[#2A2A2A] min-w-[20px] text-center">{item.quantity}</span>
-                            <button
-                              onClick={() => updateItemQuantity(item.cartId, item.quantity + 1)}
-                              className="w-7 h-7 rounded-full bg-[#F5F0EB] flex items-center justify-center text-[#555] text-sm font-bold"
-                            >
-                              +
-                            </button>
-                          </div>
                         </>
                       )}
-                      <p className="text-sm font-bold text-[#1B4332] mt-2">
-                        {formatPrice(item.subtotal)}
-                      </p>
+                      {/* 수량 변경 — 젤라또/주류 공통 */}
+                      <div className="flex items-center justify-between mt-3">
+                        <div className="flex items-center gap-3">
+                          <button
+                            onClick={() => {
+                              if (item.quantity <= 1) { removeItem(item.cartId); }
+                              else { updateItemQuantity(item.cartId, item.quantity - 1); }
+                            }}
+                            className="w-8 h-8 rounded-full bg-[#F5F0EB] flex items-center justify-center text-[#555] text-sm font-bold active:bg-[#EDE6DD]"
+                          >
+                            {item.quantity <= 1 ? "✕" : "−"}
+                          </button>
+                          <span className="text-sm font-bold text-[#2A2A2A] min-w-[24px] text-center">{item.quantity}</span>
+                          <button
+                            onClick={() => updateItemQuantity(item.cartId, item.quantity + 1)}
+                            className="w-8 h-8 rounded-full bg-[#F5F0EB] flex items-center justify-center text-[#555] text-sm font-bold active:bg-[#EDE6DD]"
+                          >
+                            +
+                          </button>
+                        </div>
+                        <p className="text-sm font-bold text-[#1B4332]">
+                          {formatPrice(item.subtotal)}
+                        </p>
+                      </div>
                     </div>
                     <button
                       onClick={() => removeItem(item.cartId)}
-                      className="w-9 h-9 flex items-center justify-center text-[#BBB] hover:text-red-400 transition-colors"
+                      className="w-9 h-9 flex items-center justify-center text-[#BBB] hover:text-red-400 transition-colors ml-2"
                       aria-label="삭제"
                     >
                       <Trash2 size={16} />

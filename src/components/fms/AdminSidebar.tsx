@@ -76,6 +76,17 @@ export default function AdminSidebar({ role, isOpen, onClose }: AdminSidebarProp
       ],
     },
     {
+      title: "직원 화면 (열람)",
+      icon: <Users size={16} />,
+      items: [
+        { label: "직원 홈", href: "/admin/staff", icon: <LayoutDashboard size={16} /> },
+        { label: "직원 할일", href: "/admin/staff/tasks", icon: <ListTodo size={16} /> },
+        { label: "직원 공지", href: "/admin/staff/announcements", icon: <Megaphone size={16} /> },
+        { label: "직원 메뉴ON/OFF", href: "/admin/staff/menu", icon: <UtensilsCrossed size={16} /> },
+        { label: "직원 발주내역", href: "/admin/staff/orders", icon: <ShoppingCart size={16} /> },
+      ],
+    },
+    {
       title: "운영 도구",
       icon: <QrCode size={16} />,
       defaultOpen: true,

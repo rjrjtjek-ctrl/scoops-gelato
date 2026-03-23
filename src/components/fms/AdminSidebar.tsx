@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, Store, ShoppingCart, UtensilsCrossed,
   Package, Megaphone, BookOpen, BarChart3, Users, ClipboardList,
-  ListTodo, X
+  ListTodo, X, Eye, MessageSquare, QrCode, Headphones
 } from "lucide-react";
 
 interface MenuItem {
@@ -33,6 +33,11 @@ export default function AdminSidebar({ role, isOpen, onClose }: AdminSidebarProp
     { label: "공지사항", href: "/admin/hq/notices", icon: <Megaphone size={18} />, active: true },
     { label: "지식베이스", href: "/admin/hq/knowledge", icon: <BookOpen size={18} />, active: true },
     { label: "분석", href: "/admin/hq/analytics", icon: <BarChart3 size={18} />, active: true },
+    // ── 기존 관리자 기능 ──
+    { label: "QR 주문관리", href: "/admin/orders", icon: <QrCode size={18} />, active: true },
+    { label: "가맹문의", href: "/admin/inquiries", icon: <MessageSquare size={18} />, active: true },
+    { label: "방문자통계", href: "/admin/analytics", icon: <Eye size={18} />, active: true },
+    { label: "고객의소리", href: "/admin/customer", icon: <Headphones size={18} />, active: true },
   ];
 
   const storeMenus: MenuItem[] = [

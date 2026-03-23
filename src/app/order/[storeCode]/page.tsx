@@ -48,6 +48,7 @@ export default function StoreMenuPage() {
 
   const [orderType, setOrderType] = useState<"dine_in" | "takeaway" | null>(null);
   const [ageVerified, setAgeVerified] = useState(false);
+  const [soldOutIds, setSoldOutIds] = useState<Set<string>>(new Set());
   const [showAgeModal, setShowAgeModal] = useState(false);
   const [activeDrinkTab, setActiveDrinkTab] = useState<"cat3" | "cat4" | "cat5" | "cat6" | null>("cat3");
   const [pendingDrinkTab, setPendingDrinkTab] = useState<string | null>(null);
@@ -57,6 +58,29 @@ export default function StoreMenuPage() {
   const gelatoSectionRef = useRef<HTMLDivElement | null>(null);
 
   const drinkSectionRef = useRef<HTMLDivElement | null>(null);
+
+  // 매장별 품절 메뉴 로드 (FMS 연동 — 실패해도 기존 메뉴 정상 표시)
+  useEffect(() => {
+    if (!store) return;
+    fetch(`/api/fms/menu/sold-out?storeCode=${storeCode}`)
+      .then(r => r.ok ? r.json() : { soldOutNames: [] })
+      .then(d => {
+        if (d.soldOutNames?.length > 0) {
+          // 이름으로 order-data의 메뉴 ID 매핑
+          const ids = new Set<string>();
+          menuItems.forEach(item => {
+            if (d.soldOutNames.includes(item.name)) ids.add(item.id);
+          });
+          // 맛(flavor)도 매핑
+          const allFlavors = getAllFlavors();
+          allFlavors.forEach(flavor => {
+            if (d.soldOutNames.includes(flavor.name)) ids.add(flavor.id);
+          });
+          if (ids.size > 0) setSoldOutIds(ids);
+        }
+      })
+      .catch(() => {}); // 실패해도 무시 — 기존 메뉴 그대로 표시
+  }, [store, storeCode]);
 
   // 토스트 자동 사라짐
   useEffect(() => {
@@ -241,7 +265,7 @@ export default function StoreMenuPage() {
       <main className="w-full max-w-[480px] flex-1 px-4 pb-28">
         {/* ▸ 젤라또·소르베또 섹션 */}
         <div className="pt-6" ref={gelatoSectionRef}>
-          <GelatoSection onAddToCart={handleAddToCart} orderType={orderType as "dine_in" | "takeaway"} />
+          <GelatoSection onAddToCart={handleAddToCart} orderType={orderType as "dine_in" | "takeaway"} soldOutIds={soldOutIds} />
         </div>
 
         {/* ▸ 주류 섹션 — 매장식사일 때만 표시 */}
@@ -491,9 +515,11 @@ export default function StoreMenuPage() {
 function GelatoSection({
   onAddToCart,
   orderType,
+  soldOutIds = new Set(),
 }: {
   onAddToCart: (item: CartItem) => void;
   orderType: "dine_in" | "takeaway";
+  soldOutIds?: Set<string>;
 }) {
   const [selectedPrice, setSelectedPrice] = useState<GelatoPrice | null>(null);
   const [selectedFlavors, setSelectedFlavors] = useState<MenuItem[]>([]);
@@ -648,7 +674,7 @@ function GelatoSection({
                     const isSelected = selectedFlavors.some((f) => f.id === flavor.id);
                     const isFull =
                       selectedFlavors.length >= selectedPrice.flavorCount && !isSelected;
-                    const isInactive = !flavor.isActive;
+                    const isInactive = !flavor.isActive || soldOutIds.has(flavor.id);
 
                     return (
                       <button
@@ -669,6 +695,9 @@ function GelatoSection({
                           </div>
                         )}
                         <p className="text-sm font-bold leading-tight">{flavor.name}</p>
+                        {isInactive && soldOutIds.has(flavor.id) && (
+                          <span className="text-[10px] text-red-400 font-medium">품절</span>
+                        )}
                         {flavor.badge && (
                           <div className="flex flex-wrap gap-1 mt-1.5">
                             {flavor.badge.split(" ").map((b) => (

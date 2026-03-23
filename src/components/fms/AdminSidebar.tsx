@@ -12,7 +12,8 @@ interface MenuItem {
   label: string;
   href: string;
   icon: React.ReactNode;
-  active: boolean; // Phase별 활성화 여부
+  active: boolean;
+  section?: string; // 섹션 구분 헤더
 }
 
 interface AdminSidebarProps {
@@ -25,7 +26,8 @@ export default function AdminSidebar({ role, isOpen, onClose }: AdminSidebarProp
   const pathname = usePathname();
 
   const hqMenus: MenuItem[] = [
-    { label: "대시보드", href: "/admin/hq", icon: <LayoutDashboard size={18} />, active: true },
+    // ── 본사 관리 ──
+    { label: "대시보드", href: "/admin/hq", icon: <LayoutDashboard size={18} />, active: true, section: "본사 관리" },
     { label: "매장관리", href: "/admin/hq/stores", icon: <Store size={18} />, active: true },
     { label: "발주관리", href: "/admin/hq/orders", icon: <ShoppingCart size={18} />, active: true },
     { label: "메뉴관리", href: "/admin/hq/menu", icon: <UtensilsCrossed size={18} />, active: true },
@@ -33,20 +35,22 @@ export default function AdminSidebar({ role, isOpen, onClose }: AdminSidebarProp
     { label: "공지사항", href: "/admin/hq/notices", icon: <Megaphone size={18} />, active: true },
     { label: "지식베이스", href: "/admin/hq/knowledge", icon: <BookOpen size={18} />, active: true },
     { label: "분석", href: "/admin/hq/analytics", icon: <BarChart3 size={18} />, active: true },
-    // ── 기존 관리자 기능 ──
-    { label: "QR 주문관리", href: "/admin/orders", icon: <QrCode size={18} />, active: true },
+    // ── 점주 기능 ──
+    { label: "할일관리", href: "/admin/store/tasks", icon: <ListTodo size={18} />, active: true, section: "점주 기능" },
+    { label: "작업기록", href: "/admin/store/tasks/logs", icon: <ClipboardList size={18} />, active: true },
+    { label: "직원관리", href: "/admin/store/employees", icon: <Users size={18} />, active: true },
+    { label: "매장메뉴ON/OFF", href: "/admin/store/menu", icon: <UtensilsCrossed size={18} />, active: true },
+    { label: "매장판매현황", href: "/admin/store/sales", icon: <BarChart3 size={18} />, active: true },
+    { label: "매장발주내역", href: "/admin/store/orders", icon: <ShoppingCart size={18} />, active: true },
+    { label: "매장공지", href: "/admin/store/announcements", icon: <Megaphone size={18} />, active: true },
+    // ── 운영 도구 ──
+    { label: "QR 주문관리", href: "/admin/orders", icon: <QrCode size={18} />, active: true, section: "운영 도구" },
     { label: "주문내역", href: "/admin/orders/history", icon: <ClipboardList size={18} />, active: true },
     { label: "주문분석", href: "/admin/orders/analytics", icon: <BarChart3 size={18} />, active: true },
     { label: "가맹문의", href: "/admin/inquiries", icon: <MessageSquare size={18} />, active: true },
     { label: "방문자통계", href: "/admin/analytics", icon: <Eye size={18} />, active: true },
     { label: "고객의소리", href: "/admin/customer", icon: <Headphones size={18} />, active: true },
     { label: "QR코드관리", href: "/admin/qr", icon: <QrCode size={18} />, active: true },
-    // ── 매장/직원 기능 (본사에서 열람) ──
-    { label: "할일관리", href: "/admin/store/tasks", icon: <ListTodo size={18} />, active: true },
-    { label: "작업기록", href: "/admin/store/tasks/logs", icon: <ClipboardList size={18} />, active: true },
-    { label: "직원관리", href: "/admin/store/employees", icon: <Users size={18} />, active: true },
-    { label: "매장메뉴ON/OFF", href: "/admin/store/menu", icon: <UtensilsCrossed size={18} />, active: true },
-    { label: "매장판매현황", href: "/admin/store/sales", icon: <BarChart3 size={18} />, active: true },
   ];
 
   const storeMenus: MenuItem[] = [
@@ -84,35 +88,45 @@ export default function AdminSidebar({ role, isOpen, onClose }: AdminSidebarProp
         </div>
 
         {/* 메뉴 */}
-        <nav className="mt-4 px-3 space-y-1">
+        <nav className="mt-2 px-3 space-y-0.5 overflow-y-auto" style={{ maxHeight: "calc(100vh - 64px)" }}>
           {menus.map((item) => {
             const isCurrent = pathname === item.href;
+
+            // 섹션 헤더 표시
+            const sectionHeader = item.section ? (
+              <div key={`section-${item.section}`} className="pt-4 pb-1 px-3 first:pt-2">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">{item.section}</span>
+              </div>
+            ) : null;
+
             if (!item.active) {
               return (
-                <div
-                  key={item.href}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 cursor-not-allowed"
-                >
-                  {item.icon}
-                  <span className="text-sm">{item.label}</span>
-                  <span className="ml-auto text-[10px] text-gray-700 bg-gray-800 px-1.5 py-0.5 rounded">준비중</span>
+                <div key={item.href}>
+                  {sectionHeader}
+                  <div className="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-600 cursor-not-allowed">
+                    {item.icon}
+                    <span className="text-sm">{item.label}</span>
+                    <span className="ml-auto text-[10px] text-gray-700 bg-gray-800 px-1.5 py-0.5 rounded">준비중</span>
+                  </div>
                 </div>
               );
             }
             return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={onClose}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
-                  isCurrent
-                    ? "text-[#D4A574] bg-white/5"
-                    : "text-gray-400 hover:text-white hover:bg-white/5"
-                }`}
-              >
-                {item.icon}
-                <span className="text-sm font-medium">{item.label}</span>
-              </Link>
+              <div key={item.href}>
+                {sectionHeader}
+                <Link
+                  href={item.href}
+                  onClick={onClose}
+                  className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+                    isCurrent
+                      ? "text-[#D4A574] bg-white/5"
+                      : "text-gray-400 hover:text-white hover:bg-white/5"
+                  }`}
+                >
+                  {item.icon}
+                  <span className="text-[13px] font-medium">{item.label}</span>
+                </Link>
+              </div>
             );
           })}
         </nav>

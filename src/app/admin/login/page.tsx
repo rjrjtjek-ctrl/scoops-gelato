@@ -38,6 +38,11 @@ export default function AdminLoginPage() {
         sessionStorage.setItem("fms_token", data.token);
       }
 
+      // 기존 admin 호환: admin_token도 설정
+      if (data.user.role === "hq_admin") {
+        sessionStorage.setItem("admin_token", data.token);
+      }
+
       // 역할별 리다이렉트
       switch (data.user.role) {
         case "hq_admin":

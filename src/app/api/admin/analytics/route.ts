@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { recordPageView, recordSessionComplete, getAnalyticsSummary } from "@/lib/analytics";
+import { verifyToken } from "@/lib/fms/auth";
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "scoops8893!";
 
@@ -55,7 +56,20 @@ export async function POST(req: NextRequest) {
 // 분석 데이터 조회 (관리자용)
 export async function GET(req: NextRequest) {
   const auth = req.headers.get("authorization");
-  if (!auth || auth.replace("Bearer ", "") !== ADMIN_PASSWORD) {
+  let isAuthed = false;
+  if (auth) {
+    const token = auth.replace("Bearer ", "");
+    if (token === ADMIN_PASSWORD) isAuthed = true;
+    const payload = verifyToken(token);
+    if (payload && payload.role === "hq_admin") isAuthed = true;
+  }
+  // FMS 쿠키로도 인증
+  const fmsCookie = req.cookies.get("fms_token");
+  if (fmsCookie) {
+    const p = verifyToken(fmsCookie.value);
+    if (p && p.role === "hq_admin") isAuthed = true;
+  }
+  if (!isAuthed) {
     return NextResponse.json({ error: "인증 필요" }, { status: 401 });
   }
 

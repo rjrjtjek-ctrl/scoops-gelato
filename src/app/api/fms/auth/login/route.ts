@@ -83,6 +83,24 @@ export async function POST(req: NextRequest) {
 
     response.cookies.set("fms_token", token, cookieOptions);
 
+    // 기존 admin 세션도 함께 설정 (기존 관리자 페이지 접근 호환)
+    if (user.role === "hq_admin") {
+      response.cookies.set("admin_session", "scoops_admin_session_2026", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict" as const,
+        path: "/",
+        maxAge: 24 * 60 * 60,
+      });
+      response.cookies.set("scoops_admin", "true", {
+        httpOnly: false,
+        secure: false,
+        sameSite: "lax" as const,
+        path: "/",
+        maxAge: 365 * 24 * 60 * 60,
+      });
+    }
+
     return response;
   } catch (err) {
     console.error("[FMS] 로그인 실패:", err);

@@ -2,20 +2,19 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 
-export default function AdminLoginPage() {
+export default function LoginForm() {
   const router = useRouter();
   const [loginId, setLoginId] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(false);
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    setLoading(true);
+    setIsLoading(true);
 
     try {
       const res = await fetch("/api/fms/auth/login", {
@@ -31,7 +30,7 @@ export default function AdminLoginPage() {
         return;
       }
 
-      // 토큰 저장
+      // 토큰 저장 (기억하기 체크 시 localStorage)
       if (remember) {
         localStorage.setItem("fms_token", data.token);
       } else {
@@ -55,19 +54,16 @@ export default function AdminLoginPage() {
     } catch {
       setError("서버에 연결할 수 없습니다.");
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#FFF8F0] px-4">
-      <div className="w-full max-w-[400px] bg-white rounded-2xl shadow-lg p-8">
+    <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#FFF8F0" }}>
+      <div className="w-full max-w-[400px] mx-4 bg-white rounded-2xl shadow-lg p-8">
         {/* 로고 */}
         <div className="text-center mb-8">
-          <div className="w-12 h-12 relative mx-auto mb-4">
-            <Image src="/images/logo_symbol.png" alt="SCOOPS" fill className="object-contain" />
-          </div>
-          <h1 className="text-xl font-bold" style={{ color: "#2C1810" }}>
+          <h1 className="text-2xl font-bold" style={{ color: "#2C1810" }}>
             SCOOPS GELATO
           </h1>
           <p className="text-sm text-gray-500 mt-1">가맹점 관리 시스템</p>
@@ -123,11 +119,11 @@ export default function AdminLoginPage() {
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={isLoading}
             className="w-full py-3 rounded-lg text-white font-medium text-sm transition-opacity disabled:opacity-50"
             style={{ backgroundColor: "#2C1810" }}
           >
-            {loading ? "로그인 중..." : "로그인"}
+            {isLoading ? "로그인 중..." : "로그인"}
           </button>
         </form>
       </div>

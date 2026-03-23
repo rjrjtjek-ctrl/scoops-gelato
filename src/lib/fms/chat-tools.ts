@@ -187,29 +187,25 @@ async function handleSearchProductPrice(args: Record<string, unknown>): Promise<
     lower.includes(p.name.toLowerCase().replace(/\s/g, ""))
   );
 
-  if (!matched) {
-    const names = (products || []).map((p: any) => p.name).join(", ");
-    return JSON.stringify({ error: `'${productName}'을 찾을 수 없습니다. 등록된 제품: ${names}` });
-  }
-
   // hq_only 체크
-  if (matched.purchase_mode === "hq_only") {
+  if (matched && matched.purchase_mode === "hq_only") {
     return JSON.stringify({
       hqOnly: true,
       message: `${matched.name}은(는) 본사 일괄 구매 제품입니다. 본사에 발주해주세요.`,
     });
   }
 
-  // 최저가 검색
-  const results = await searchLowestPrice(matched.search_keyword || matched.name);
+  // 최저가 검색 — 승인 제품이면 검색 키워드 사용, 아니면 제품명으로 직접 검색
+  const searchKeyword = matched ? (matched.search_keyword || matched.name) : productName;
+  const results = await searchLowestPrice(searchKeyword);
 
   if (results.length === 0) {
-    return JSON.stringify({ noResults: true, message: `${matched.name} 검색 결과가 없습니다.` });
+    return JSON.stringify({ noResults: true, message: `${matched?.name || productName} 검색 결과가 없습니다.` });
   }
 
   return JSON.stringify({
     success: true,
-    productName: matched.name,
+    productName: matched?.name || productName,
     quantity,
     results: results.map((r, i) => ({
       rank: i + 1,

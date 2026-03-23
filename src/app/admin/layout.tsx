@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import ChatFloatingButton from "@/components/fms/ChatFloatingButton";
 
 export const metadata: Metadata = {
   title: "SCOOPS 관리자",
@@ -6,5 +7,10 @@ export const metadata: Metadata = {
 };
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
+  return (
+    <>
+      {children}
+      <ChatFloatingButton />
+    </>
+  );
 }

@@ -37,11 +37,11 @@ function InquiriesContent() {
   const searchParams = useSearchParams();
   const filter = searchParams.get("filter");
 
-  const token = typeof window !== "undefined" ? sessionStorage.getItem("admin_token") : null;
+  const token = typeof window !== "undefined" ? (sessionStorage.getItem("admin_token") || localStorage.getItem("fms_token") || sessionStorage.getItem("fms_token")) : null;
 
   const fetchInquiries = useCallback(async () => {
     if (!token) {
-      router.push("/admin");
+      router.push("/admin/login");
       return;
     }
     try {
@@ -50,7 +50,7 @@ function InquiriesContent() {
       });
       if (res.status === 401) {
         sessionStorage.removeItem("admin_token");
-        router.push("/admin");
+        router.push("/admin/login");
         return;
       }
       const data = await res.json();
@@ -101,7 +101,7 @@ function InquiriesContent() {
           <div className="flex items-center justify-between mb-2 md:mb-3">
             <div className="flex items-center gap-2 md:gap-4">
               <button
-                onClick={() => router.push("/admin")}
+                onClick={() => router.push("/admin/login")}
                 className="text-white/60 hover:text-white transition text-sm"
               >
                 ← 대시보드

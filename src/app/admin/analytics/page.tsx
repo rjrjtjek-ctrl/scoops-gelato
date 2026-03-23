@@ -63,7 +63,7 @@ export default function AdminPage() {
   } | null>(null);
   const router = useRouter();
 
-  const getToken = () => typeof window !== "undefined" ? sessionStorage.getItem("admin_token") || "" : "";
+  const getToken = () => typeof window !== "undefined" ? (sessionStorage.getItem("admin_token") || localStorage.getItem("fms_token") || sessionStorage.getItem("fms_token") || "") : "";
 
   const fetchData = useCallback(async (token: string) => {
     setLoading(true);

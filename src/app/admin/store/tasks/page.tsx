@@ -16,9 +16,30 @@ export default function StoreTasksPage() {
   const [showAdd, setShowAdd] = useState(false);
   const [newTask, setNewTask] = useState({ title: "", description: "", dueTime: "", assignedTo: "", isRecurring: false, recurPattern: "daily" });
   const [employees, setEmployees] = useState<{ id: string; name: string }[]>([]);
+  const [userRole, setUserRole] = useState("");
+  const [stores, setStores] = useState<{ id: string; name: string }[]>([]);
+  const [selectedStoreId, setSelectedStoreId] = useState("");
 
   const today = new Date().toISOString().split("T")[0];
   const tomorrow = new Date(Date.now() + 86400000).toISOString().split("T")[0];
+
+  // 사용자 역할 확인 + 본사면 매장 목록 가져오기
+  useEffect(() => {
+    fetch("/api/fms/auth/me", { cache: "no-store" })
+      .then(r => r.json())
+      .then(d => {
+        setUserRole(d.user?.role || "");
+        if (d.user?.role === "hq_admin") {
+          fetch("/api/fms/stores?status=active", { cache: "no-store" })
+            .then(r => r.json())
+            .then(sd => {
+              const s = (sd.stores || []).map((st: any) => ({ id: st.id, name: st.name }));
+              setStores(s);
+              if (s.length > 0) setSelectedStoreId(s[0].id);
+            }).catch(() => {});
+        }
+      }).catch(() => {});
+  }, []);
 
   const fetchTasks = async () => {
     setLoading(true);
@@ -27,12 +48,17 @@ export default function StoreTasksPage() {
     else if (tab === "tomorrow") url += `?date=${tomorrow}`;
     else url += "?recurring=true";
 
+    // 본사는 선택한 매장의 할일 조회
+    if (userRole === "hq_admin" && selectedStoreId) {
+      url += (url.includes("?") ? "&" : "?") + `storeId=${selectedStoreId}`;
+    }
+
     const res = await fetch(url, { cache: "no-store" });
     if (res.ok) { const d = await res.json(); setTasks(d.tasks || []); }
     setLoading(false);
   };
 
-  useEffect(() => { fetchTasks(); }, [tab]);
+  useEffect(() => { fetchTasks(); }, [tab, selectedStoreId, userRole]);
   useEffect(() => {
     fetch("/api/fms/employees", { cache: "no-store" })
       .then(r => r.json())
@@ -44,7 +70,7 @@ export default function StoreTasksPage() {
     if (!newTask.title) return;
     await fetch("/api/fms/tasks", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...newTask, dueDate: tab === "tomorrow" ? tomorrow : today }),
+      body: JSON.stringify({ ...newTask, dueDate: tab === "tomorrow" ? tomorrow : today, storeId: selectedStoreId || undefined }),
     });
     setShowAdd(false); setNewTask({ title: "", description: "", dueTime: "", assignedTo: "", isRecurring: false, recurPattern: "daily" });
     fetchTasks();
@@ -64,6 +90,22 @@ export default function StoreTasksPage() {
 
   return (
     <div>
+      {/* 본사: 매장 선택 */}
+      {userRole === "hq_admin" && stores.length > 0 && (
+        <div className="mb-4 flex items-center gap-3">
+          <span className="text-sm text-gray-500">매장 선택:</span>
+          <select value={selectedStoreId} onChange={e => setSelectedStoreId(e.target.value)}
+            className="px-3 py-2 border rounded-lg text-sm">
+            {stores.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+          </select>
+        </div>
+      )}
+      {userRole === "hq_admin" && stores.length === 0 && (
+        <div className="mb-4 bg-yellow-50 rounded-lg p-3 text-sm text-yellow-700">
+          매장을 먼저 등록해주세요. <a href="/admin/hq/stores/new" className="underline font-medium">매장 등록 →</a>
+        </div>
+      )}
+
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-bold text-gray-800">할일 관리</h2>
         <button onClick={() => setShowAdd(!showAdd)} className="flex items-center gap-1 px-3 py-2 bg-[#1B4332] text-white text-sm rounded-lg">

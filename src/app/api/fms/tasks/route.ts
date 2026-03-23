@@ -48,12 +48,15 @@ export async function GET(req: NextRequest) {
 // POST: 할일 추가
 export async function POST(req: NextRequest) {
   try {
-    const user = requireAuth(req, ["franchisee"]);
-    if (!user.storeId) return NextResponse.json({ error: "매장 없음" }, { status: 400 });
+    const user = requireAuth(req, ["franchisee", "hq_admin"]);
 
+    // 본사는 storeId 파라미터로 매장 지정, 점주는 자기 매장
     const body = await req.json();
+    const storeId = user.storeId || body.storeId;
+    if (!storeId) return NextResponse.json({ error: "매장을 선택해주세요." }, { status: 400 });
+
     const result = await supabaseInsert("tasks", {
-      store_id: user.storeId,
+      store_id: storeId,
       created_by: user.userId,
       assigned_to: body.assignedTo || null,
       title: body.title,

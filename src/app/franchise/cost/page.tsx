@@ -2,13 +2,13 @@ import Link from "next/link";
 import SubNav from "@/components/SubNav";
 
 const costItems = [
-  { category: "가맹비", amount: "500만원", desc: "브랜드 사용권, 노하우 전수, 교육비 포함" },
-  { category: "교육비", amount: "포함", desc: "가맹비에 포함 (2주 교육 프로그램)" },
-  { category: "보증금", amount: "300만원", desc: "계약 종료 시 반환 (위약 시 공제)" },
-  { category: "인테리어", amount: "3,500만원~", desc: "15평 기준, 평당 약 230만원 (면적에 따라 변동)" },
-  { category: "장비·설비", amount: "2,000만원~", desc: "젤라또 쇼케이스, 배치프리저, 커피머신 등" },
-  { category: "초도물량", amount: "500만원~", desc: "원재료, 포장재, 소모품 등 초기 물량" },
-  { category: "기타 비용", amount: "200만원~", desc: "간판, POS, 소방·전기 등 기타 설비" },
+  { category: "가맹비", amount: "0원 (면제)", desc: "2020년부터 전액 면제" },
+  { category: "교육비", amount: "0원 (무료)", desc: "현장 실습 40시간 이상, 본부 전액 부담" },
+  { category: "보증금", amount: "100만원", desc: "계약 종료 시 반환 (실제 운영 시 면제 가능)" },
+  { category: "인테리어", amount: "1,800만원~", desc: "10평 기준, 평당 180~250만원 (면적에 따라 변동)" },
+  { category: "장비·설비", amount: "2,100만원~", desc: "젤라또 머신, 쇼케이스 2대, 냉동냉장고 등 (별첨 물품목록 26종 기준)" },
+  { category: "초도물량", amount: "400만원~", desc: "원재료, 포장재, 소모품 등 초기 물량" },
+  { category: "기타 비용", amount: "50만원~", desc: "간판 50~150만원 (시공 자유), POS는 월 5~7만원 별도" },
 ];
 
 export default function FranchiseCostPage() {
@@ -49,12 +49,12 @@ export default function FranchiseCostPage() {
             {/* 총합 */}
             <div className="grid grid-cols-3 gap-4 px-6 py-5 bg-brand-primary/5 border-t border-brand-primary/10">
               <span className="font-medium text-brand-primary text-sm">총 예상 투자비</span>
-              <span className="text-brand-primary font-semibold text-lg col-span-2">약 7,000만원~</span>
+              <span className="text-brand-primary font-semibold text-lg col-span-2">약 4,700만원~</span>
             </div>
           </div>
 
           <p className="text-xs text-text-light mt-4 text-center">
-            * 위 금액은 15평(약 50㎡) 기준 예상 금액이며, 매장 규모·지역·인테리어 마감재 등에 따라 달라질 수 있습니다.
+            * 위 금액은 10평(약 33㎡) 기준 예상 금액이며, 매장 규모·지역·인테리어 마감재 등에 따라 달라질 수 있습니다.
             <br />* 부가세 별도. 상세 비용은 가맹 상담 시 안내드립니다.
           </p>
         </div>

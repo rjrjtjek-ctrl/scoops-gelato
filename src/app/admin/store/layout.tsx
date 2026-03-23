@@ -17,7 +17,7 @@ export default function StoreLayout({ children }: { children: React.ReactNode })
         const res = await fetch("/api/fms/auth/me", { cache: "no-store" });
         if (!res.ok) { router.push("/admin/login"); return; }
         const data = await res.json();
-        if (data.user.role !== "franchisee") { router.push("/admin/login"); return; }
+        if (data.user.role !== "franchisee" && data.user.role !== "hq_admin") { router.push("/admin/login"); return; }
         setUser(data.user);
       } catch { router.push("/admin/login"); }
       finally { setLoading(false); }

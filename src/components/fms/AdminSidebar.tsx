@@ -41,6 +41,12 @@ export default function AdminSidebar({ role, isOpen, onClose }: AdminSidebarProp
     { label: "방문자통계", href: "/admin/analytics", icon: <Eye size={18} />, active: true },
     { label: "고객의소리", href: "/admin/customer", icon: <Headphones size={18} />, active: true },
     { label: "QR코드관리", href: "/admin/qr", icon: <QrCode size={18} />, active: true },
+    // ── 매장/직원 기능 (본사에서 열람) ──
+    { label: "할일관리", href: "/admin/store/tasks", icon: <ListTodo size={18} />, active: true },
+    { label: "작업기록", href: "/admin/store/tasks/logs", icon: <ClipboardList size={18} />, active: true },
+    { label: "직원관리", href: "/admin/store/employees", icon: <Users size={18} />, active: true },
+    { label: "매장메뉴ON/OFF", href: "/admin/store/menu", icon: <UtensilsCrossed size={18} />, active: true },
+    { label: "매장판매현황", href: "/admin/store/sales", icon: <BarChart3 size={18} />, active: true },
   ];
 
   const storeMenus: MenuItem[] = [

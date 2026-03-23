@@ -70,22 +70,57 @@ export async function POST(req: NextRequest) {
     }
     let systemPrompt = buildSystemPrompt({ name: user.name, role: user.role, storeName });
 
-    // 3-1. RAG: 관련 지식 검색 + 차단 키워드
+    // 3-1. RAG: 관련 지식 검색 — 인라인 실행
+    let ragError = "";
+    let ragCount = 0;
+    let ragFetchStatus = 0;
     try {
-      const [knowledge, blockedKeywords] = await Promise.all([
-        findRelevantKnowledge(message.trim()),
-        getBlockedKeywords(),
-      ]);
-      if (knowledge.length > 0) {
-        systemPrompt += "\n\n[참고 지식]\n아래는 스쿱스젤라또 본사에서 제공하는 공식 정보입니다.\n이 정보를 바탕으로 답변하되, \"장사는 기술이다\" 철학에 맞게 현장감 있게 전달하세요.\n정보가 없는 질문에는 일반 지식으로 답변하되, \"본사 공식 정보는 아닙니다\"라고 덧붙이세요.\n\n";
-        knowledge.forEach(k => {
-          systemPrompt += `---\n제목: ${k.title}\n${k.content}\n`;
-        });
+      const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+      const SB_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY || "";
+
+      if (SB_URL && SB_KEY) {
+        // Supabase PostgREST ilike로 서버 사이드 검색 — 한글 인코딩 문제 우회
+        const userWords = message.trim().replace(/[?!.,]/g, "").split(/\s+/).filter((w: string) => w.length >= 2);
+        // 핵심 단어 3개만 사용
+        const searchWords = userWords.slice(0, 3);
+
+        const allMatches: any[] = [];
+        for (const word of searchWords) {
+          const encoded = encodeURIComponent(word);
+          const searchUrl = `${SB_URL}/rest/v1/knowledge_base?or=(title.ilike.*${encoded}*,content.ilike.*${encoded}*)&limit=5&select=id,category,title,content`;
+          const ragRes = await fetch(searchUrl, {
+            headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` },
+          });
+          if (ragRes.ok) {
+            const items = await ragRes.json();
+            if (Array.isArray(items)) allMatches.push(...items);
+          }
+        }
+
+        // 중복 제거 + 빈도순 정렬
+        const countMap = new Map<string, { item: any; count: number }>();
+        for (const item of allMatches) {
+          const existing = countMap.get(item.id);
+          if (existing) existing.count++;
+          else countMap.set(item.id, { item, count: 1 });
+        }
+        const matched = [...countMap.values()].sort((a, b) => b.count - a.count).slice(0, 3);
+        ragCount = matched.length;
+        ragFetchStatus = allMatches.length;
+
+        if (matched.length > 0) {
+          systemPrompt += "\n\n[중요 — 반드시 아래 지식을 기반으로 답변하세요]\n아래는 스쿱스젤라또 대표님이 직접 작성한 공식 답변입니다.\n반드시 이 내용을 중심으로 답변하세요. 일반 지식이 아닌 아래 내용을 사용해야 합니다.\n\n";
+          matched.forEach((m) => {
+            systemPrompt += `---\n[${m.item.category}] ${m.item.title}\n${m.item.content}\n`;
+          });
+          systemPrompt += "---\n위 내용을 반드시 반영하여 답변하세요.\n";
+        }
+      } else {
+        ragError = "SB_URL or SB_KEY missing";
       }
-      if (blockedKeywords.length > 0) {
-        systemPrompt += `\n\n[절대 답변 금지 키워드]\n아래 키워드와 관련된 질문에는 반드시 차단 응답을 하세요:\n${blockedKeywords.join(", ")}\n차단 응답: "본사 기밀 사항이라 답변드릴 수 없습니다. 본사에 직접 문의해주세요."`;
-      }
-    } catch {}
+    } catch (ragErr: any) {
+      ragError = ragErr?.message || String(ragErr);
+    }
 
     // 4. 메시지 구성
     const aiMessages: { role: string; content: string }[] = [
@@ -99,12 +134,18 @@ export async function POST(req: NextRequest) {
       aiMessages.push({ role: "user", content: message.trim() });
     }
 
-    // 5. OpenAI 호출 (Function Calling 포함)
+    // RAG 디버그 — 응답 헤더에 포함
+    // RAG 상태 (디버그 — 안정화 후 제거 가능)
+
+    // 5. OpenAI 호출
+    // 지식베이스에서 답변을 찾았으면 도구 호출 없이 순수 대화
+    // 지식베이스 결과가 없을 때만 Function Calling 도구 포함
+    const hasKnowledge = systemPrompt.includes("[중요 — 반드시 아래 지식을 기반으로 답변하세요]");
     let aiResponse: string;
     let msgType = "general";
 
     try {
-      const result = await callOpenAI(aiMessages, chatTools);
+      const result = await callOpenAI(aiMessages, hasKnowledge ? undefined : chatTools);
 
       if (result.toolCalls && result.toolCalls.length > 0) {
         // Function Calling 처리
@@ -151,6 +192,7 @@ export async function POST(req: NextRequest) {
         content: aiResponse,
         createdAt: savedMsg?.created_at || new Date().toISOString(),
       },
+      _rag: ragCount, // 지식베이스 매칭 수
     });
   } catch (err) {
     return handleAuthError(err);

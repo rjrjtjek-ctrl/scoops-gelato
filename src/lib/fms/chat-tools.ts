@@ -46,6 +46,22 @@ export const chatTools = [
   {
     type: "function" as const,
     function: {
+      name: "create_task",
+      description: "직원에게 할일을 배정합니다. 점주가 '~에게 ~시켜줘', '~해야 해', '할일 추가해줘' 등으로 요청할 때 사용하세요.",
+      parameters: {
+        type: "object",
+        properties: {
+          title: { type: "string", description: "할일 제목 (예: 매장 청소, 젤라또 제조)" },
+          assigneeName: { type: "string", description: "담당 직원 이름 (없으면 미지정)" },
+          dueDate: { type: "string", description: "마감일 (YYYY-MM-DD, 기본 오늘)" },
+        },
+        required: ["title"],
+      },
+    },
+  },
+  {
+    type: "function" as const,
+    function: {
       name: "log_work",
       description: "직원의 작업 완료를 기록합니다. 직원이 '~를 만들었어', '~를 했어', '~를 완료했어' 등으로 작업 보고할 때 사용하세요.",
       parameters: {
@@ -105,6 +121,9 @@ export async function handleToolCall(
   }
   if (toolName === "search_product_price") {
     return await handleSearchProductPrice(args);
+  }
+  if (toolName === "create_task") {
+    return await handleCreateTask(args, userId, storeId);
   }
   if (toolName === "log_work") {
     return await handleLogWork(args, userId, storeId);
@@ -277,5 +296,44 @@ async function handleGetTodayTasks(userId: string, storeId: string | null): Prom
     total: result.length,
     completed,
     remaining: result.length - completed,
+  });
+}
+
+// 할일 생성 핸들러
+async function handleCreateTask(args: Record<string, unknown>, userId: string, storeId: string | null): Promise<string> {
+  if (!storeId) return JSON.stringify({ error: "매장이 지정되지 않았습니다." });
+
+  const title = args.title as string;
+  const assigneeName = args.assigneeName as string | undefined;
+  const dueDate = (args.dueDate as string) || new Date().toISOString().split("T")[0];
+
+  if (!title) return JSON.stringify({ error: "할일 제목이 필요합니다." });
+
+  // 담당자 이름으로 user_id 찾기
+  let assignedTo: string | null = null;
+  if (assigneeName) {
+    const employees = await supabaseSelect<any[]>("users", `store_id=eq.${storeId}&role=eq.employee&is_active=eq.true&name=ilike.*${encodeURIComponent(assigneeName)}*&limit=1`);
+    if (employees && employees.length > 0) {
+      assignedTo = employees[0].id;
+    }
+  }
+
+  const result = await supabaseInsert("tasks", {
+    store_id: storeId,
+    created_by: userId,
+    assigned_to: assignedTo,
+    title,
+    due_date: dueDate,
+    status: "pending",
+  });
+
+  const task = Array.isArray(result) ? result[0] : result;
+
+  return JSON.stringify({
+    success: true,
+    taskId: task?.id,
+    title,
+    assignedTo: assigneeName || "미지정",
+    dueDate,
   });
 }

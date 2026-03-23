@@ -41,7 +41,7 @@ export default function AdminSidebar({ role, isOpen, onClose }: AdminSidebarProp
     { label: "메뉴관리", href: "/admin/store/menu", icon: <UtensilsCrossed size={18} />, active: false },
     { label: "판매현황", href: "/admin/store/sales", icon: <BarChart3 size={18} />, active: false },
     { label: "발주내역", href: "/admin/store/orders", icon: <ShoppingCart size={18} />, active: true },
-    { label: "할일관리", href: "/admin/store/tasks", icon: <ListTodo size={18} />, active: false },
+    { label: "할일관리", href: "/admin/store/tasks", icon: <ListTodo size={18} />, active: true },
     { label: "공지사항", href: "/admin/store/notices", icon: <Megaphone size={18} />, active: false },
   ];
 

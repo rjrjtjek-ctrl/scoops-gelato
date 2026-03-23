@@ -43,6 +43,29 @@ export const chatTools = [
       },
     },
   },
+  {
+    type: "function" as const,
+    function: {
+      name: "log_work",
+      description: "직원의 작업 완료를 기록합니다. 직원이 '~를 만들었어', '~를 했어', '~를 완료했어' 등으로 작업 보고할 때 사용하세요.",
+      parameters: {
+        type: "object",
+        properties: {
+          description: { type: "string", description: "작업 내용 (예: 피스타치오 젤라또 5통 제조)" },
+          taskId: { type: "string", description: "연관된 할일 ID (있을 경우)" },
+        },
+        required: ["description"],
+      },
+    },
+  },
+  {
+    type: "function" as const,
+    function: {
+      name: "get_today_tasks",
+      description: "오늘 해야 할 일 목록을 조회합니다. 직원이 '오늘 할 일 뭐야?', '뭐 해야 돼?' 등으로 물어볼 때 사용하세요.",
+      parameters: { type: "object", properties: {} },
+    },
+  },
 ];
 
 // 제품명 유사 매칭
@@ -82,6 +105,12 @@ export async function handleToolCall(
   }
   if (toolName === "search_product_price") {
     return await handleSearchProductPrice(args);
+  }
+  if (toolName === "log_work") {
+    return await handleLogWork(args, userId, storeId);
+  }
+  if (toolName === "get_today_tasks") {
+    return await handleGetTodayTasks(userId, storeId);
   }
   return JSON.stringify({ error: "알 수 없는 기능입니다." });
 }
@@ -191,5 +220,66 @@ async function handleSearchProductPrice(args: Record<string, unknown>): Promise<
       url: r.url,
       mallName: r.mallName,
     })),
+  });
+}
+
+// 작업 기록 핸들러
+async function handleLogWork(args: Record<string, unknown>, userId: string, storeId: string | null): Promise<string> {
+  if (!storeId) return JSON.stringify({ error: "매장이 지정되지 않았습니다." });
+  const description = args.description as string;
+  const taskId = args.taskId as string | undefined;
+
+  // task_logs에 기록
+  const result = await supabaseInsert("task_logs", {
+    task_id: taskId || null,
+    user_id: userId,
+    store_id: storeId,
+    action: "completed",
+    description,
+  });
+
+  // 연관 task가 있으면 완료 처리
+  if (taskId) {
+    const { supabaseUpdate } = await import("@/lib/supabase-client");
+    await supabaseUpdate("tasks", `id=eq.${taskId}`, { status: "completed", completed_at: new Date().toISOString() });
+  }
+
+  // 오늘 남은 할일 조회
+  const today = new Date().toISOString().split("T")[0];
+  const remaining = await supabaseSelect<any[]>("tasks", `store_id=eq.${storeId}&due_date=eq.${today}&status=neq.completed`);
+
+  const log = Array.isArray(result) ? result[0] : result;
+  const time = new Date().toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Seoul" });
+
+  return JSON.stringify({
+    success: true,
+    logId: log?.id,
+    recordedAt: time,
+    description,
+    remainingTasks: (remaining || []).map((t: any) => t.title),
+  });
+}
+
+// 오늘 할일 조회 핸들러
+async function handleGetTodayTasks(userId: string, storeId: string | null): Promise<string> {
+  if (!storeId) return JSON.stringify({ error: "매장이 지정되지 않았습니다." });
+
+  const today = new Date().toISOString().split("T")[0];
+  const tasks = await supabaseSelect<any[]>("tasks", `store_id=eq.${storeId}&due_date=eq.${today}&order=created_at.asc`);
+
+  const result = (tasks || []).map((t: any) => ({
+    id: t.id,
+    title: t.title,
+    status: t.status,
+    dueTime: t.due_time,
+  }));
+
+  const completed = result.filter(t => t.status === "completed").length;
+
+  return JSON.stringify({
+    tasks: result,
+    total: result.length,
+    completed,
+    remaining: result.length - completed,
   });
 }

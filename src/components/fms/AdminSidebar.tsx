@@ -28,21 +28,21 @@ export default function AdminSidebar({ role, isOpen, onClose }: AdminSidebarProp
     { label: "대시보드", href: "/admin/hq", icon: <LayoutDashboard size={18} />, active: true },
     { label: "매장관리", href: "/admin/hq/stores", icon: <Store size={18} />, active: true },
     { label: "발주관리", href: "/admin/hq/orders", icon: <ShoppingCart size={18} />, active: true },
-    { label: "메뉴관리", href: "/admin/hq/menu", icon: <UtensilsCrossed size={18} />, active: false },
+    { label: "메뉴관리", href: "/admin/hq/menu", icon: <UtensilsCrossed size={18} />, active: true },
     { label: "제품카탈로그", href: "/admin/hq/catalog", icon: <Package size={18} />, active: true },
-    { label: "공지사항", href: "/admin/hq/notices", icon: <Megaphone size={18} />, active: false },
-    { label: "지식베이스", href: "/admin/hq/knowledge", icon: <BookOpen size={18} />, active: false },
-    { label: "분석", href: "/admin/hq/analytics", icon: <BarChart3 size={18} />, active: false },
+    { label: "공지사항", href: "/admin/hq/notices", icon: <Megaphone size={18} />, active: true },
+    { label: "지식베이스", href: "/admin/hq/knowledge", icon: <BookOpen size={18} />, active: true },
+    { label: "분석", href: "/admin/hq/analytics", icon: <BarChart3 size={18} />, active: true },
   ];
 
   const storeMenus: MenuItem[] = [
     { label: "대시보드", href: "/admin/store", icon: <LayoutDashboard size={18} />, active: true },
     { label: "직원관리", href: "/admin/store/employees", icon: <Users size={18} />, active: true },
-    { label: "메뉴관리", href: "/admin/store/menu", icon: <UtensilsCrossed size={18} />, active: false },
-    { label: "판매현황", href: "/admin/store/sales", icon: <BarChart3 size={18} />, active: false },
+    { label: "메뉴관리", href: "/admin/store/menu", icon: <UtensilsCrossed size={18} />, active: true },
+    { label: "판매현황", href: "/admin/store/sales", icon: <BarChart3 size={18} />, active: true },
     { label: "발주내역", href: "/admin/store/orders", icon: <ShoppingCart size={18} />, active: true },
     { label: "할일관리", href: "/admin/store/tasks", icon: <ListTodo size={18} />, active: true },
-    { label: "공지사항", href: "/admin/store/notices", icon: <Megaphone size={18} />, active: false },
+    { label: "공지사항", href: "/admin/store/notices", icon: <Megaphone size={18} />, active: true },
   ];
 
   const menus = role === "hq_admin" ? hqMenus : storeMenus;

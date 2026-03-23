@@ -91,8 +91,8 @@ export async function POST(req: NextRequest) {
     const aiMessages: { role: string; content: string }[] = [
       { role: "system", content: systemPrompt },
       ...sortedHistory
-        .filter((m: any) => m.role === "user" || m.role === "assistant")
-        .map((m: any) => ({ role: m.role, content: m.content })),
+        .filter((m: any) => (m.role === "user" || m.role === "assistant") && m.content && m.content.trim())
+        .map((m: any) => ({ role: m.role as "user" | "assistant", content: m.content })),
     ];
     const lastMsg = aiMessages[aiMessages.length - 1];
     if (!lastMsg || lastMsg.content !== message.trim()) {
@@ -117,11 +117,10 @@ export async function POST(req: NextRequest) {
           user.storeId
         );
 
-        // 함수 결과를 다시 OpenAI에 전달
+        // 함수 결과를 포함하여 일반 메시지로 다시 OpenAI에 전달
         const followUp = await callOpenAI([
           ...aiMessages,
-          { role: "assistant", content: "" },
-          { role: "tool" as any, content: toolResult },
+          { role: "user", content: `[시스템] 함수 실행 결과: ${toolResult}\n\n위 결과를 바탕으로 사용자에게 친절하게 한국어로 답변해주세요.` },
         ]);
 
         aiResponse = followUp.content || "처리가 완료되었습니다.";
@@ -129,9 +128,10 @@ export async function POST(req: NextRequest) {
       } else {
         aiResponse = result.content || "응답을 생성할 수 없습니다.";
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("[FMS Chat] OpenAI 오류:", err);
-      aiResponse = "죄송합니다. 일시적으로 응답할 수 없습니다.";
+      const errMsg = err?.message || err?.toString() || "unknown";
+      aiResponse = `죄송합니다. 오류: ${errMsg.substring(0, 200)}`;
     }
 
     // 6. AI 응답 저장

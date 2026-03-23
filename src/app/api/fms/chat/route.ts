@@ -3,6 +3,7 @@ import { supabaseSelect, supabaseInsert } from "@/lib/supabase-client";
 import { requireAuth, handleAuthError } from "@/lib/fms/middleware";
 import { buildSystemPrompt } from "@/lib/fms/chat-prompts";
 import { chatTools, handleToolCall } from "@/lib/fms/chat-tools";
+import { findRelevantKnowledge, getBlockedKeywords } from "@/lib/fms/rag";
 
 // OpenAI 동적 import (빌드 시 API 키 없어도 에러 안 나게)
 async function callOpenAI(
@@ -67,7 +68,24 @@ export async function POST(req: NextRequest) {
       const stores = await supabaseSelect<any[]>("stores", `id=eq.${user.storeId}&limit=1`);
       storeName = stores?.[0]?.name || null;
     }
-    const systemPrompt = buildSystemPrompt({ name: user.name, role: user.role, storeName });
+    let systemPrompt = buildSystemPrompt({ name: user.name, role: user.role, storeName });
+
+    // 3-1. RAG: 관련 지식 검색 + 차단 키워드
+    try {
+      const [knowledge, blockedKeywords] = await Promise.all([
+        findRelevantKnowledge(message.trim()),
+        getBlockedKeywords(),
+      ]);
+      if (knowledge.length > 0) {
+        systemPrompt += "\n\n[참고 지식]\n아래는 스쿱스젤라또 본사에서 제공하는 공식 정보입니다.\n이 정보를 바탕으로 답변하되, \"장사는 기술이다\" 철학에 맞게 현장감 있게 전달하세요.\n정보가 없는 질문에는 일반 지식으로 답변하되, \"본사 공식 정보는 아닙니다\"라고 덧붙이세요.\n\n";
+        knowledge.forEach(k => {
+          systemPrompt += `---\n제목: ${k.title}\n${k.content}\n`;
+        });
+      }
+      if (blockedKeywords.length > 0) {
+        systemPrompt += `\n\n[절대 답변 금지 키워드]\n아래 키워드와 관련된 질문에는 반드시 차단 응답을 하세요:\n${blockedKeywords.join(", ")}\n차단 응답: "본사 기밀 사항이라 답변드릴 수 없습니다. 본사에 직접 문의해주세요."`;
+      }
+    } catch {}
 
     // 4. 메시지 구성
     const aiMessages: { role: string; content: string }[] = [

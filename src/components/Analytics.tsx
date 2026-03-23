@@ -129,6 +129,13 @@ export default function Analytics() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ type: "pageview", page: pathname, referrer: document.referrer || "", sessionId }),
     }).catch(() => {});
+
+    // Supabase visit_logs에도 기록 (IP 지역 분석용)
+    fetch("/api/analytics", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ path: pathname }),
+    }).catch(() => {});
   }, [pathname, recordDwell]);
 
   // 페이지 떠날 때만 세션 완료 전송

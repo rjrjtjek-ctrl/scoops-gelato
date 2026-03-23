@@ -29,7 +29,7 @@ export default function AdminSidebar({ role, isOpen, onClose }: AdminSidebarProp
     { label: "매장관리", href: "/admin/hq/stores", icon: <Store size={18} />, active: true },
     { label: "발주관리", href: "/admin/hq/orders", icon: <ShoppingCart size={18} />, active: true },
     { label: "메뉴관리", href: "/admin/hq/menu", icon: <UtensilsCrossed size={18} />, active: false },
-    { label: "제품카탈로그", href: "/admin/hq/catalog", icon: <Package size={18} />, active: false },
+    { label: "제품카탈로그", href: "/admin/hq/catalog", icon: <Package size={18} />, active: true },
     { label: "공지사항", href: "/admin/hq/notices", icon: <Megaphone size={18} />, active: false },
     { label: "지식베이스", href: "/admin/hq/knowledge", icon: <BookOpen size={18} />, active: false },
     { label: "분석", href: "/admin/hq/analytics", icon: <BarChart3 size={18} />, active: false },

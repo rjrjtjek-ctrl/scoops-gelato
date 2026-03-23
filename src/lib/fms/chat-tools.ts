@@ -1,4 +1,5 @@
 import { supabaseSelect, supabaseInsert } from "@/lib/supabase-client";
+import { searchLowestPrice } from "./price-search";
 
 // OpenAI Function Calling 도구 정의
 export const chatTools = [
@@ -24,6 +25,21 @@ export const chatTools = [
           },
         },
         required: ["items"],
+      },
+    },
+  },
+  {
+    type: "function" as const,
+    function: {
+      name: "search_product_price",
+      description: "사입 제품의 최저가를 검색합니다. 사용자가 특정 제품을 구매하거나 가격을 알고 싶어할 때 사용하세요.",
+      parameters: {
+        type: "object",
+        properties: {
+          productName: { type: "string", description: "검색할 제품명 (예: 흑임자 페이스트)" },
+          quantity: { type: "number", description: "필요한 수량 (기본 1)" },
+        },
+        required: ["productName"],
       },
     },
   },
@@ -63,6 +79,9 @@ export async function handleToolCall(
 ): Promise<string> {
   if (toolName === "create_hq_order") {
     return await handleCreateHqOrder(args, userId, storeId);
+  }
+  if (toolName === "search_product_price") {
+    return await handleSearchProductPrice(args);
   }
   return JSON.stringify({ error: "알 수 없는 기능입니다." });
 }
@@ -119,5 +138,58 @@ async function handleCreateHqOrder(
     success: true,
     orderId: order?.id,
     items: resolvedItems.map(i => `${i.productName} x${i.quantity}`),
+  });
+}
+
+// 가격 검색 핸들러
+async function handleSearchProductPrice(args: Record<string, unknown>): Promise<string> {
+  const productName = args.productName as string;
+  const quantity = (args.quantity as number) || 1;
+
+  if (!productName) {
+    return JSON.stringify({ error: "제품명이 필요합니다." });
+  }
+
+  // approved_products에서 검색
+  const products = await supabaseSelect<any[]>("approved_products", "is_active=eq.true");
+  const lower = productName.toLowerCase().replace(/\s/g, "");
+  const matched = (products || []).find((p: any) =>
+    p.name.toLowerCase().replace(/\s/g, "").includes(lower) ||
+    lower.includes(p.name.toLowerCase().replace(/\s/g, ""))
+  );
+
+  if (!matched) {
+    const names = (products || []).map((p: any) => p.name).join(", ");
+    return JSON.stringify({ error: `'${productName}'을 찾을 수 없습니다. 등록된 제품: ${names}` });
+  }
+
+  // hq_only 체크
+  if (matched.purchase_mode === "hq_only") {
+    return JSON.stringify({
+      hqOnly: true,
+      message: `${matched.name}은(는) 본사 일괄 구매 제품입니다. 본사에 발주해주세요.`,
+    });
+  }
+
+  // 최저가 검색
+  const results = await searchLowestPrice(matched.search_keyword || matched.name);
+
+  if (results.length === 0) {
+    return JSON.stringify({ noResults: true, message: `${matched.name} 검색 결과가 없습니다.` });
+  }
+
+  return JSON.stringify({
+    success: true,
+    productName: matched.name,
+    quantity,
+    results: results.map((r, i) => ({
+      rank: i + 1,
+      source: r.source,
+      name: r.productName,
+      price: r.price,
+      totalPrice: r.price * quantity,
+      url: r.url,
+      mallName: r.mallName,
+    })),
   });
 }

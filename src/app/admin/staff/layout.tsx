@@ -42,7 +42,7 @@ export default function StaffLayout({ children }: { children: React.ReactNode })
   ];
 
   return (
-    <div className="min-h-screen bg-[#f5f5f5] pb-20">
+    <div className="min-h-screen bg-[#f5f5f5] pb-24">
       {isHQViewing && (
         <div className="bg-[#2D6A4F] text-white px-4 py-2 flex items-center justify-between text-sm">
           <div className="flex items-center gap-2">

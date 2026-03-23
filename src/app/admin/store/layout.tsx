@@ -71,7 +71,7 @@ export default function StoreLayout({ children }: { children: React.ReactNode })
 
   // 점주 본인: 모바일 전용 UI (하단 탭바)
   return (
-    <div className="min-h-screen bg-[#f5f5f5] pb-20">
+    <div className="min-h-screen bg-[#f5f5f5] pb-24">
       <AdminHeader
         title={user.storeName || "매장 관리"}
         userName={user.name}

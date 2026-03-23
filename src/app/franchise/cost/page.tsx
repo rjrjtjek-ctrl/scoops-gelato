@@ -3,12 +3,12 @@ import SubNav from "@/components/SubNav";
 
 const costItems = [
   { category: "가맹비", amount: "0원 (면제)", desc: "2020년부터 전액 면제" },
-  { category: "교육비", amount: "0원 (무료)", desc: "현장 실습 40시간 이상, 본부 전액 부담" },
-  { category: "보증금", amount: "100만원", desc: "계약 종료 시 반환 (실제 운영 시 면제 가능)" },
+  { category: "교육비", amount: "100만원 (VAT별도)", desc: "현장 실습 40시간 이상" },
+  { category: "보증금", amount: "조건부 면제 (100만원)", desc: "물품대금 성실 정산 시 면제, 계약 종료 시 반환" },
   { category: "인테리어", amount: "1,800만원~", desc: "10평 기준, 평당 180~250만원 (면적에 따라 변동)" },
-  { category: "장비·설비", amount: "2,100만원~", desc: "젤라또 머신, 쇼케이스 2대, 냉동냉장고 등 (별첨 물품목록 26종 기준)" },
-  { category: "초도물량", amount: "400만원~", desc: "원재료, 포장재, 소모품 등 초기 물량" },
-  { category: "기타 비용", amount: "50만원~", desc: "간판 50~150만원 (시공 자유), POS는 월 5~7만원 별도" },
+  { category: "장비·설비", amount: "2,100만원~", desc: "젤라또 머신, 쇼케이스 2대, 냉동냉장고 등" },
+  { category: "초도물량", amount: "700만원~", desc: "원재료, 포장재, 소모품 등 초기 물량" },
+  { category: "기타 비용", amount: "50만원~", desc: "간판 (시공 자유), POS 월 5~7만원 별도" },
 ];
 
 export default function FranchiseCostPage() {
@@ -49,7 +49,7 @@ export default function FranchiseCostPage() {
             {/* 총합 */}
             <div className="grid grid-cols-3 gap-4 px-6 py-5 bg-brand-primary/5 border-t border-brand-primary/10">
               <span className="font-medium text-brand-primary text-sm">총 예상 투자비</span>
-              <span className="text-brand-primary font-semibold text-lg col-span-2">약 4,700만원~</span>
+              <span className="text-brand-primary font-semibold text-lg col-span-2">약 4,850만원~</span>
             </div>
           </div>
 

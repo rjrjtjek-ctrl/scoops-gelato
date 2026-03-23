@@ -2,11 +2,13 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import AdminHeader from "@/components/fms/AdminHeader";
+import { ArrowLeft } from "lucide-react";
 
 export default function StaffLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const [user, setUser] = useState<{ name: string } | null>(null);
+  const [user, setUser] = useState<{ name: string; role: string } | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -28,10 +30,23 @@ export default function StaffLayout({ children }: { children: React.ReactNode })
   }
   if (!user) return null;
 
+  const isHQViewing = user.role === "hq_admin";
+
   return (
     <div className="min-h-screen bg-[#f5f5f5]">
+      {isHQViewing && (
+        <div className="bg-[#2D6A4F] text-white px-4 py-2 flex items-center justify-between text-sm">
+          <div className="flex items-center gap-2">
+            <span>👤</span>
+            <span>직원 화면을 열람 중입니다</span>
+          </div>
+          <Link href="/admin/hq" className="flex items-center gap-1 text-[#D4A574] hover:text-white text-xs">
+            <ArrowLeft size={14} /> 본사로 돌아가기
+          </Link>
+        </div>
+      )}
       <AdminHeader
-        title="SCOOPS GELATO"
+        title={isHQViewing ? "직원 화면 열람" : "SCOOPS GELATO"}
         userName={user.name}
         onMenuToggle={() => {}}
       />

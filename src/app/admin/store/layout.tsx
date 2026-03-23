@@ -2,13 +2,15 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import AdminSidebar from "@/components/fms/AdminSidebar";
 import AdminHeader from "@/components/fms/AdminHeader";
+import { ArrowLeft } from "lucide-react";
 
 export default function StoreLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [user, setUser] = useState<{ name: string; storeName: string | null } | null>(null);
+  const [user, setUser] = useState<{ name: string; storeName: string | null; role: string } | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -30,12 +32,26 @@ export default function StoreLayout({ children }: { children: React.ReactNode })
   }
   if (!user) return null;
 
+  const isHQViewing = user.role === "hq_admin";
+
   return (
     <div className="min-h-screen bg-[#f5f5f5]">
       <AdminSidebar role="franchisee" isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <div className="lg:ml-[240px]">
+      <div className="lg:ml-[250px]">
+        {/* 본사가 점주 페이지를 열람 중일 때 상단 안내 */}
+        {isHQViewing && (
+          <div className="bg-[#1B4332] text-white px-4 py-2 flex items-center justify-between text-sm">
+            <div className="flex items-center gap-2">
+              <span className="text-[#D4A574]">🏪</span>
+              <span>점주 기능을 열람 중입니다</span>
+            </div>
+            <Link href="/admin/hq" className="flex items-center gap-1 text-[#D4A574] hover:text-white text-xs">
+              <ArrowLeft size={14} /> 본사로 돌아가기
+            </Link>
+          </div>
+        )}
         <AdminHeader
-          title={`${user.storeName || "매장"} 관리`}
+          title={isHQViewing ? "점주 기능 열람" : `${user.storeName || "매장"} 관리`}
           userName={user.name}
           onMenuToggle={() => setSidebarOpen(!sidebarOpen)}
         />

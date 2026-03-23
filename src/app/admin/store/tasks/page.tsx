@@ -94,7 +94,25 @@ export default function StoreTasksPage() {
       )}
 
       {loading ? <div className="text-center py-12 text-gray-400">로딩 중...</div> :
-      tasks.length === 0 ? <div className="text-center py-12 text-gray-400">할일이 없습니다.</div> : (
+      tasks.length === 0 ? (
+        <div className="bg-white rounded-xl shadow-sm p-6">
+          <div className="text-center mb-4">
+            <p className="text-4xl mb-3">📋</p>
+            <h3 className="font-bold text-gray-800 mb-1">할일을 추가해보세요</h3>
+            <p className="text-sm text-gray-500">직원에게 할 일을 배정하고 진행 상황을 관리합니다</p>
+          </div>
+          <div className="bg-gray-50 rounded-lg p-4 text-sm text-gray-600 space-y-2">
+            <p><strong>사용 방법:</strong></p>
+            <p>1. 상단 <strong>&quot;+ 추가&quot;</strong> 버튼을 눌러 할일을 만듭니다</p>
+            <p>2. 담당 직원을 지정하면 직원 앱에 자동 표시됩니다</p>
+            <p>3. 직원이 완료하면 체크 표시가 됩니다</p>
+            <p>4. <strong>작업 기록</strong>에서 시간대별 타임라인을 확인할 수 있습니다</p>
+          </div>
+          <div className="mt-4 bg-blue-50 rounded-lg p-4 text-sm text-blue-700">
+            <p><strong>💡 예시 할일:</strong> 개점 준비, 젤라또 제조 (피스타치오 5통), 쇼케이스 정리, 주방 청소, 마감 정리</p>
+          </div>
+        </div>
+      ) : (
         <div className="space-y-2">
           {tasks.map(t => (
             <div key={t.id} className="bg-white rounded-xl shadow-sm p-4 flex items-center gap-3 cursor-pointer" onClick={() => toggleStatus(t.id, t.status)}>

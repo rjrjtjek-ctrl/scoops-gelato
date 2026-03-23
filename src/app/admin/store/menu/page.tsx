@@ -8,16 +8,35 @@ export default function StoreMenuPage() {
   const [items, setItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [storeId, setStoreId] = useState("");
+  const [userRole, setUserRole] = useState("");
+  const [stores, setStores] = useState<{ id: string; name: string }[]>([]);
 
   useEffect(() => {
     fetch("/api/fms/auth/me", { cache: "no-store" })
       .then(r => r.json())
-      .then(d => { if (d.user?.storeId) setStoreId(d.user.storeId); })
-      .catch(() => {});
+      .then(d => {
+        setUserRole(d.user?.role || "");
+        if (d.user?.storeId) {
+          setStoreId(d.user.storeId);
+        } else if (d.user?.role === "hq_admin") {
+          // 본사: 매장 목록 가져오기
+          fetch("/api/fms/stores?status=active", { cache: "no-store" })
+            .then(r => r.json())
+            .then(sd => {
+              const s = (sd.stores || []).map((st: any) => ({ id: st.id, name: st.name }));
+              setStores(s);
+              if (s.length > 0) setStoreId(s[0].id);
+              else setLoading(false);
+            }).catch(() => setLoading(false));
+        } else {
+          setLoading(false);
+        }
+      }).catch(() => setLoading(false));
   }, []);
 
   useEffect(() => {
     if (!storeId) return;
+    setLoading(true);
     fetch(`/api/fms/menu?storeId=${storeId}`, { cache: "no-store" })
       .then(r => r.json())
       .then(d => setItems((d.menuItems || []).filter((i: any) => i.isActive)))
@@ -38,14 +57,37 @@ export default function StoreMenuPage() {
 
   return (
     <div>
-      <h2 className="text-lg font-bold text-gray-800 mb-4">메뉴 관리</h2>
-      <p className="text-sm text-gray-500 mb-4">토글을 끄면 QR 주문에서 품절 표시됩니다.</p>
+      <h2 className="text-lg font-bold text-gray-800 mb-2">메뉴 ON/OFF</h2>
+      <p className="text-xs text-gray-500 mb-4">토글을 끄면 QR 주문에서 품절 표시됩니다.</p>
 
-      {loading ? <div className="text-center py-12 text-gray-400">로딩 중...</div> : (
-        <div className="space-y-6">
+      {/* 본사: 매장 선택 */}
+      {userRole === "hq_admin" && stores.length > 0 && (
+        <div className="mb-4 flex items-center gap-3">
+          <span className="text-sm text-gray-500">매장:</span>
+          <select value={storeId} onChange={e => setStoreId(e.target.value)}
+            className="px-3 py-2 border rounded-lg text-sm">
+            {stores.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+          </select>
+        </div>
+      )}
+      {userRole === "hq_admin" && stores.length === 0 && !loading && (
+        <div className="mb-4 bg-yellow-50 rounded-lg p-3 text-sm text-yellow-700">
+          매장을 먼저 등록해주세요. <a href="/admin/hq/stores/new" className="underline font-medium">매장 등록 →</a>
+        </div>
+      )}
+
+      {loading ? <div className="text-center py-12 text-gray-400">로딩 중...</div> :
+      items.length === 0 ? (
+        <div className="bg-white rounded-xl shadow-sm p-6 text-center">
+          <p className="text-4xl mb-3">🍨</p>
+          <h3 className="font-bold text-gray-800 mb-1">메뉴 데이터가 없습니다</h3>
+          <p className="text-sm text-gray-500">본사에서 메뉴를 등록하면 여기에 표시됩니다</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
           {categories.map(cat => (
             <div key={cat}>
-              <h3 className="text-sm font-semibold text-gray-500 mb-2">{cat}</h3>
+              <h3 className="text-xs font-semibold text-gray-500 mb-2">{cat}</h3>
               <div className="bg-white rounded-xl shadow-sm divide-y divide-gray-100">
                 {items.filter(i => i.category === cat).map(item => {
                   const isAvailable = item.storeStatus?.isAvailable !== false;
@@ -56,8 +98,8 @@ export default function StoreMenuPage() {
                         {!isAvailable && <span className="ml-2 text-xs text-red-500">품절</span>}
                       </div>
                       <button onClick={() => toggleMenu(item.id, isAvailable)}
-                        className={`w-12 h-6 rounded-full transition-colors relative ${isAvailable ? "bg-green-500" : "bg-gray-300"}`}>
-                        <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${isAvailable ? "left-6" : "left-0.5"}`} />
+                        className={`w-11 h-6 rounded-full transition-colors relative ${isAvailable ? "bg-green-500" : "bg-gray-300"}`}>
+                        <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${isAvailable ? "left-5" : "left-0.5"}`} />
                       </button>
                     </div>
                   );

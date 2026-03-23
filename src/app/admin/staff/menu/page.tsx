@@ -8,12 +8,27 @@ export default function StaffMenuPage() {
   const [items, setItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [storeId, setStoreId] = useState("");
+  const [userRole, setUserRole] = useState("");
+  const [stores, setStores] = useState<{ id: string; name: string }[]>([]);
 
   useEffect(() => {
     fetch("/api/fms/auth/me", { cache: "no-store" })
       .then(r => r.json())
-      .then(d => { if (d.user?.storeId) setStoreId(d.user.storeId); })
-      .catch(() => {});
+      .then(d => {
+        setUserRole(d.user?.role || "");
+        if (d.user?.storeId) {
+          setStoreId(d.user.storeId);
+        } else if (d.user?.role === "hq_admin") {
+          fetch("/api/fms/stores?status=active", { cache: "no-store" })
+            .then(r => r.json())
+            .then(sd => {
+              const s = (sd.stores || []).map((st: any) => ({ id: st.id, name: st.name }));
+              setStores(s);
+              if (s.length > 0) setStoreId(s[0].id);
+              else setLoading(false);
+            }).catch(() => setLoading(false));
+        } else { setLoading(false); }
+      }).catch(() => setLoading(false));
   }, []);
 
   useEffect(() => {
@@ -40,6 +55,15 @@ export default function StaffMenuPage() {
     <div>
       <h2 className="text-lg font-bold text-gray-800 mb-2">메뉴 ON/OFF</h2>
       <p className="text-xs text-gray-500 mb-4">토글을 끄면 QR 주문에서 품절로 표시됩니다</p>
+
+      {userRole === "hq_admin" && stores.length > 0 && (
+        <div className="mb-4 flex items-center gap-3">
+          <span className="text-sm text-gray-500">매장:</span>
+          <select value={storeId} onChange={e => setStoreId(e.target.value)} className="px-3 py-2 border rounded-lg text-sm">
+            {stores.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+          </select>
+        </div>
+      )}
 
       {loading ? <div className="text-center py-12 text-gray-400">로딩 중...</div> :
       items.length === 0 ? (

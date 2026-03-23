@@ -67,6 +67,18 @@ export default function StoreDetailPage() {
           <button onClick={handleSave} disabled={saving} className="flex items-center gap-1 px-4 py-2 bg-[#1B4332] text-white text-sm rounded-lg disabled:opacity-50">
             <Save size={14} /> {saving ? "저장 중..." : "저장"}
           </button>
+          {store.status === "active" ? (
+            <button onClick={async () => {
+              if (!confirm("매장을 비활성화하시겠습니까?")) return;
+              await fetch(`/api/fms/stores/${storeId}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: "inactive" }) });
+              setStore({ ...store, status: "inactive" });
+            }} className="text-xs px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100">매장 비활성화</button>
+          ) : (
+            <button onClick={async () => {
+              await fetch(`/api/fms/stores/${storeId}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: "active" }) });
+              setStore({ ...store, status: "active" });
+            }} className="text-xs px-3 py-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100">매장 활성화</button>
+          )}
           {msg && <span className="text-sm text-green-600">{msg}</span>}
         </div>
       </div>
@@ -74,7 +86,17 @@ export default function StoreDetailPage() {
       {/* 점주 정보 */}
       {owner && (
         <div className="bg-white rounded-xl shadow-sm p-6 mb-4">
-          <h3 className="font-semibold text-gray-800 mb-3">점주 정보</h3>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-semibold text-gray-800">점주 정보</h3>
+            <button
+              onClick={async () => {
+                if (!confirm(`${owner.name} 점주 계정을 비활성화하시겠습니까? 로그인이 불가능해집니다.`)) return;
+                await fetch(`/api/fms/users/${owner.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ isActive: false }) });
+                alert("비활성화 완료");
+              }}
+              className="text-xs px-3 py-1 bg-red-50 text-red-600 rounded-lg hover:bg-red-100"
+            >계정 비활성화</button>
+          </div>
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div><span className="text-gray-500">이름:</span> <span className="text-gray-800">{owner.name}</span></div>
             <div><span className="text-gray-500">아이디:</span> <span className="font-mono text-gray-800">{owner.loginId}</span></div>

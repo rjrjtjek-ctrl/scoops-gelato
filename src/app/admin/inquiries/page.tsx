@@ -40,13 +40,11 @@ function InquiriesContent() {
   const token = typeof window !== "undefined" ? (sessionStorage.getItem("admin_token") || localStorage.getItem("fms_token") || sessionStorage.getItem("fms_token")) : null;
 
   const fetchInquiries = useCallback(async () => {
-    if (!token) {
-      router.push("/admin/login");
-      return;
-    }
     try {
+      const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
       const res = await fetch("/api/admin/inquiries", {
-        headers: { Authorization: `Bearer ${token}` },
+        headers,
+        credentials: "include",
       });
       if (res.status === 401) {
         sessionStorage.removeItem("admin_token");

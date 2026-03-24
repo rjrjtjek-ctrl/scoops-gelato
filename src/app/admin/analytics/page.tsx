@@ -68,9 +68,10 @@ export default function AdminPage() {
   const fetchData = useCallback(async (token: string) => {
     setLoading(true);
     try {
+      const authHeaders: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
       const [inqRes, anaRes, trackRes, geoRes] = await Promise.all([
-        fetch("/api/admin/inquiries", { headers: { Authorization: `Bearer ${token}` } }),
-        fetch("/api/admin/analytics", { headers: { Authorization: `Bearer ${token}` } }),
+        fetch("/api/admin/inquiries", { headers: authHeaders, credentials: "include" }),
+        fetch("/api/admin/analytics", { headers: authHeaders, credentials: "include" }),
         fetch("/api/tracking?days=1").catch(() => null),
         fetch("/api/analytics").catch(() => null),
       ]);
@@ -141,7 +142,12 @@ export default function AdminPage() {
       fetch("/api/admin/inquiries", { headers: { Authorization: `Bearer ${saved}` } })
         .then((r) => { if (r.ok) { setAuthenticated(true); fetchData(saved); } else setLoading(false); })
         .catch(() => setLoading(false));
-    } else setLoading(false);
+    } else {
+      // FMS 쿠키로 인증 시도 (본사 로그인 상태)
+      fetch("/api/admin/inquiries", { credentials: "include" })
+        .then((r) => { if (r.ok) { setAuthenticated(true); fetchData(""); } else setLoading(false); })
+        .catch(() => setLoading(false));
+    }
   }, [fetchData]);
 
   /* ── 유틸 ── */

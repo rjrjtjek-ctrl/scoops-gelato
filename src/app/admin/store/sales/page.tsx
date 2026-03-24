@@ -35,7 +35,7 @@ export default function StoreSalesPage() {
           <p className="text-sm text-gray-500">QR 주문이 들어오면 자동으로 매출이 집계됩니다</p>
         </div>
       ) : (
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div className="bg-white rounded-xl shadow-sm p-5 text-center">
             <p className="text-xs text-gray-500 mb-1">총 매출</p>
             <p className="text-xl font-bold text-[#1B4332]">{summary.totalRevenue.toLocaleString()}원</p>

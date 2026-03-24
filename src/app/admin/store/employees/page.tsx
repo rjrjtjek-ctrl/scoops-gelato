@@ -34,10 +34,12 @@ export default function StoreEmployeesPage() {
     <div>
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-bold text-gray-800">직원 관리</h2>
-        {activeEmployees.length < 5 && (
+        {activeEmployees.length < 5 ? (
           <Link href="/admin/store/employees/new" className="flex items-center gap-2 px-4 py-2 bg-[#1B4332] text-white text-sm rounded-lg">
             <Plus size={16} /> 직원 등록
           </Link>
+        ) : (
+          <span className="text-xs text-gray-400 bg-gray-100 px-3 py-1.5 rounded-lg">최대 5명</span>
         )}
       </div>
 

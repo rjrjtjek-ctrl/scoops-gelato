@@ -16,11 +16,11 @@ export default function StaffLayout({ children }: { children: React.ReactNode })
     const checkAuth = async () => {
       try {
         const res = await fetch("/api/fms/auth/me", { cache: "no-store" });
-        if (!res.ok) { router.push("/admin/login"); return; }
+        if (!res.ok) { router.push("/staff/login"); return; }
         const data = await res.json();
-        if (data.user.role !== "employee" && data.user.role !== "hq_admin") { router.push("/admin/login"); return; }
+        if (data.user.role !== "employee" && data.user.role !== "hq_admin") { router.push("/staff/login"); return; }
         setUser(data.user);
-      } catch { router.push("/admin/login"); }
+      } catch { router.push("/staff/login"); }
       finally { setLoading(false); }
     };
     checkAuth();
@@ -57,7 +57,8 @@ export default function StaffLayout({ children }: { children: React.ReactNode })
       <AdminHeader
         title={isHQViewing ? "직원 화면 열람" : "SCOOPS GELATO"}
         userName={user.name}
-        onMenuToggle={() => {}}
+        showMenu={false}
+        logoutRedirect="/staff/login"
       />
       <main className="p-4 lg:p-6 max-w-lg mx-auto">{children}</main>
 

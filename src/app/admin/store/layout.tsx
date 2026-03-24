@@ -21,11 +21,11 @@ export default function StoreLayout({ children }: { children: React.ReactNode })
     const checkAuth = async () => {
       try {
         const res = await fetch("/api/fms/auth/me", { cache: "no-store" });
-        if (!res.ok) { router.push("/admin/login"); return; }
+        if (!res.ok) { router.push("/store/login"); return; }
         const data = await res.json();
-        if (data.user.role !== "franchisee" && data.user.role !== "hq_admin") { router.push("/admin/login"); return; }
+        if (data.user.role !== "franchisee" && data.user.role !== "hq_admin") { router.push("/store/login"); return; }
         setUser(data.user);
-      } catch { router.push("/admin/login"); }
+      } catch { router.push("/store/login"); }
       finally { setLoading(false); }
     };
     checkAuth();
@@ -75,7 +75,8 @@ export default function StoreLayout({ children }: { children: React.ReactNode })
       <AdminHeader
         title={user.storeName || "매장 관리"}
         userName={user.name}
-        onMenuToggle={() => {}}
+        showMenu={false}
+        logoutRedirect="/store/login"
       />
       <main className="p-4 max-w-lg mx-auto">{children}</main>
 
@@ -95,22 +96,7 @@ export default function StoreLayout({ children }: { children: React.ReactNode })
         </div>
       </nav>
 
-      {/* 추가 메뉴 (탭바에 안 들어간 것들) */}
-      {pathname === "/admin/store" && (
-        <div className="max-w-lg mx-auto px-4 mt-2">
-          <div className="flex gap-2">
-            <Link href="/admin/store/orders" className="flex-1 bg-white rounded-lg p-3 text-center text-xs text-gray-600 shadow-sm">
-              <ShoppingCart size={16} className="mx-auto mb-1 text-gray-400" /> 발주내역
-            </Link>
-            <Link href="/admin/store/announcements" className="flex-1 bg-white rounded-lg p-3 text-center text-xs text-gray-600 shadow-sm">
-              <Megaphone size={16} className="mx-auto mb-1 text-gray-400" /> 공지사항
-            </Link>
-            <Link href="/admin/store/tasks/logs" className="flex-1 bg-white rounded-lg p-3 text-center text-xs text-gray-600 shadow-sm">
-              <ListTodo size={16} className="mx-auto mb-1 text-gray-400" /> 작업기록
-            </Link>
-          </div>
-        </div>
-      )}
+      {/* 추가 메뉴는 대시보드 페이지(page.tsx)에서 렌더링 — 중복 방지 */}
     </div>
   );
 }

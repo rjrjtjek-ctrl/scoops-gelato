@@ -24,7 +24,11 @@ async function callOpenAI(
     temperature: 0.7,
     max_tokens: 1000,
   };
-  if (tools && tools.length > 0) params.tools = tools;
+  if (tools && tools.length > 0) {
+    params.tools = tools;
+    params.tool_choice = "auto";
+    params.parallel_tool_calls = true;
+  }
 
   const response = await openai.chat.completions.create(params);
   const choice = response.choices[0];

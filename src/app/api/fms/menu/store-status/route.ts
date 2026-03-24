@@ -5,7 +5,7 @@ import { requireAuth, handleAuthError } from "@/lib/fms/middleware";
 // PATCH: 매장별 메뉴 ON/OFF 토글
 export async function PATCH(req: NextRequest) {
   try {
-    const user = requireAuth(req, ["franchisee"]);
+    const user = requireAuth(req, ["franchisee", "employee"]);
     if (!user.storeId) return NextResponse.json({ error: "매장 없음" }, { status: 400 });
 
     const { menuItemId, isAvailable } = await req.json();

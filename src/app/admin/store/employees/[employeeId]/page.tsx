@@ -87,7 +87,7 @@ export default function EmployeeDetailPage() {
           </span>
         </div>
         <div className="grid grid-cols-2 gap-2 text-sm">
-          <div><span className="text-gray-500">직급:</span> {employee.position}</div>
+          <div><span className="text-gray-500">직급:</span> {/^[\uAC00-\uD7AF\u0020-\u007E]+$/.test(employee.position || '') ? employee.position : '알바'}</div>
           <div><span className="text-gray-500">입사일:</span> {employee.hireDate}</div>
           <div><span className="text-gray-500">연락처:</span> {employee.phone || "-"}</div>
           <div><span className="text-gray-500">주민번호:</span> {employee.residentNum || "-"}</div>

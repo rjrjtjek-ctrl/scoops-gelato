@@ -56,7 +56,7 @@ export default function StoreEmployeesPage() {
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <span className="font-medium text-gray-800">{emp.name}</span>
-                    <span className="text-xs px-2 py-0.5 bg-gray-100 rounded-full text-gray-500">{emp.position}</span>
+                    <span className="text-xs px-2 py-0.5 bg-gray-100 rounded-full text-gray-500">{/^[\uAC00-\uD7AF\u0020-\u007E]+$/.test(emp.position || '') ? emp.position : '알바'}</span>
                   </div>
                   <p className="text-xs text-gray-400 mt-0.5">
                     입사일: {emp.hireDate} {emp.phone && `· ${emp.phone}`}

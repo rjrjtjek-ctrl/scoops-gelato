@@ -96,11 +96,19 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="theme-color" content="#1B4332" />
+        <meta name="apple-mobile-web-app-title" content="스쿱스" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="theme-color" content="#1B4332" media="(prefers-color-scheme: light)" />
+        <meta name="theme-color" content="#1B4332" media="(prefers-color-scheme: dark)" />
         <meta name="format-detection" content="telephone=yes" />
+        <meta name="msapplication-TileColor" content="#1B4332" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/images/icon-192.png" />
+        <link rel="apple-touch-icon" sizes="152x152" href="/images/icon-192.png" />
+        <link rel="apple-touch-icon" sizes="120x120" href="/images/icon-192.png" />
+        <link rel="manifest" href="/manifest.json" />
         <JsonLd />
       </head>
       <body

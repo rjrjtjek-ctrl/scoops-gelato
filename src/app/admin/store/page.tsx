@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Users, ListTodo, UtensilsCrossed, BarChart3, ShoppingCart, Megaphone, ClipboardList, ArrowRight } from "lucide-react";
+import NotificationSettings from "@/components/fms/NotificationSettings";
 
 export default function StoreDashboard() {
   const [storeName, setStoreName] = useState("");
@@ -41,9 +42,12 @@ export default function StoreDashboard() {
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-xl font-bold text-gray-800">{storeName}</h1>
-        <p className="text-sm text-gray-500 mt-0.5">안녕하세요, {userName}님</p>
+      <div className="mb-6 flex items-start justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-gray-800">{storeName}</h1>
+          <p className="text-sm text-gray-500 mt-0.5">안녕하세요, {userName}님</p>
+        </div>
+        <NotificationSettings />
       </div>
 
       {/* 메인 기능 카드 */}

@@ -60,22 +60,24 @@ export default function StaffLayout({ children }: { children: React.ReactNode })
         showMenu={false}
         logoutRedirect="/staff/login"
       />
-      <main className="p-4 pb-24 lg:p-6 lg:pb-24 max-w-lg mx-auto">{children}</main>
+      <main className="p-4 pb-32 lg:p-6 lg:pb-32 max-w-lg mx-auto">{children}</main>
 
-      {/* 하단 탭바 */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
+      {/* 하단 탭바 — 아이폰 홈바 위에 배치 */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40">
         <div className="max-w-lg mx-auto flex">
           {tabs.map(tab => {
             const isActive = pathname === tab.href;
             return (
               <Link key={tab.href} href={tab.href}
-                className={`flex-1 flex flex-col items-center py-2 text-[10px] ${isActive ? "text-[#1B4332] font-bold" : "text-gray-400"}`}>
+                className={`flex-1 flex flex-col items-center pt-2 pb-1 text-[10px] ${isActive ? "text-[#1B4332] font-bold" : "text-gray-400"}`}>
                 {tab.icon}
                 <span className="mt-0.5">{tab.label}</span>
               </Link>
             );
           })}
         </div>
+        {/* 아이폰 홈바 영역 */}
+        <div className="h-[env(safe-area-inset-bottom,0px)]" />
       </nav>
     </div>
   );

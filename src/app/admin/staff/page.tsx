@@ -1,14 +1,37 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
-import { ClipboardList, Megaphone, UtensilsCrossed, ShoppingCart, ArrowRight } from "lucide-react";
+import { ClipboardList, Megaphone, UtensilsCrossed, ShoppingCart, ArrowRight, Clock, LogIn, LogOut } from "lucide-react";
 
 export default function StaffDashboard() {
   const [userName, setUserName] = useState("");
   const [storeName, setStoreName] = useState("");
   const [taskCount, setTaskCount] = useState(0);
   const [unreadAnnouncements, setUnreadAnnouncements] = useState(0);
+  // 출퇴근
+  const [isClockedIn, setIsClockedIn] = useState(false);
+  const [clockInTime, setClockInTime] = useState<string | null>(null);
+  const [workingMinutes, setWorkingMinutes] = useState(0);
+  const [clockLoading, setClockLoading] = useState(false);
+  // 시간대 업무
+  const [currentTasks, setCurrentTasks] = useState<string[]>([]);
+
+  const fetchAttendance = useCallback(async () => {
+    try {
+      const res = await fetch("/api/fms/attendance", { cache: "no-store" });
+      if (!res.ok) return;
+      const data = await res.json();
+      const active = (data.records || []).find((r: any) => !r.clock_out);
+      if (active) {
+        setIsClockedIn(true);
+        setClockInTime(active.clock_in);
+      } else {
+        setIsClockedIn(false);
+        setClockInTime(null);
+      }
+    } catch {}
+  }, []);
 
   useEffect(() => {
     // 사용자 정보
@@ -35,7 +58,75 @@ export default function StaffDashboard() {
         const unread = (d.announcements || []).filter((a: any) => !a.isRead).length;
         setUnreadAnnouncements(unread);
       }).catch(() => {});
-  }, []);
+
+    // 출퇴근 상태
+    fetchAttendance();
+
+    // 시간대 업무 규칙
+    fetch("/api/fms/time-rules", { cache: "no-store" })
+      .then(r => r.json())
+      .then(d => {
+        const now = new Date();
+        const kstHour = (now.getUTCHours() + 9) % 24;
+        const rules = (d.rules || []).filter((r: any) =>
+          r.start_hour <= kstHour && kstHour < r.end_hour
+        );
+        const tasks = rules.flatMap((r: any) => r.tasks || []);
+        setCurrentTasks(tasks);
+      }).catch(() => {});
+  }, [fetchAttendance]);
+
+  // 근무 시간 실시간 업데이트
+  useEffect(() => {
+    if (!isClockedIn || !clockInTime) return;
+    const update = () => {
+      const diff = Math.round((Date.now() - new Date(clockInTime).getTime()) / 60000);
+      setWorkingMinutes(diff);
+    };
+    update();
+    const timer = setInterval(update, 60000);
+    return () => clearInterval(timer);
+  }, [isClockedIn, clockInTime]);
+
+  const handleClock = async (action: "clock_in" | "clock_out") => {
+    setClockLoading(true);
+    try {
+      const res = await fetch("/api/fms/attendance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        if (action === "clock_in") {
+          setIsClockedIn(true);
+          setClockInTime(data.clockIn);
+          setWorkingMinutes(0);
+        } else {
+          setIsClockedIn(false);
+          setClockInTime(null);
+          setWorkingMinutes(0);
+        }
+      } else {
+        alert(data.error || "오류 발생");
+      }
+    } catch {
+      alert("네트워크 오류");
+    } finally {
+      setClockLoading(false);
+    }
+  };
+
+  const fmtMinutes = (m: number) => {
+    const h = Math.floor(m / 60);
+    const min = m % 60;
+    return h > 0 ? `${h}시간 ${min}분` : `${min}분`;
+  };
+
+  const fmtTime = (iso: string) => {
+    const d = new Date(iso);
+    return d.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", hour12: true });
+  };
 
   const menuCards = [
     {
@@ -74,13 +165,72 @@ export default function StaffDashboard() {
 
   return (
     <div>
-      <div className="mb-6">
+      <div className="mb-4">
         <h1 className="text-xl font-bold text-gray-800">
-          안녕하세요, {userName}님 👋
+          안녕하세요, {userName || "..."}님 👋
         </h1>
         {storeName && <p className="text-sm text-gray-500 mt-1">{storeName}</p>}
       </div>
 
+      {/* 출퇴근 카드 */}
+      <div className="bg-white rounded-xl shadow-sm p-4 mb-4">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <Clock size={18} className="text-[#1B4332]" />
+            <span className="text-sm font-bold text-gray-800">출퇴근</span>
+          </div>
+          {isClockedIn && (
+            <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
+              근무 중 · {fmtMinutes(workingMinutes)}
+            </span>
+          )}
+        </div>
+
+        {isClockedIn && clockInTime && (
+          <p className="text-xs text-gray-400 mb-3">출근 시간: {fmtTime(clockInTime)}</p>
+        )}
+
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            onClick={() => handleClock("clock_in")}
+            disabled={isClockedIn || clockLoading}
+            className={`flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${
+              isClockedIn
+                ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                : "bg-[#1B4332] text-white active:scale-95"
+            }`}
+          >
+            <LogIn size={16} />
+            출근
+          </button>
+          <button
+            onClick={() => handleClock("clock_out")}
+            disabled={!isClockedIn || clockLoading}
+            className={`flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${
+              !isClockedIn
+                ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                : "bg-red-500 text-white active:scale-95"
+            }`}
+          >
+            <LogOut size={16} />
+            퇴근
+          </button>
+        </div>
+      </div>
+
+      {/* 지금 해야 할 일 (시간대별 업무) */}
+      {currentTasks.length > 0 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4">
+          <p className="text-sm font-bold text-amber-800 mb-2">📋 지금 해야 할 일</p>
+          <div className="space-y-1">
+            {currentTasks.map((task, i) => (
+              <p key={i} className="text-xs text-amber-700">• {task}</p>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 메뉴 카드 */}
       <div className="space-y-3">
         {menuCards.map(card => (
           <Link key={card.href} href={card.href}

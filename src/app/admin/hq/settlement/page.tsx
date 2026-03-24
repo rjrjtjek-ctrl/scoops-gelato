@@ -15,7 +15,7 @@ interface Payment {
   id: string; customer_id: string; payment_date: string; amount: number; memo: string;
 }
 interface Product {
-  id: string; name: string; spec: string; unit: string; price: number;
+  id: string; name: string; spec: string; unit: string; price: number; category: string;
 }
 interface CartItem {
   productId: string; name: string; quantity: number; price: number; subtotal: number;
@@ -114,10 +114,9 @@ export default function SettlementPage() {
     if (res.ok) { setShowAddPay(false); setNewPay({ customerId: "", date: new Date().toISOString().split("T")[0], amount: "", memo: "" }); fetchData(); }
   };
 
-  const totalSupply = customers.reduce((s, c) => s + c.totalSupply, 0);
-  const totalPaid = customers.reduce((s, c) => s + c.totalPaid, 0);
-  const totalBalance = customers.reduce((s, c) => s + c.balance, 0);
-  const overdue = customers.filter(c => c.balance > 500000);
+  const totalBalance = customers.reduce((s, c) => s + (c.balance || 0), 0);
+  const activeCustomers = customers.filter(c => (c.balance || 0) > 0);
+  const overdue = customers.filter(c => (c.balance || 0) > 500000);
 
   const getCustomerName = (id: string) => customers.find(c => c.id === id)?.store_name || id;
 
@@ -137,10 +136,10 @@ export default function SettlementPage() {
       {/* 요약 카드 */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
         {[
-          { label: "총 공급액", value: fmt(totalSupply), icon: <TrendingUp size={18} />, color: "bg-green-50 text-green-600" },
-          { label: "총 입금액", value: fmt(totalPaid), icon: <DollarSign size={18} />, color: "bg-blue-50 text-blue-600" },
-          { label: "미수금 합계", value: fmt(totalBalance), icon: <AlertTriangle size={18} />, color: totalBalance > 0 ? "bg-red-50 text-red-600" : "bg-gray-50 text-gray-600" },
-          { label: "주의 거래처", value: overdue.length + "곳", icon: <AlertTriangle size={18} />, color: overdue.length > 0 ? "bg-amber-50 text-amber-600" : "bg-gray-50 text-gray-600" },
+          { label: "미수금 합계", value: fmt(totalBalance), icon: <DollarSign size={18} />, color: totalBalance > 0 ? "bg-red-50 text-red-600" : "bg-green-50 text-green-600" },
+          { label: "미수 거래처", value: activeCustomers.length + "곳", icon: <TrendingUp size={18} />, color: activeCustomers.length > 0 ? "bg-amber-50 text-amber-600" : "bg-green-50 text-green-600" },
+          { label: "거래처 수", value: customers.length + "곳", icon: <Search size={18} />, color: "bg-blue-50 text-blue-600" },
+          { label: "제품 수", value: products.length + "종", icon: <ArrowUpDown size={18} />, color: "bg-purple-50 text-purple-600" },
         ].map((c, i) => (
           <div key={i} className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
             <div className={`w-8 h-8 rounded-lg flex items-center justify-center mb-2 ${c.color}`}>{c.icon}</div>
@@ -179,9 +178,12 @@ export default function SettlementPage() {
                   {c.balance > 0 ? "미수 " + fmt(c.balance) : "정산 완료"}
                 </span>
               </div>
-              <div className="flex gap-4 text-xs text-gray-500">
-                <span>공급: {fmt(c.totalSupply)}</span>
-                <span>입금: {fmt(c.totalPaid)}</span>
+              <div className="flex items-center gap-2 mt-1">
+                <button onClick={() => { setSelectedCustomer(c.id); setTab("transactions"); }}
+                  className="text-xs text-blue-500 hover:underline">출고 내역</button>
+                <span className="text-xs text-gray-300">|</span>
+                <button onClick={() => { setSelectedCustomer(c.id); setTab("payments"); }}
+                  className="text-xs text-blue-500 hover:underline">입금 내역</button>
               </div>
             </div>
           ))}
@@ -197,12 +199,20 @@ export default function SettlementPage() {
           </select>
           <div className="space-y-2">
             {transactions.map(t => (
-              <div key={t.id} className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-800">{t.title}</p>
-                  <p className="text-xs text-gray-400">{t.transaction_date} · {getCustomerName(t.customer_id)}</p>
+              <div key={t.id} className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-800">{t.title}</p>
+                    <p className="text-xs text-gray-400">{t.transaction_date} · {getCustomerName(t.customer_id)}</p>
+                  </div>
+                  <p className="text-sm font-bold text-gray-800">{fmt(t.total_amount)}</p>
                 </div>
-                <p className="text-sm font-bold text-gray-800">{fmt(t.total_amount)}</p>
+                {(t.supply_amount > 0 || t.tax_amount > 0) && (
+                  <div className="flex gap-3 mt-1 text-[10px] text-gray-400">
+                    <span>공급가: {fmt(t.supply_amount)}</span>
+                    <span>부가세: {fmt(t.tax_amount)}</span>
+                  </div>
+                )}
               </div>
             ))}
             {transactions.length === 0 && <p className="text-center text-sm text-gray-400 py-8">출고 내역이 없습니다</p>}
@@ -232,23 +242,66 @@ export default function SettlementPage() {
         </div>
       )}
 
-      {/* 제품 단가 */}
+      {/* 제품 단가 관리 */}
       {tab === "products" && (
-        <div className="space-y-2">
-          <div className="bg-gray-50 rounded-lg p-3 mb-2">
+        <div>
+          <div className="flex gap-2 mb-3">
             <input placeholder="🔍 제품 검색..." value={productSearch} onChange={e => setProductSearch(e.target.value)}
-              className="w-full px-3 py-2 bg-white border rounded-lg text-sm" />
+              className="flex-1 px-3 py-2 border rounded-lg text-sm" />
+            <button onClick={() => {
+              const name = prompt("제품명:");
+              if (!name) return;
+              const spec = prompt("규격 (예: 박스, 바트, 팩):") || "";
+              const price = parseInt(prompt("단가 (원):") || "0");
+              const category = prompt("카테고리 (베이스/원재료/소모품/장비/기타):") || "기타";
+              fetch("/api/fms/settlement", { method: "POST", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ type: "product", name, spec, price, category }),
+              }).then(() => fetch("/api/fms/settlement?view=products", { cache: "no-store" })
+                .then(r => r.json()).then(d => setProducts(d.products || [])));
+            }} className="flex items-center gap-1 px-3 py-2 bg-[#1B4332] text-white text-xs rounded-lg whitespace-nowrap">
+              <Plus size={14} /> 추가
+            </button>
           </div>
-          {products.filter(p => !productSearch || p.name.includes(productSearch)).map(p => (
-            <div key={p.id} className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-800">{p.name}</p>
-                <p className="text-xs text-gray-400">{p.spec} {p.unit && `· ${p.unit}`}</p>
-              </div>
-              <p className="text-sm font-bold text-[#1B4332]">{fmt(p.price)}</p>
-            </div>
-          ))}
-          {products.length === 0 && <p className="text-center text-sm text-gray-400 py-8">등록된 제품이 없습니다</p>}
+
+          {/* 카테고리별 그룹 */}
+          {(() => {
+            const filtered = products.filter(p => !productSearch || p.name.includes(productSearch));
+            const cats = [...new Set(filtered.map(p => p.category || "기타"))].sort();
+            if (filtered.length === 0) return <p className="text-center text-sm text-gray-400 py-8">등록된 제품이 없습니다</p>;
+            return cats.map(cat => {
+              const items = filtered.filter(p => (p.category || "기타") === cat);
+              return (
+                <div key={cat} className="mb-4">
+                  <p className="text-xs font-bold text-gray-500 uppercase mb-2 px-1">{cat} ({items.length})</p>
+                  <div className="space-y-1">
+                    {items.map(p => (
+                      <div key={p.id} className="bg-white rounded-xl p-3 shadow-sm border border-gray-100 flex items-center justify-between">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-800 truncate">{p.name}</p>
+                          <p className="text-xs text-gray-400">{p.spec} {p.unit && `· ${p.unit}`}</p>
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <p className="text-sm font-bold text-[#1B4332]">{fmt(p.price)}</p>
+                          <button onClick={() => {
+                            const newPrice = prompt(p.name + " 단가 수정 (현재: " + p.price.toLocaleString() + "원):", String(p.price));
+                            if (!newPrice) return;
+                            fetch("/api/fms/settlement", { method: "PATCH", headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ type: "product", id: p.id, price: parseInt(newPrice) }),
+                            }).then(() => setProducts(prev => prev.map(pp => pp.id === p.id ? { ...pp, price: parseInt(newPrice) } : pp)));
+                          }} className="text-xs text-blue-500">수정</button>
+                          <button onClick={() => {
+                            if (!confirm(p.name + " 삭제?")) return;
+                            fetch("/api/fms/settlement?type=product&id=" + p.id, { method: "DELETE" })
+                              .then(() => setProducts(prev => prev.filter(pp => pp.id !== p.id)));
+                          }} className="text-xs text-red-400">삭제</button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            });
+          })()}
         </div>
       )}
 

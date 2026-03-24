@@ -10,18 +10,14 @@ export async function GET(req: NextRequest) {
     const view = searchParams.get("view") || "overview"; // overview | customers | transactions | payments | products
 
     if (view === "overview") {
-      // 거래처별 요약
+      // 거래처별 요약 — outstanding_balance 컬럼 사용 (엑셀 불출대장 기준 실제 미수금)
       const customers = await supabaseSelect<any[]>("settlement_customers", "order=store_name.asc");
       const recentTrans = await supabaseSelect<any[]>("settlement_transactions", "order=transaction_date.desc&limit=20");
       const recentPays = await supabaseSelect<any[]>("settlement_payments", "order=payment_date.desc&limit=20");
 
-      // 거래처별 총 거래액 + 총 입금액 계산
-      const summary = await Promise.all((customers || []).map(async (c: any) => {
-        const trans = await supabaseSelect<any[]>("settlement_transactions", `customer_id=eq.${c.id}&select=total_amount`);
-        const pays = await supabaseSelect<any[]>("settlement_payments", `customer_id=eq.${c.id}&select=amount`);
-        const totalSupply = (trans || []).reduce((s: number, t: any) => s + (t.total_amount || 0), 0);
-        const totalPaid = (pays || []).reduce((s: number, p: any) => s + (p.amount || 0), 0);
-        return { ...c, totalSupply, totalPaid, balance: totalSupply - totalPaid };
+      const summary = (customers || []).map((c: any) => ({
+        ...c,
+        balance: c.outstanding_balance || 0,
       }));
 
       return NextResponse.json({ customers: summary, recentTransactions: recentTrans || [], recentPayments: recentPays || [] });
@@ -94,6 +90,61 @@ export async function POST(req: NextRequest) {
         store_name: storeName, owner_name: ownerName || "", phone: phone || "", address: address || "",
       });
       return NextResponse.json({ success: true, customer: result });
+    }
+
+    if (type === "product") {
+      const { name, spec, unit, price, category } = body;
+      if (!name) return NextResponse.json({ error: "제품명이 필요합니다." }, { status: 400 });
+      const result = await supabaseInsert("settlement_products", {
+        name, spec: spec || "", unit: unit || "", price: price || 0, category: category || "general",
+      });
+      return NextResponse.json({ success: true, product: result });
+    }
+
+    return NextResponse.json({ error: "Invalid type" }, { status: 400 });
+  } catch (err) { return handleAuthError(err); }
+}
+
+// PATCH: 제품 수정 / 거래처 미수금 수정
+export async function PATCH(req: NextRequest) {
+  try {
+    const user = requireAuth(req, ["hq_admin"]);
+    const body = await req.json();
+    const { type, id } = body;
+
+    if (type === "product" && id) {
+      const { name, spec, unit, price, category } = body;
+      const updates: Record<string, any> = {};
+      if (name !== undefined) updates.name = name;
+      if (spec !== undefined) updates.spec = spec;
+      if (unit !== undefined) updates.unit = unit;
+      if (price !== undefined) updates.price = price;
+      if (category !== undefined) updates.category = category;
+      await supabaseUpdate("settlement_products", `id=eq.${id}`, updates);
+      return NextResponse.json({ success: true });
+    }
+
+    if (type === "customer_balance" && id) {
+      const { balance } = body;
+      await supabaseUpdate("settlement_customers", `id=eq.${id}`, { outstanding_balance: balance });
+      return NextResponse.json({ success: true });
+    }
+
+    return NextResponse.json({ error: "Invalid type" }, { status: 400 });
+  } catch (err) { return handleAuthError(err); }
+}
+
+// DELETE: 제품 삭제
+export async function DELETE(req: NextRequest) {
+  try {
+    const user = requireAuth(req, ["hq_admin"]);
+    const { searchParams } = req.nextUrl;
+    const id = searchParams.get("id");
+    const type = searchParams.get("type") || "product";
+
+    if (type === "product" && id) {
+      await supabaseUpdate("settlement_products", `id=eq.${id}`, { is_active: false });
+      return NextResponse.json({ success: true });
     }
 
     return NextResponse.json({ error: "Invalid type" }, { status: 400 });

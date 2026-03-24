@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Check, Clock, Circle } from "lucide-react";
+import { Plus, Check, Clock, Circle, Trash2, Edit2, X } from "lucide-react";
 
 interface Task {
   id: string; title: string; description: string; status: string;
@@ -82,6 +82,29 @@ export default function StoreTasksPage() {
     fetchTasks();
   };
 
+  const [editingTask, setEditingTask] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+
+  const deleteTask = async (taskId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!confirm("이 할일을 삭제할까요?")) return;
+    await fetch(`/api/fms/tasks/${taskId}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: "deleted" }) });
+    fetchTasks();
+  };
+
+  const startEdit = (task: Task, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingTask(task.id);
+    setEditTitle(task.title);
+  };
+
+  const saveEdit = async (taskId: string) => {
+    if (!editTitle.trim()) return;
+    await fetch(`/api/fms/tasks/${taskId}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title: editTitle }) });
+    setEditingTask(null);
+    fetchTasks();
+  };
+
   const statusIcon = (s: string) => {
     if (s === "completed") return <Check size={16} className="text-green-600" />;
     if (s === "in_progress") return <Clock size={16} className="text-blue-500" />;
@@ -156,15 +179,36 @@ export default function StoreTasksPage() {
         </div>
       ) : (
         <div className="space-y-2">
-          {tasks.map(t => (
-            <div key={t.id} className="bg-white rounded-xl shadow-sm p-4 flex items-center gap-3 cursor-pointer" onClick={() => toggleStatus(t.id, t.status)}>
-              {statusIcon(t.status)}
-              <div className="flex-1">
-                <p className={`text-sm font-medium ${t.status === "completed" ? "text-gray-400 line-through" : "text-gray-800"}`}>{t.title}</p>
-                <p className="text-xs text-gray-400">
-                  {t.assigneeName || "미지정"} {t.dueTime && `· ${t.dueTime}`}
-                </p>
-              </div>
+          {tasks.filter(t => t.status !== "deleted").map(t => (
+            <div key={t.id} className="bg-white rounded-xl shadow-sm p-4">
+              {editingTask === t.id ? (
+                <div className="flex items-center gap-2">
+                  <input value={editTitle} onChange={e => setEditTitle(e.target.value)} className="flex-1 px-3 py-2 border rounded-lg text-sm" autoFocus
+                    onKeyDown={e => { if (e.key === "Enter") saveEdit(t.id); if (e.key === "Escape") setEditingTask(null); }} />
+                  <button onClick={() => saveEdit(t.id)} className="px-3 py-2 bg-[#1B4332] text-white text-xs rounded-lg">저장</button>
+                  <button onClick={() => setEditingTask(null)} className="p-2 text-gray-400"><X size={14} /></button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <button onClick={() => toggleStatus(t.id, t.status)} className="flex-shrink-0">
+                    {statusIcon(t.status)}
+                  </button>
+                  <div className="flex-1" onClick={() => toggleStatus(t.id, t.status)}>
+                    <p className={`text-sm font-medium ${t.status === "completed" ? "text-gray-400 line-through" : "text-gray-800"}`}>{t.title}</p>
+                    <p className="text-xs text-gray-400">
+                      {t.assigneeName || "미지정"} {t.dueTime && `· ${t.dueTime}`}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <button onClick={(e) => startEdit(t, e)} className="p-1.5 text-gray-300 hover:text-blue-500">
+                      <Edit2 size={14} />
+                    </button>
+                    <button onClick={(e) => deleteTask(t.id, e)} className="p-1.5 text-gray-300 hover:text-red-500">
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>

@@ -45,12 +45,17 @@ export default function StoreMenuPage() {
   }, [storeId]);
 
   const toggleMenu = async (menuItemId: string, current: boolean) => {
-    await fetch("/api/fms/menu/store-status", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ menuItemId, isAvailable: !current }),
-    });
     setItems(prev => prev.map(i => i.id === menuItemId ? { ...i, storeStatus: { isAvailable: !current } } : i));
+    try {
+      const res = await fetch("/api/fms/menu/store-status", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ menuItemId, isAvailable: !current }),
+      });
+      if (!res.ok) setItems(prev => prev.map(i => i.id === menuItemId ? { ...i, storeStatus: { isAvailable: current } } : i));
+    } catch {
+      setItems(prev => prev.map(i => i.id === menuItemId ? { ...i, storeStatus: { isAvailable: current } } : i));
+    }
   };
 
   const categories = [...new Set(items.map(i => i.category))];

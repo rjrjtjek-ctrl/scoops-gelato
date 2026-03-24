@@ -11,17 +11,22 @@ export default function NewKnowledgePage() {
   const router = useRouter();
   const [form, setForm] = useState({ category: "젤라또제조", title: "", content: "", tags: "" });
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.title || !form.content) return;
+    if (!form.title || !form.content) { setError("제목과 내용을 입력해주세요."); return; }
     setSaving(true);
-    const tags = form.tags.split(",").map(t => t.trim()).filter(Boolean);
-    await fetch("/api/fms/knowledge", {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...form, tags }),
-    });
-    router.push("/admin/hq/knowledge");
+    setError("");
+    try {
+      const tags = form.tags.split(",").map(t => t.trim()).filter(Boolean);
+      const res = await fetch("/api/fms/knowledge", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...form, tags }),
+      });
+      if (!res.ok) { setError("저장에 실패했습니다. 다시 시도해주세요."); setSaving(false); return; }
+      router.push("/admin/hq/knowledge");
+    } catch { setError("네트워크 오류가 발생했습니다."); setSaving(false); }
   };
 
   return (
@@ -30,6 +35,7 @@ export default function NewKnowledgePage() {
         <ArrowLeft size={16} /> 지식 목록
       </Link>
       <h2 className="text-lg font-bold text-gray-800 mb-6">지식 추가</h2>
+      {error && <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4 text-sm text-red-600">{error}</div>}
       <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm p-6 space-y-4">
         <div>
           <label className="block text-xs text-gray-500 mb-1">카테고리</label>

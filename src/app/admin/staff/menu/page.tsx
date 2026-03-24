@@ -41,12 +41,22 @@ export default function StaffMenuPage() {
   }, [storeId]);
 
   const toggleMenu = async (menuItemId: string, current: boolean) => {
-    await fetch("/api/fms/menu/store-status", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ menuItemId, isAvailable: !current }),
-    });
+    // 즉시 UI 반영 (Optimistic)
     setItems(prev => prev.map(i => i.id === menuItemId ? { ...i, storeStatus: { isAvailable: !current } } : i));
+    try {
+      const res = await fetch("/api/fms/menu/store-status", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ menuItemId, isAvailable: !current }),
+      });
+      if (!res.ok) {
+        // 실패 시 원복
+        setItems(prev => prev.map(i => i.id === menuItemId ? { ...i, storeStatus: { isAvailable: current } } : i));
+      }
+    } catch {
+      // 네트워크 오류 시 원복
+      setItems(prev => prev.map(i => i.id === menuItemId ? { ...i, storeStatus: { isAvailable: current } } : i));
+    }
   };
 
   const categories = [...new Set(items.map(i => i.category))];

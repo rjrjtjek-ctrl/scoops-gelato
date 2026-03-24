@@ -50,11 +50,14 @@ export default function NewEmployeePage() {
           </div>
           <h2 className="text-lg font-bold text-gray-800 mb-2">{success.name} 등록 완료</h2>
           <div className="bg-gray-50 rounded-lg p-4 mt-4 text-left">
-            <p className="text-sm text-gray-600 mb-1">직원 로그인 정보:</p>
+            <p className="text-sm text-gray-600 mb-2">직원 로그인 정보:</p>
             <p className="text-sm font-mono"><strong>ID:</strong> {success.loginId}</p>
             <p className="text-sm font-mono"><strong>PW:</strong> {success.password}</p>
+            <p className="text-xs text-red-500 mt-2">⚠️ 이 정보는 다시 확인할 수 없습니다. 반드시 메모해주세요.</p>
           </div>
-          <button onClick={() => router.push("/admin/store/employees")} className="mt-6 px-6 py-2 bg-[#1B4332] text-white rounded-lg text-sm">
+          <button onClick={() => { navigator.clipboard.writeText(`아이디: ${success.loginId}\n비밀번호: ${success.password}`).catch(() => {}); alert("복사되었습니다!"); }}
+            className="mt-4 w-full py-2 bg-gray-100 text-gray-700 rounded-lg text-sm">📋 로그인 정보 복사</button>
+          <button onClick={() => router.push("/admin/store/employees")} className="mt-2 w-full py-2 bg-[#1B4332] text-white rounded-lg text-sm">
             직원 목록으로
           </button>
         </div>

@@ -278,12 +278,12 @@ async function handleSearchProductPrice(args: Record<string, unknown>): Promise<
     quantity,
     results: results.map((r, i) => ({
       rank: i + 1,
-      source: r.source,
-      name: r.productName,
+      source: r.mall || "네이버",
+      name: r.title,
       price: r.price,
       totalPrice: r.price * quantity,
-      url: r.url,
-      mallName: r.mallName,
+      url: r.link,
+      mallName: r.mall,
     })),
   });
 }

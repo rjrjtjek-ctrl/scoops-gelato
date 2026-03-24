@@ -101,10 +101,10 @@ export default function HQCatalogPage() {
               {searchResults.map((r: any, i: number) => (
                 <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div>
-                    <p className="text-sm font-medium text-gray-800">{r.productName.substring(0, 40)}</p>
-                    <p className="text-xs text-gray-400">{r.source} · {r.mallName}</p>
+                    <p className="text-sm font-medium text-gray-800">{(r.title || r.productName || "").substring(0, 40)}</p>
+                    <p className="text-xs text-gray-400">{r.mall || r.source || "네이버"}</p>
                   </div>
-                  <a href={r.url} target="_blank" rel="noopener noreferrer" className="text-sm font-bold text-[#1B4332]">
+                  <a href={r.link || r.url} target="_blank" rel="noopener noreferrer" className="text-sm font-bold text-[#1B4332]">
                     {r.price.toLocaleString()}원
                   </a>
                 </div>

@@ -4,6 +4,7 @@ export interface NaverProduct {
   lprice: string;
   mallName: string;
   maker: string;
+  image: string;
 }
 
 export async function searchNaverShopping(keyword: string): Promise<NaverProduct[]> {
@@ -36,6 +37,7 @@ export async function searchNaverShopping(keyword: string): Promise<NaverProduct
         lprice: item.lprice,
         mallName: item.mallName || "알 수 없음",
         maker: item.maker || "",
+        image: item.image || "",
       }));
   } catch {
     return [];

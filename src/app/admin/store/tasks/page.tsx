@@ -1,12 +1,20 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Check, Clock, Circle, Trash2, Edit2, X } from "lucide-react";
+import { Plus, Check, Clock, Circle, Trash2, Edit2, X, Search, ExternalLink, ShoppingCart, Loader2 } from "lucide-react";
 
 interface Task {
   id: string; title: string; description: string; status: string;
   dueTime: string; assigneeName: string; assignedTo: string;
   isRecurring: boolean; recurPattern: string; completedAt: string;
+}
+
+interface PriceResult {
+  title: string;
+  price: number;
+  link: string;
+  mall: string;
+  image: string;
 }
 
 export default function StoreTasksPage() {
@@ -20,10 +28,14 @@ export default function StoreTasksPage() {
   const [stores, setStores] = useState<{ id: string; name: string }[]>([]);
   const [selectedStoreId, setSelectedStoreId] = useState("");
 
+  // 구매 검색 관련
+  const [searchingTaskId, setSearchingTaskId] = useState<string | null>(null);
+  const [searchResults, setSearchResults] = useState<Record<string, PriceResult[]>>({});
+  const [searchLoading, setSearchLoading] = useState(false);
+
   const today = new Date().toISOString().split("T")[0];
   const tomorrow = new Date(Date.now() + 86400000).toISOString().split("T")[0];
 
-  // 사용자 역할 확인 + 본사면 매장 목록 가져오기
   useEffect(() => {
     fetch("/api/fms/auth/me", { cache: "no-store" })
       .then(r => r.json())
@@ -47,12 +59,9 @@ export default function StoreTasksPage() {
     if (tab === "today") url += `?date=${today}`;
     else if (tab === "tomorrow") url += `?date=${tomorrow}`;
     else url += "?recurring=true";
-
-    // 본사는 선택한 매장의 할일 조회
     if (userRole === "hq_admin" && selectedStoreId) {
       url += (url.includes("?") ? "&" : "?") + `storeId=${selectedStoreId}`;
     }
-
     const res = await fetch(url, { cache: "no-store" });
     if (res.ok) { const d = await res.json(); setTasks(d.tasks || []); }
     setLoading(false);
@@ -105,11 +114,46 @@ export default function StoreTasksPage() {
     fetchTasks();
   };
 
+  // 구매 요청인지 확인
+  const isPurchaseRequest = (title: string) => {
+    return title.includes("[구매요청]") || title.includes("[구매 요청]") || title.includes("구매 필요");
+  };
+
+  // 구매 키워드 추출
+  const extractProductName = (title: string) => {
+    return title.replace(/\[구매요청\]|\[구매 요청\]|구매 필요[:\s]*/g, "").trim();
+  };
+
+  // 최저가 검색
+  const searchPrice = async (taskId: string, title: string) => {
+    const keyword = extractProductName(title);
+    if (!keyword) return;
+
+    setSearchingTaskId(taskId);
+    setSearchLoading(true);
+    try {
+      const res = await fetch("/api/fms/price-search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ keyword }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setSearchResults(prev => ({ ...prev, [taskId]: data.results || [] }));
+      }
+    } catch {
+      // 에러 무시
+    }
+    setSearchLoading(false);
+  };
+
   const statusIcon = (s: string) => {
     if (s === "completed") return <Check size={16} className="text-green-600" />;
     if (s === "in_progress") return <Clock size={16} className="text-blue-500" />;
     return <Circle size={16} className="text-gray-300" />;
   };
+
+  const formatPrice = (price: number) => price.toLocaleString("ko-KR") + "원";
 
   return (
     <div>
@@ -171,42 +215,92 @@ export default function StoreTasksPage() {
             <p>1. 상단 <strong>&quot;+ 추가&quot;</strong> 버튼을 눌러 할일을 만듭니다</p>
             <p>2. 담당 직원을 지정하면 직원 앱에 자동 표시됩니다</p>
             <p>3. 직원이 완료하면 체크 표시가 됩니다</p>
-            <p>4. <strong>작업 기록</strong>에서 시간대별 타임라인을 확인할 수 있습니다</p>
-          </div>
-          <div className="mt-4 bg-blue-50 rounded-lg p-4 text-sm text-blue-700">
-            <p><strong>💡 예시 할일:</strong> 개점 준비, 젤라또 제조 (피스타치오 5통), 쇼케이스 정리, 주방 청소, 마감 정리</p>
+            <p>4. <strong>AI 채팅</strong>으로도 할일을 만들 수 있습니다</p>
           </div>
         </div>
       ) : (
         <div className="space-y-2">
           {tasks.filter(t => t.status !== "deleted").map(t => (
-            <div key={t.id} className="bg-white rounded-xl shadow-sm p-4">
-              {editingTask === t.id ? (
-                <div className="flex items-center gap-2">
-                  <input value={editTitle} onChange={e => setEditTitle(e.target.value)} className="flex-1 px-3 py-2 border rounded-lg text-sm" autoFocus
-                    onKeyDown={e => { if (e.key === "Enter") saveEdit(t.id); if (e.key === "Escape") setEditingTask(null); }} />
-                  <button onClick={() => saveEdit(t.id)} className="px-3 py-2 bg-[#1B4332] text-white text-xs rounded-lg">저장</button>
-                  <button onClick={() => setEditingTask(null)} className="p-2 text-gray-400"><X size={14} /></button>
-                </div>
-              ) : (
-                <div className="flex items-center gap-3">
-                  <button onClick={() => toggleStatus(t.id, t.status)} className="flex-shrink-0">
-                    {statusIcon(t.status)}
-                  </button>
-                  <div className="flex-1" onClick={() => toggleStatus(t.id, t.status)}>
-                    <p className={`text-sm font-medium ${t.status === "completed" ? "text-gray-400 line-through" : "text-gray-800"}`}>{t.title}</p>
-                    <p className="text-xs text-gray-400">
-                      {t.assigneeName || "미지정"} {t.dueTime && `· ${t.dueTime}`}
-                    </p>
+            <div key={t.id} className="bg-white rounded-xl shadow-sm overflow-hidden">
+              <div className="p-4">
+                {editingTask === t.id ? (
+                  <div className="flex items-center gap-2">
+                    <input value={editTitle} onChange={e => setEditTitle(e.target.value)} className="flex-1 px-3 py-2 border rounded-lg text-sm" autoFocus
+                      onKeyDown={e => { if (e.key === "Enter") saveEdit(t.id); if (e.key === "Escape") setEditingTask(null); }} />
+                    <button onClick={() => saveEdit(t.id)} className="px-3 py-2 bg-[#1B4332] text-white text-xs rounded-lg">저장</button>
+                    <button onClick={() => setEditingTask(null)} className="p-2 text-gray-400"><X size={14} /></button>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <button onClick={(e) => startEdit(t, e)} className="p-1.5 text-gray-300 hover:text-blue-500">
-                      <Edit2 size={14} />
+                ) : (
+                  <div className="flex items-center gap-3">
+                    <button onClick={() => toggleStatus(t.id, t.status)} className="flex-shrink-0">
+                      {statusIcon(t.status)}
                     </button>
-                    <button onClick={(e) => deleteTask(t.id, e)} className="p-1.5 text-gray-300 hover:text-red-500">
-                      <Trash2 size={14} />
-                    </button>
+                    <div className="flex-1" onClick={() => toggleStatus(t.id, t.status)}>
+                      <p className={`text-sm font-medium ${t.status === "completed" ? "text-gray-400 line-through" : "text-gray-800"}`}>
+                        {isPurchaseRequest(t.title) && <span className="inline-block bg-orange-100 text-orange-700 text-[10px] px-1.5 py-0.5 rounded mr-1.5">구매</span>}
+                        {isPurchaseRequest(t.title) ? extractProductName(t.title) : t.title}
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        {t.assigneeName || "미지정"} {t.dueTime && `· ${t.dueTime}`}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      {isPurchaseRequest(t.title) && t.status !== "completed" && (
+                        <button onClick={(e) => { e.stopPropagation(); searchPrice(t.id, t.title); }}
+                          className="p-1.5 text-orange-400 hover:text-orange-600" title="최저가 검색">
+                          <Search size={14} />
+                        </button>
+                      )}
+                      <button onClick={(e) => startEdit(t, e)} className="p-1.5 text-gray-300 hover:text-blue-500">
+                        <Edit2 size={14} />
+                      </button>
+                      <button onClick={(e) => deleteTask(t.id, e)} className="p-1.5 text-gray-300 hover:text-red-500">
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
                   </div>
+                )}
+              </div>
+
+              {/* 최저가 검색 결과 */}
+              {searchingTaskId === t.id && (
+                <div className="border-t bg-gray-50 p-4">
+                  {searchLoading ? (
+                    <div className="flex items-center justify-center gap-2 py-4 text-gray-400 text-sm">
+                      <Loader2 size={16} className="animate-spin" /> 최저가 검색 중...
+                    </div>
+                  ) : searchResults[t.id]?.length > 0 ? (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-xs font-bold text-gray-600">🔍 검색 결과 (최저가순)</p>
+                        <button onClick={() => setSearchingTaskId(null)} className="text-gray-400 hover:text-gray-600">
+                          <X size={14} />
+                        </button>
+                      </div>
+                      {searchResults[t.id].slice(0, 5).map((r, i) => (
+                        <a key={i} href={r.link} target="_blank" rel="noopener noreferrer"
+                          className="flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-100 hover:border-[#1B4332] hover:shadow-sm transition-all">
+                          {r.image && (
+                            <img src={r.image} alt="" className="w-12 h-12 rounded object-cover flex-shrink-0" />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs text-gray-700 line-clamp-2">{r.title.replace(/<[^>]*>/g, "")}</p>
+                            <p className="text-[10px] text-gray-400 mt-0.5">{r.mall}</p>
+                          </div>
+                          <div className="flex items-center gap-1.5 flex-shrink-0">
+                            <span className="text-sm font-bold text-[#1B4332]">{formatPrice(r.price)}</span>
+                            <ExternalLink size={12} className="text-gray-300" />
+                          </div>
+                        </a>
+                      ))}
+                      <p className="text-[10px] text-gray-400 text-center mt-2">터치하면 해당 쇼핑몰로 이동합니다</p>
+                    </div>
+                  ) : (
+                    <div className="text-center py-4">
+                      <p className="text-sm text-gray-400">검색 결과가 없습니다</p>
+                      <button onClick={() => setSearchingTaskId(null)} className="text-xs text-[#1B4332] mt-2">닫기</button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

@@ -31,15 +31,25 @@ export const chatTools = [
   {
     type: "function" as const,
     function: {
-      name: "search_product_price",
-      description: "사입 제품의 최저가를 검색합니다. 사용자가 특정 제품을 구매하거나 가격을 알고 싶어할 때 사용하세요.",
+      name: "request_purchase",
+      description: "직원이 구매가 필요한 물품을 점주에게 요청합니다. 직원이 '~사야해', '~필요해', '~떨어졌어', '~구매해야해' 등으로 물품 구매를 요청할 때 사용하세요.",
       parameters: {
         type: "object",
         properties: {
-          productName: { type: "string", description: "검색할 제품명 (예: 흑임자 페이스트)" },
-          quantity: { type: "number", description: "필요한 수량 (기본 1)" },
+          items: {
+            type: "array",
+            description: "구매가 필요한 물품 목록",
+            items: {
+              type: "object",
+              properties: {
+                name: { type: "string", description: "물품명 (예: 블루베리잼, 초코파우더)" },
+                note: { type: "string", description: "참고사항 (예: 1kg, 대용량)" },
+              },
+              required: ["name"],
+            },
+          },
         },
-        required: ["productName"],
+        required: ["items"],
       },
     },
   },
@@ -119,8 +129,8 @@ export async function handleToolCall(
   if (toolName === "create_hq_order") {
     return await handleCreateHqOrder(args, userId, storeId);
   }
-  if (toolName === "search_product_price") {
-    return await handleSearchProductPrice(args);
+  if (toolName === "request_purchase") {
+    return await handleRequestPurchase(args, userId, storeId);
   }
   if (toolName === "create_task") {
     return await handleCreateTask(args, userId, storeId);
@@ -189,7 +199,47 @@ async function handleCreateHqOrder(
   });
 }
 
-// 가격 검색 핸들러
+// 직원 → 점주 구매 요청 (할일로 전달)
+async function handleRequestPurchase(
+  args: Record<string, unknown>,
+  userId: string,
+  storeId: string | null
+): Promise<string> {
+  if (!storeId) {
+    return JSON.stringify({ error: "매장 정보가 없습니다." });
+  }
+
+  const items = args.items as { name: string; note?: string }[];
+  if (!items || items.length === 0) {
+    return JSON.stringify({ error: "물품 목록이 필요합니다." });
+  }
+
+  // 요청자 이름 조회
+  const users = await supabaseSelect<any[]>("users", `id=eq.${userId}&limit=1`);
+  const userName = users?.[0]?.name || "직원";
+
+  // 물품 리스트 텍스트
+  const itemList = items.map(i => i.note ? `${i.name} (${i.note})` : i.name).join(", ");
+
+  // 점주 할일로 생성
+  const today = new Date().toISOString().split("T")[0];
+  await supabaseInsert("tasks", {
+    store_id: storeId,
+    title: `[구매요청] ${itemList}`,
+    description: `${userName}님이 구매를 요청했습니다.\n\n품목:\n${items.map(i => `• ${i.name}${i.note ? ` (${i.note})` : ""}`).join("\n")}`,
+    status: "pending",
+    due_date: today,
+    created_by: userId,
+  });
+
+  return JSON.stringify({
+    success: true,
+    message: `점주님께 구매 요청을 전달했습니다.`,
+    items: items.map(i => i.name),
+  });
+}
+
+// 가격 검색 핸들러 (현재 비활성화 — 추후 안정화 후 사용)
 async function handleSearchProductPrice(args: Record<string, unknown>): Promise<string> {
   const productName = args.productName as string;
   const quantity = (args.quantity as number) || 1;

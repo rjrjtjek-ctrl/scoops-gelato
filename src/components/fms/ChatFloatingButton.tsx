@@ -21,8 +21,8 @@ export default function ChatFloatingButton() {
 
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`fixed right-4 z-[9999] w-[52px] h-[52px] rounded-full shadow-lg flex items-center justify-center transition-transform hover:scale-110 ${
-          isStoreOrStaff ? "bottom-[88px]" : "bottom-6"
+        className={`fixed right-4 z-[9990] w-[52px] h-[52px] rounded-full shadow-lg flex items-center justify-center transition-transform hover:scale-110 ${
+          isStoreOrStaff ? "bottom-[calc(88px+env(safe-area-inset-bottom,0px))]" : "bottom-6"
         }`}
         style={{ backgroundColor: isOpen ? "#333" : "#D4A574" }}
       >

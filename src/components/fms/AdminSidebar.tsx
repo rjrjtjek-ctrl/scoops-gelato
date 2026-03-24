@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Store, ShoppingCart, UtensilsCrossed,
   Package, Megaphone, BookOpen, BarChart3, Users, ClipboardList,
   ListTodo, X, Eye, MessageSquare, QrCode, Headphones,
-  ChevronDown, ChevronRight
+  ChevronDown, ChevronRight, DollarSign
 } from "lucide-react";
 
 interface MenuItem {
@@ -48,6 +48,7 @@ export default function AdminSidebar({ role, isOpen, onClose }: AdminSidebarProp
       title: "상품 · 발주",
       icon: <ShoppingCart size={16} />,
       items: [
+        { label: "정산관리", href: "/admin/hq/settlement", icon: <DollarSign size={16} /> },
         { label: "발주관리", href: "/admin/hq/orders", icon: <ShoppingCart size={16} /> },
         { label: "본사제품관리", href: "/admin/hq/products", icon: <Package size={16} /> },
         { label: "메뉴관리", href: "/admin/hq/menu", icon: <UtensilsCrossed size={16} /> },

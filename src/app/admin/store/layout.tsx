@@ -78,10 +78,10 @@ export default function StoreLayout({ children }: { children: React.ReactNode })
         showMenu={false}
         logoutRedirect="/store/login"
       />
-      <main className="p-4 max-w-lg mx-auto">{children}</main>
+      <main className="p-4 pb-24 max-w-lg mx-auto">{children}</main>
 
       {/* 하단 탭바 */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40 safe-area-bottom">
+      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
         <div className="max-w-lg mx-auto flex">
           {storeTabs.map(tab => {
             const isActive = pathname === tab.href;

@@ -20,7 +20,8 @@ export default function NewEmployeePage() {
   const handleNameChange = (name: string) => {
     setForm({ ...form, name });
     if (!form.loginId || form.loginId.startsWith("emp_")) {
-      setForm(prev => ({ ...prev, name, loginId: `emp_${name.replace(/\s/g, "")}` }));
+      const slug = name.replace(/[^a-zA-Z0-9]/g, "") || Date.now().toString().slice(-6);
+      setForm(prev => ({ ...prev, name, loginId: `emp_${slug}` }));
     }
   };
 

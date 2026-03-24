@@ -18,7 +18,7 @@ export default function NewStorePage() {
     setStore({ ...store, name });
     // 로그인 아이디 자동 생성 제안
     if (!owner.loginId || owner.loginId.startsWith("store_")) {
-      const slug = name.replace(/[^가-힣a-zA-Z]/g, "").substring(0, 10);
+      const slug = name.replace(/[^a-zA-Z0-9]/g, "").substring(0, 10) || "store" + Date.now().toString().slice(-4);
       setOwner({ ...owner, loginId: `store_${slug}` });
     }
   };

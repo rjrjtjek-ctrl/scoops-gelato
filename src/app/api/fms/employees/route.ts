@@ -76,6 +76,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "필수 정보가 누락되었습니다." }, { status: 400 });
     }
 
+    // 로그인 ID 중복 체크
+    const dupCheck = await supabaseSelect<any[]>("users", `login_id=eq.${loginId}`);
+    if (dupCheck.length > 0) {
+      return NextResponse.json({ error: "이미 사용 중인 아이디입니다." }, { status: 400 });
+    }
+
     // 현재 매장 활성 직원 수 확인
     const existing = await supabaseSelect<any[]>(
       "employees_detail",

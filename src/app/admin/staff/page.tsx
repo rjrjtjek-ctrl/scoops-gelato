@@ -91,10 +91,32 @@ export default function StaffDashboard() {
   const handleClock = async (action: "clock_in" | "clock_out") => {
     setClockLoading(true);
     try {
+      // GPS 위치 가져오기
+      let latitude: number | null = null;
+      let longitude: number | null = null;
+      try {
+        const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0,
+          });
+        });
+        latitude = pos.coords.latitude;
+        longitude = pos.coords.longitude;
+      } catch (geoErr: any) {
+        if (geoErr?.code === 1) {
+          alert("위치 권한이 필요합니다.\n설정 → 사이트 설정 → 위치에서 허용해주세요.");
+          setClockLoading(false);
+          return;
+        }
+        // 위치를 못 가져와도 서버에서 판단 (GPS 미설정 매장은 통과)
+      }
+
       const res = await fetch("/api/fms/attendance", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action }),
+        body: JSON.stringify({ action, latitude, longitude }),
       });
       const data = await res.json();
       if (res.ok) {
@@ -102,10 +124,16 @@ export default function StaffDashboard() {
           setIsClockedIn(true);
           setClockInTime(data.clockIn);
           setWorkingMinutes(0);
+          if (data.distance !== null && data.distance !== undefined) {
+            // 성공 시 거리 표시 (선택)
+          }
         } else {
           setIsClockedIn(false);
           setClockInTime(null);
           setWorkingMinutes(0);
+          if (data.workMinutes) {
+            alert(`퇴근 완료! 오늘 근무시간: ${Math.floor(data.workMinutes / 60)}시간 ${data.workMinutes % 60}분`);
+          }
         }
       } else {
         alert(data.error || "오류 발생");

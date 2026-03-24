@@ -18,9 +18,9 @@ export async function GET(req: NextRequest) {
       storeFilter = `store_id=eq.${user.storeId}&`;
     }
 
-    let query = `${storeFilter}order=created_at.desc`;
-    if (date) query = `${storeFilter}due_date=eq.${date}&order=created_at.asc`;
-    if (recurring === "true") query = `${storeFilter}is_recurring=eq.true&order=created_at.asc`;
+    let query = `${storeFilter}status=neq.deleted&order=created_at.desc`;
+    if (date) query = `${storeFilter}status=neq.deleted&due_date=eq.${date}&order=created_at.asc`;
+    if (recurring === "true") query = `${storeFilter}status=neq.deleted&is_recurring=eq.true&order=created_at.asc`;
 
     const tasks = await supabaseSelect<any[]>("tasks", query);
 

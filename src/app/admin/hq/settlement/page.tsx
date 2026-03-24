@@ -14,6 +14,12 @@ interface Transaction {
 interface Payment {
   id: string; customer_id: string; payment_date: string; amount: number; memo: string;
 }
+interface Product {
+  id: string; name: string; spec: string; unit: string; price: number;
+}
+interface CartItem {
+  productId: string; name: string; quantity: number; price: number; subtotal: number;
+}
 
 function fmt(n: number) { return n.toLocaleString() + "원"; }
 
@@ -23,6 +29,7 @@ export default function SettlementPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<string>("");
+  const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -31,6 +38,9 @@ export default function SettlementPage() {
   const [showAddPay, setShowAddPay] = useState(false);
   const [newTrans, setNewTrans] = useState({ customerId: "", date: new Date().toISOString().split("T")[0], title: "", totalAmount: "", memo: "" });
   const [newPay, setNewPay] = useState({ customerId: "", date: new Date().toISOString().split("T")[0], amount: "", memo: "" });
+  // 출고 등록 — 제품 선택 장바구니
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [productSearch, setProductSearch] = useState("");
 
   const fetchData = useCallback(async () => {
     setLoading(true); setError("");
@@ -46,6 +56,28 @@ export default function SettlementPage() {
   }, []);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+
+  // 제품 로드
+  useEffect(() => {
+    fetch("/api/fms/settlement?view=products", { cache: "no-store" })
+      .then(r => r.json())
+      .then(d => setProducts(d.products || []))
+      .catch(() => {});
+  }, []);
+
+  const addToCart = (p: Product) => {
+    setCart(prev => {
+      const existing = prev.find(c => c.productId === p.id);
+      if (existing) return prev.map(c => c.productId === p.id ? { ...c, quantity: c.quantity + 1, subtotal: (c.quantity + 1) * c.price } : c);
+      return [...prev, { productId: p.id, name: p.name, quantity: 1, price: p.price, subtotal: p.price }];
+    });
+  };
+  const removeFromCart = (productId: string) => setCart(prev => prev.filter(c => c.productId !== productId));
+  const updateCartQty = (productId: string, qty: number) => {
+    if (qty <= 0) return removeFromCart(productId);
+    setCart(prev => prev.map(c => c.productId === productId ? { ...c, quantity: qty, subtotal: qty * c.price } : c));
+  };
+  const cartTotal = cart.reduce((s, c) => s + c.subtotal, 0);
 
   const fetchTransactions = async (custId?: string) => {
     const url = `/api/fms/settlement?view=transactions${custId ? "&customerId=" + custId : ""}`;
@@ -124,6 +156,7 @@ export default function SettlementPage() {
           { key: "overview" as const, label: "거래처 현황" },
           { key: "transactions" as const, label: "출고 내역" },
           { key: "payments" as const, label: "입금 내역" },
+          { key: "products" as const, label: "제품 단가" },
         ].map(t => (
           <button key={t.key} onClick={() => setTab(t.key)}
             className={`px-4 py-2 rounded-lg text-sm whitespace-nowrap ${tab === t.key ? "bg-[#1B4332] text-white" : "bg-gray-100 text-gray-600"}`}>
@@ -199,25 +232,100 @@ export default function SettlementPage() {
         </div>
       )}
 
-      {/* 출고 등록 모달 */}
+      {/* 제품 단가 */}
+      {tab === "products" && (
+        <div className="space-y-2">
+          <div className="bg-gray-50 rounded-lg p-3 mb-2">
+            <input placeholder="🔍 제품 검색..." value={productSearch} onChange={e => setProductSearch(e.target.value)}
+              className="w-full px-3 py-2 bg-white border rounded-lg text-sm" />
+          </div>
+          {products.filter(p => !productSearch || p.name.includes(productSearch)).map(p => (
+            <div key={p.id} className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-800">{p.name}</p>
+                <p className="text-xs text-gray-400">{p.spec} {p.unit && `· ${p.unit}`}</p>
+              </div>
+              <p className="text-sm font-bold text-[#1B4332]">{fmt(p.price)}</p>
+            </div>
+          ))}
+          {products.length === 0 && <p className="text-center text-sm text-gray-400 py-8">등록된 제품이 없습니다</p>}
+        </div>
+      )}
+
+      {/* 출고 등록 모달 — 제품 선택 방식 */}
       {showAddTrans && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30" onClick={() => setShowAddTrans(false)}>
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md mx-4 shadow-xl" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-end lg:items-center justify-center bg-black/30" onClick={() => { setShowAddTrans(false); setCart([]); }}>
+          <div className="bg-white rounded-t-2xl lg:rounded-2xl p-5 w-full max-w-lg max-h-[85vh] overflow-y-auto shadow-xl" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-bold text-gray-800">출고 등록</h3>
-              <button onClick={() => setShowAddTrans(false)}><X size={20} className="text-gray-400" /></button>
+              <button onClick={() => { setShowAddTrans(false); setCart([]); }}><X size={20} className="text-gray-400" /></button>
             </div>
-            <div className="space-y-3">
-              <select value={newTrans.customerId} onChange={e => setNewTrans({...newTrans, customerId: e.target.value})} className="w-full px-3 py-2 border rounded-lg text-sm">
-                <option value="">거래처 선택 *</option>
+
+            {/* 거래처 + 날짜 */}
+            <div className="grid grid-cols-2 gap-2 mb-3">
+              <select value={newTrans.customerId} onChange={e => setNewTrans({...newTrans, customerId: e.target.value})} className="px-3 py-2 border rounded-lg text-sm">
+                <option value="">거래처 *</option>
                 {customers.map(c => <option key={c.id} value={c.id}>{c.store_name}</option>)}
               </select>
-              <input type="date" value={newTrans.date} onChange={e => setNewTrans({...newTrans, date: e.target.value})} className="w-full px-3 py-2 border rounded-lg text-sm" />
-              <input placeholder="품목 (예: 젤라또베이스 1box)" value={newTrans.title} onChange={e => setNewTrans({...newTrans, title: e.target.value})} className="w-full px-3 py-2 border rounded-lg text-sm" />
-              <input type="number" placeholder="금액 (원)" value={newTrans.totalAmount} onChange={e => setNewTrans({...newTrans, totalAmount: e.target.value})} className="w-full px-3 py-2 border rounded-lg text-sm" />
-              <input placeholder="메모 (선택)" value={newTrans.memo} onChange={e => setNewTrans({...newTrans, memo: e.target.value})} className="w-full px-3 py-2 border rounded-lg text-sm" />
-              <button onClick={addTransaction} className="w-full py-3 bg-[#1B4332] text-white rounded-lg text-sm font-medium">등록</button>
+              <input type="date" value={newTrans.date} onChange={e => setNewTrans({...newTrans, date: e.target.value})} className="px-3 py-2 border rounded-lg text-sm" />
             </div>
+
+            {/* 제품 선택 */}
+            <div className="mb-3">
+              <input placeholder="🔍 제품 검색해서 추가..." value={productSearch} onChange={e => setProductSearch(e.target.value)}
+                className="w-full px-3 py-2 border rounded-lg text-sm mb-2" />
+              {productSearch && (
+                <div className="max-h-32 overflow-y-auto border rounded-lg">
+                  {products.filter(p => p.name.includes(productSearch)).slice(0, 8).map(p => (
+                    <button key={p.id} onClick={() => { addToCart(p); setProductSearch(""); }}
+                      className="w-full flex items-center justify-between px-3 py-2 hover:bg-gray-50 text-left text-sm border-b last:border-b-0">
+                      <span>{p.name} <span className="text-gray-400 text-xs">{p.spec}</span></span>
+                      <span className="text-xs text-[#1B4332] font-medium">{fmt(p.price)}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* 장바구니 */}
+            {cart.length > 0 && (
+              <div className="bg-gray-50 rounded-xl p-3 mb-3 space-y-2">
+                <p className="text-xs font-bold text-gray-500 mb-1">선택한 제품</p>
+                {cart.map(c => (
+                  <div key={c.productId} className="flex items-center justify-between">
+                    <span className="text-sm text-gray-800 flex-1">{c.name}</span>
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => updateCartQty(c.productId, c.quantity - 1)} className="w-6 h-6 bg-white border rounded text-xs">-</button>
+                      <span className="text-sm font-medium w-6 text-center">{c.quantity}</span>
+                      <button onClick={() => updateCartQty(c.productId, c.quantity + 1)} className="w-6 h-6 bg-white border rounded text-xs">+</button>
+                      <span className="text-xs text-gray-500 w-20 text-right">{fmt(c.subtotal)}</span>
+                      <button onClick={() => removeFromCart(c.productId)} className="text-red-400 text-xs">✕</button>
+                    </div>
+                  </div>
+                ))}
+                <div className="flex justify-between pt-2 border-t border-gray-200">
+                  <span className="text-sm font-bold text-gray-800">합계</span>
+                  <span className="text-sm font-bold text-[#1B4332]">{fmt(cartTotal)}</span>
+                </div>
+              </div>
+            )}
+
+            {/* 직접 입력 (제품 목록에 없는 경우) */}
+            <input placeholder="품목명 직접 입력 (제품 목록에 없는 경우)" value={newTrans.title} onChange={e => setNewTrans({...newTrans, title: e.target.value})} className="w-full px-3 py-2 border rounded-lg text-sm mb-2" />
+            {!cart.length && <input type="number" placeholder="금액 직접 입력 (원)" value={newTrans.totalAmount} onChange={e => setNewTrans({...newTrans, totalAmount: e.target.value})} className="w-full px-3 py-2 border rounded-lg text-sm mb-2" />}
+            <input placeholder="메모 (선택)" value={newTrans.memo} onChange={e => setNewTrans({...newTrans, memo: e.target.value})} className="w-full px-3 py-2 border rounded-lg text-sm mb-3" />
+
+            <button onClick={() => {
+              const title = cart.length > 0 ? cart.map(c => `${c.name} x${c.quantity}`).join(", ") : newTrans.title;
+              const total = cart.length > 0 ? cartTotal : parseInt(newTrans.totalAmount || "0");
+              if (!newTrans.customerId || !title || !total) return;
+              fetch("/api/fms/settlement", {
+                method: "POST", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ type: "transaction", customerId: newTrans.customerId, date: newTrans.date, title, items: cart, totalAmount: total, memo: newTrans.memo }),
+              }).then(r => { if (r.ok) { setShowAddTrans(false); setCart([]); setNewTrans({ customerId: "", date: new Date().toISOString().split("T")[0], title: "", totalAmount: "", memo: "" }); fetchData(); } });
+            }} className="w-full py-3 bg-[#1B4332] text-white rounded-lg text-sm font-medium">
+              {cart.length > 0 ? `출고 등록 (${fmt(cartTotal)})` : "출고 등록"}
+            </button>
           </div>
         </div>
       )}

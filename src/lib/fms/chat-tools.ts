@@ -351,7 +351,12 @@ async function handleGetTodayTasks(userId: string, storeId: string | null): Prom
 
 // 할일 생성 핸들러
 async function handleCreateTask(args: Record<string, unknown>, userId: string, storeId: string | null): Promise<string> {
-  if (!storeId) return JSON.stringify({ error: "매장이 지정되지 않았습니다." });
+  // 본사 계정은 storeId가 없으므로 첫 번째 활성 매장 자동 선택
+  if (!storeId) {
+    const stores = await supabaseSelect<any[]>("stores", "status=eq.active&limit=1");
+    if (stores && stores.length > 0) storeId = stores[0].id;
+    else return JSON.stringify({ error: "등록된 매장이 없습니다." });
+  }
 
   const title = args.title as string;
   const assigneeName = args.assigneeName as string | undefined;

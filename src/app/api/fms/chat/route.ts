@@ -8,7 +8,8 @@ import { findRelevantKnowledge, getBlockedKeywords } from "@/lib/fms/rag";
 // OpenAI 동적 import (빌드 시 API 키 없어도 에러 안 나게)
 async function callOpenAI(
   messages: { role: string; content: string }[],
-  tools?: unknown[]
+  tools?: unknown[],
+  toolChoice?: string
 ): Promise<{ content: string | null; toolCalls: any[] | null }> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
@@ -26,7 +27,7 @@ async function callOpenAI(
   };
   if (tools && tools.length > 0) {
     params.tools = tools;
-    params.tool_choice = "auto";
+    params.tool_choice = toolChoice || "auto";
     params.parallel_tool_calls = true;
   }
 
@@ -144,13 +145,21 @@ export async function POST(req: NextRequest) {
     // 5. OpenAI 호출
     // 액션 요청(시켜줘, 주문, 발주, 추가, 검색)은 항상 도구 포함
     // 지식 질문은 도구 없이 순수 대화
-    // FC 도구는 항상 포함 — GPT가 필요할 때만 호출하므로 안전
-    const useTools = true;
+    // FC 도구 — 액션 요청 시 tool_choice=required로 강제
+    const taskKeywords = ["만들어", "시켜", "전달", "체크리스트", "청소", "준비", "마감", "오픈", "정리", "확인해"];
+    const purchaseKeywords = ["사야", "구매", "주문해", "발주"];
+    const isTaskRequest = taskKeywords.some(kw => message.includes(kw));
+    const isPurchaseRequest = purchaseKeywords.some(kw => message.includes(kw));
+    const forceToolUse = isTaskRequest || isPurchaseRequest;
     let aiResponse: string;
     let msgType = "general";
 
     try {
-      const result = await callOpenAI(aiMessages, useTools ? chatTools : undefined);
+      const result = await callOpenAI(
+        aiMessages,
+        chatTools,
+        forceToolUse ? "required" : "auto"
+      );
 
       if (result.toolCalls && result.toolCalls.length > 0) {
         // Function Calling 처리 — 여러 도구 호출을 순차 실행

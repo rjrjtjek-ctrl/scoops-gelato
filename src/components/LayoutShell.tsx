@@ -82,8 +82,10 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
   const isAdmin = pathname.startsWith("/admin");
   const isOrder = pathname.startsWith("/order");
   const isLanding = pathname === "/franchise/landing";
+  const isStoreLogin = pathname.startsWith("/store");
+  const isStaffLogin = pathname.startsWith("/staff");
 
-  if (isAdmin || isOrder || isLanding) {
+  if (isAdmin || isOrder || isLanding || isStoreLogin || isStaffLogin) {
     return <>{children}</>;
   }
 

@@ -14,17 +14,17 @@ const ibmPlexSansKR = IBM_Plex_Sans_KR({
 });
 
 const SITE_URL = "https://scoopsgelato.kr";
-const SITE_NAME = "스쿱스 젤라떼리아";
-const DEFAULT_DESC = "이탈리아 정통 프리미엄 젤라또 프랜차이즈. 전국 17개 매장에서 매일 매장에서 직접 만드는 신선한 수제 젤라또를 만나보세요.";
+const SITE_NAME = "스쿱스젤라또";
+const DEFAULT_DESC = "스쿱스젤라또 - 이탈리아 정통 프리미엄 수제 젤라또 프랜차이즈. 전국 17개 매장에서 매일 직접 만드는 신선한 젤라또를 만나보세요. 가맹비 0원, 가맹 문의 접수 중.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "SCOOPS GELATERIA | 스쿱스 젤라떼리아 - 경험을 파는 브랜드",
-    template: "%s | 스쿱스 젤라떼리아",
+    default: "스쿱스젤라또 | SCOOPS GELATERIA - 수제 젤라또 프랜차이즈",
+    template: "%s | 스쿱스젤라또",
   },
   description: DEFAULT_DESC,
-  keywords: "젤라또, 젤라토, 아이스크림, 프랜차이즈, 디저트, 스쿱스, 젤라떼리아, 수제젤라또, 가맹점, gelato, scoops",
+  keywords: "스쿱스젤라또, 스쿱스 젤라또, 스쿱스젤라떼리아, 젤라또 프랜차이즈, 수제 젤라또, 젤라또 창업, 젤라또, 젤라토, 아이스크림, 프랜차이즈, 디저트, 가맹점, gelato, scoops",
   authors: [{ name: SITE_NAME }],
   creator: SITE_NAME,
   publisher: SITE_NAME,
@@ -41,7 +41,7 @@ export const metadata: Metadata = {
     "ICBM": "36.6358, 127.4595",
   },
   openGraph: {
-    title: "SCOOPS GELATERIA | 스쿱스 젤라떼리아",
+    title: "스쿱스젤라또 | SCOOPS GELATERIA - 수제 젤라또 프랜차이즈",
     description: DEFAULT_DESC,
     url: SITE_URL,
     siteName: SITE_NAME,
@@ -52,13 +52,13 @@ export const metadata: Metadata = {
         url: "/images/gelato-plating-hero.jpg",
         width: 1200,
         height: 630,
-        alt: "스쿱스 젤라떼리아 수제 젤라또",
+        alt: "스쿱스젤라또 - 수제 젤라또 프랜차이즈",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "SCOOPS GELATERIA | 스쿱스 젤라떼리아",
+    title: "스쿱스젤라또 | SCOOPS GELATERIA - 수제 젤라또 프랜차이즈",
     description: DEFAULT_DESC,
     images: ["/images/gelato-plating-hero.jpg"],
   },

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Users, ListTodo, UtensilsCrossed, BarChart3, ShoppingCart, Megaphone, ClipboardList, ArrowRight } from "lucide-react";
+import { Users, ListTodo, UtensilsCrossed, BarChart3, ShoppingCart, Megaphone, ClipboardList, ArrowRight, Clock } from "lucide-react";
 import NotificationSettings from "@/components/fms/NotificationSettings";
 
 export default function StoreDashboard() {
@@ -38,6 +38,7 @@ export default function StoreDashboard() {
     { href: "/admin/store/tasks", icon: <ListTodo size={22} className="text-blue-500" />, title: "할일 관리", desc: taskCount > 0 ? `${taskCount}개 미완료` : "모두 완료!", color: "bg-blue-50", badge: taskCount > 0 ? taskCount : null },
     { href: "/admin/store/menu", icon: <UtensilsCrossed size={22} className="text-orange-500" />, title: "메뉴 ON/OFF", desc: "품절 메뉴 관리", color: "bg-orange-50" },
     { href: "/admin/store/sales", icon: <BarChart3 size={22} className="text-purple-500" />, title: "판매 현황", desc: "매출/주문 확인", color: "bg-purple-50" },
+    { href: "/admin/store/payroll", icon: <Clock size={22} className="text-teal-500" />, title: "출퇴근/급여", desc: "근무시간 · 급여 계산", color: "bg-teal-50" },
   ];
 
   return (

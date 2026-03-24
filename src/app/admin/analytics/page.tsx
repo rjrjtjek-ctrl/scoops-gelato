@@ -24,6 +24,13 @@ interface AnalyticsData {
   journeyFlows: { from: string; to: string; count: number }[];
 }
 interface GeoData {
+  totalVisits: number;
+  todayVisits: number;
+  todayUniqueVisitors: number;
+  dailyStats: { date: string; count: number }[];
+  pageStats: { path: string; count: number }[];
+  deviceStats: Record<string, number>;
+  browserStats: Record<string, number>;
   regionStats: { region: string; count: number }[];
   cityStats: { city: string; count: number }[];
   ispStats: { isp: string; count: number }[];
@@ -290,8 +297,8 @@ export default function AdminPage() {
             {/* 핵심 지표 */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               {[
-                { label: "오늘 방문자", val: a?.todayUniqueVisitors ?? "—", unit: "명", icon: "👤", accent: false },
-                { label: "페이지 조회", val: a?.todayVisits ?? "—", unit: "회", icon: "📄", accent: false },
+                { label: "오늘 방문자", val: geoData?.todayUniqueVisitors ?? a?.todayUniqueVisitors ?? "—", unit: "명", icon: "👤", accent: false },
+                { label: "페이지 조회", val: geoData?.todayVisits ?? a?.todayVisits ?? "—", unit: "회", icon: "📄", accent: false },
                 { label: "바로 나간 비율", val: todayBounce, unit: "%", icon: "🚪", accent: todayBounce > 50 },
                 { label: "평균 머문 시간", val: fmtDur(avgDur), unit: "", icon: "⏱️", accent: avgDur > 0 && avgDur < 15 },
               ].map((c, i) => (

@@ -20,10 +20,24 @@ function parseBrowser(ua: string): string {
   return "기타";
 }
 
+// KST 오늘 날짜 반환
+function getKSTToday(): string {
+  const now = new Date();
+  const kst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+  return kst.toISOString().split("T")[0];
+}
+
+// KST 기준 날짜 변환
+function toKSTDate(isoStr: string): string {
+  const d = new Date(isoStr);
+  const kst = new Date(d.getTime() + 9 * 60 * 60 * 1000);
+  return kst.toISOString().split("T")[0];
+}
+
 // GET: 방문 통계 조회
 export async function GET() {
   try {
-    const todayStr = new Date().toISOString().split("T")[0];
+    const todayStr = getKSTToday();
     const rows = await supabaseSelect<Array<{
       id: string; path: string; device: string; browser: string;
       ip: string; session_id: string | null; created_at: string;
@@ -34,7 +48,7 @@ export async function GET() {
     const pageStats: Record<string, number> = {};
 
     rows.forEach((log) => {
-      const date = log.created_at.split("T")[0];
+      const date = toKSTDate(log.created_at);
       dailyStats[date] = (dailyStats[date] || 0) + 1;
       pageStats[log.path] = (pageStats[log.path] || 0) + 1;
     });
@@ -50,7 +64,7 @@ export async function GET() {
       .map(([path, count]) => ({ path, count }));
 
     // 오늘 고유 방문자 (IP 기준)
-    const todayRows = rows.filter((r) => r.created_at.startsWith(todayStr));
+    const todayRows = rows.filter((r) => toKSTDate(r.created_at) === todayStr);
     const todayUniqueIPs = new Set(todayRows.map((r) => r.ip)).size;
 
     // 디바이스 분포

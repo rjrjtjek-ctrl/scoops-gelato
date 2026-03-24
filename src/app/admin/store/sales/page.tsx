@@ -28,7 +28,13 @@ export default function StoreSalesPage() {
         ))}
       </div>
 
-      {loading ? <div className="text-center py-12 text-gray-400">로딩 중...</div> : (
+      {loading ? <div className="text-center py-12 text-gray-400">로딩 중...</div> : summary.totalOrders === 0 ? (
+        <div className="bg-white rounded-xl shadow-sm p-6 text-center">
+          <p className="text-4xl mb-3">📊</p>
+          <h3 className="font-bold text-gray-800 mb-1">아직 판매 데이터가 없습니다</h3>
+          <p className="text-sm text-gray-500">QR 주문이 들어오면 자동으로 매출이 집계됩니다</p>
+        </div>
+      ) : (
         <div className="grid grid-cols-3 gap-4">
           <div className="bg-white rounded-xl shadow-sm p-5 text-center">
             <p className="text-xs text-gray-500 mb-1">총 매출</p>

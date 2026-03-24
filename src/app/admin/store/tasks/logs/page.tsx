@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
+import { ChevronLeft } from "lucide-react";
 
 interface Log { id: string; userName: string; action: string; description: string; photoUrl: string | null; createdAt: string; }
 
@@ -22,6 +24,9 @@ export default function StoreTaskLogsPage() {
 
   return (
     <div>
+      <Link href="/admin/store/tasks" className="flex items-center gap-1 text-sm text-gray-500 mb-3 hover:text-[#1B4332]">
+        <ChevronLeft size={16} /> 할일 관리
+      </Link>
       <h2 className="text-lg font-bold text-gray-800 mb-4">작업 기록</h2>
       <input type="date" value={date} onChange={e => setDate(e.target.value)} className="mb-4 px-3 py-2 border rounded-lg text-sm" />
 

@@ -22,14 +22,13 @@ export async function GET(req: NextRequest) {
   const userId = searchParams.get("userId");
   const month = searchParams.get("month"); // YYYY-MM
 
-  if (!storeId) return NextResponse.json({ error: "매장 ID 필요" }, { status: 400 });
-
-  let query = `store_id=eq.${storeId}&order=clock_in.desc`;
+  let query = storeId ? `store_id=eq.${storeId}&order=clock_in.desc` : `order=clock_in.desc`;
   if (userId) query += `&user_id=eq.${userId}`;
   if (month) {
     const [y, m] = month.split("-").map(Number);
     const nextMonth = m === 12 ? `${y + 1}-01` : `${y}-${String(m + 1).padStart(2, "0")}`;
-    query = `store_id=eq.${storeId}&order=clock_in.desc&clock_in=gte.${month}-01T00:00:00%2B09:00&clock_in=lt.${nextMonth}-01T00:00:00%2B09:00`;
+    const storeQ = storeId ? `store_id=eq.${storeId}&` : "";
+    query = `${storeQ}order=clock_in.desc&clock_in=gte.${month}-01T00:00:00%2B09:00&clock_in=lt.${nextMonth}-01T00:00:00%2B09:00`;
     if (userId) query += `&user_id=eq.${userId}`;
   }
 

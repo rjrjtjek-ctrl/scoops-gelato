@@ -86,6 +86,7 @@ export default function StoreDetailPage() {
       const data = await res.json();
       if (res.ok) {
         setShowOwnerForm(false);
+        setMsg(`✅ 점주 등록 완료 — 아이디: ${newOwner.loginId}`);
         fetchStore(); // 새로고침
       } else {
         setOwnerError(data.error || "생성 실패");

@@ -15,7 +15,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ stor
     }
 
     const store = stores[0];
-    const owners = await supabaseSelect<any[]>("users", `store_id=eq.${storeId}&role=eq.franchisee&limit=1`);
+    // 활성 점주 우선, 없으면 비활성 점주
+    const activeOwners = await supabaseSelect<any[]>("users", `store_id=eq.${storeId}&role=eq.franchisee&is_active=eq.true&limit=1`);
+    const owners = activeOwners.length > 0 ? activeOwners : await supabaseSelect<any[]>("users", `store_id=eq.${storeId}&role=eq.franchisee&order=created_at.desc&limit=1`);
     const employees = await supabaseSelect<any[]>("employees_detail", `store_id=eq.${storeId}&order=created_at.desc`);
 
     // 직원 사용자 정보 조회

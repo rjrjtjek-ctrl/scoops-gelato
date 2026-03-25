@@ -19,7 +19,8 @@ interface PriceResult {
 
 export default function StoreTasksPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [tab, setTab] = useState<"today" | "tomorrow" | "recurring">("today");
+  const [tab, setTab] = useState<"today" | "tomorrow" | "recurring" | "history" | "purchase">("today");
+  const [overdueCount, setOverdueCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
   const [newTask, setNewTask] = useState({ title: "", description: "", dueTime: "", assignedTo: "", isRecurring: false, recurPattern: "daily" });
@@ -58,12 +59,18 @@ export default function StoreTasksPage() {
     let url = "/api/fms/tasks";
     if (tab === "today") url += `?date=${today}`;
     else if (tab === "tomorrow") url += `?date=${tomorrow}`;
+    else if (tab === "history") url += "?history=true";
+    else if (tab === "purchase") url += "?purchase=true";
     else url += "?recurring=true";
     if (userRole === "hq_admin" && selectedStoreId) {
       url += (url.includes("?") ? "&" : "?") + `storeId=${selectedStoreId}`;
     }
     const res = await fetch(url, { cache: "no-store" });
-    if (res.ok) { const d = await res.json(); setTasks(d.tasks || []); }
+    if (res.ok) {
+      const d = await res.json();
+      setTasks(d.tasks || []);
+      if (d.overdueCount) setOverdueCount(d.overdueCount);
+    }
     setLoading(false);
   };
 
@@ -181,7 +188,13 @@ export default function StoreTasksPage() {
       </div>
 
       <div className="flex gap-2 mb-4">
-        {[{ key: "today" as const, label: "오늘" }, { key: "tomorrow" as const, label: "내일" }, { key: "recurring" as const, label: "반복" }].map(t => (
+        {[
+          { key: "today" as const, label: overdueCount > 0 ? `오늘 (${overdueCount}건 이월)` : "오늘" },
+          { key: "tomorrow" as const, label: "내일" },
+          { key: "purchase" as const, label: "구매요청" },
+          { key: "history" as const, label: "과거내역" },
+          { key: "recurring" as const, label: "반복" },
+        ].map(t => (
           <button key={t.key} onClick={() => setTab(t.key)}
             className={`px-4 py-2 rounded-lg text-sm ${tab === t.key ? "bg-[#1B4332] text-white" : "bg-gray-100 text-gray-600"}`}
           >{t.label}</button>
@@ -237,6 +250,7 @@ export default function StoreTasksPage() {
                     </button>
                     <div className="flex-1" onClick={() => toggleStatus(t.id, t.status)}>
                       <p className={`text-sm font-medium ${t.status === "completed" ? "text-gray-400 line-through" : "text-gray-800"}`}>
+                        {(t as any).isOverdue && <span className="inline-block bg-red-100 text-red-600 text-[10px] px-1.5 py-0.5 rounded mr-1.5">이월</span>}
                         {isPurchaseRequest(t.title) && <span className="inline-block bg-orange-100 text-orange-700 text-[10px] px-1.5 py-0.5 rounded mr-1.5">구매</span>}
                         {isPurchaseRequest(t.title) ? extractProductName(t.title) : t.title}
                       </p>

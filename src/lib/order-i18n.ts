@@ -8,6 +8,15 @@ export const ORDER_LANGS: { code: OrderLang; flag: string; label: string }[] = [
   { code: "ja", flag: "🇯🇵", label: "日本語" },
 ];
 
+// sessionStorage에 언어 저장/불러오기
+export function saveLang(lang: OrderLang) {
+  if (typeof window !== "undefined") sessionStorage.setItem("scoops_lang", lang);
+}
+export function loadLang(): OrderLang {
+  if (typeof window === "undefined") return "ko";
+  return (sessionStorage.getItem("scoops_lang") as OrderLang) || "ko";
+}
+
 const translations: Record<string, Record<OrderLang, string>> = {
   // 매장 선택 화면
   "매장식사": { ko: "매장식사", en: "Dine In", zh: "堂食", ja: "店内飲食" },

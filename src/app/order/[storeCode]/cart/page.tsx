@@ -10,6 +10,7 @@ import { useCart } from "@/lib/cart-context";
 import { stores, formatPrice } from "@/lib/order-data";
 import type { OrderType } from "@/lib/order-types";
 import { PwaInstallBanner } from "@/components/PwaInstallBanner";
+import { t, tFlavor, loadLang, type OrderLang } from "@/lib/order-i18n";
 
 // [PERF] Optimistic UI — 주문 완료 상태를 같은 컴포넌트에서 즉시 렌더링
 // 페이지 전환 없이 상태만 변경하여 0ms 전환
@@ -29,6 +30,8 @@ function CartContent() {
   const { items, removeItem, updateItemQuantity, totalAmount, clearCart, memo, setMemo } = useCart();
   const orderType = (searchParams.get("type") as OrderType) || "dine_in";
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [lang, setLang] = useState<OrderLang>("ko");
+  useEffect(() => { setLang(loadLang()); }, []);
 
   // [PERF] Optimistic UI 상태 — null이면 장바구니, 값이 있으면 영수증 화면
   const [orderComplete, setOrderComplete] = useState<OrderComplete | null>(null);
@@ -178,7 +181,7 @@ function CartContent() {
             <CheckCircle2 size={44} className="text-[#1B4332]" />
           </motion.div>
 
-          <h1 className="text-xl font-bold text-[#2A2A2A] mb-2">{isDemo ? "체험 완료!" : "주문 완료!"}</h1>
+          <h1 className="text-xl font-bold text-[#2A2A2A] mb-2">{isDemo ? "체험 완료!" : t("주문 완료!", lang)}</h1>
 
           {/* 에러 메시지 */}
           {orderComplete.error && (
@@ -203,7 +206,7 @@ function CartContent() {
             </div>
           ) : (
             <div className="bg-white rounded-2xl px-8 py-6 text-center shadow-sm border border-[#EDE6DD]/60 mb-6 w-full">
-              <p className="text-xs text-[#999] mb-1">주문번호</p>
+              <p className="text-xs text-[#999] mb-1">{t("주문번호", lang)}</p>
               <p className="text-4xl font-black text-[#1B4332] tracking-wider">
                 {orderComplete.orderNumber === "..." ? (
                   <span className="animate-pulse">...</span>

@@ -29,7 +29,7 @@ import {
   getDrinkDescription,
 } from "@/lib/order-data";
 import type { CartItem, MenuItem, GelatoPrice } from "@/lib/order-types";
-import { ORDER_LANGS, t, tFlavor, type OrderLang } from "@/lib/order-i18n";
+import { ORDER_LANGS, t, tFlavor, saveLang, loadLang, type OrderLang } from "@/lib/order-i18n";
 
 // ============================================
 // 메인 페이지 컴포넌트
@@ -47,8 +47,9 @@ export default function StoreMenuPage() {
     if (storeCode) setStoreCode(storeCode);
   }, [storeCode, setStoreCode]);
 
-  const [lang, setLang] = useState<OrderLang>("ko");
-  const [showLangPicker, setShowLangPicker] = useState(false);
+  const [lang, setLangState] = useState<OrderLang>("ko");
+  const setLang = (l: OrderLang) => { setLangState(l); saveLang(l); };
+  useEffect(() => { setLangState(loadLang()); }, []);
   const [orderType, setOrderType] = useState<"dine_in" | "takeaway" | null>(null);
   const [ageVerified, setAgeVerified] = useState(false);
   const [soldOutIds, setSoldOutIds] = useState<Set<string>>(new Set());
@@ -165,12 +166,14 @@ export default function StoreMenuPage() {
   if (!orderType) {
     return (
       <div className="min-h-dvh bg-[#FDFBF8] flex flex-col items-center justify-center px-6 relative">
-        {/* 언어 선택 */}
-        <div className="absolute top-4 right-4 flex items-center gap-1">
+        {/* 언어 선택 — 국기 이미지 */}
+        <div className="absolute top-4 right-4 flex items-center gap-1.5">
           {ORDER_LANGS.map(l => (
             <button key={l.code} onClick={() => setLang(l.code)}
-              className={`text-xl w-9 h-9 rounded-full flex items-center justify-center transition-all ${lang === l.code ? "bg-[#1B4332]/10 scale-110 ring-2 ring-[#1B4332]/30" : "opacity-50 hover:opacity-80"}`}
-              title={l.label}>{l.flag}</button>
+              className={`w-8 h-8 rounded-full overflow-hidden border-2 transition-all ${lang === l.code ? "border-[#1B4332] scale-110 shadow-md" : "border-transparent opacity-50 hover:opacity-80"}`}
+              title={l.label}>
+              <img src={`/images/flags/${l.code === "ko" ? "kr" : l.code === "en" ? "us" : l.code === "zh" ? "cn" : "jp"}.svg`} alt={l.label} className="w-full h-full object-cover" />
+            </button>
           ))}
         </div>
 
@@ -239,7 +242,7 @@ export default function StoreMenuPage() {
           <div className="flex-1 text-center">
             <p className="text-xs text-[#999] tracking-widest">SCOOPS GELATERIA · {store.name}</p>
             <p className="text-sm font-bold text-[#1B4332]">
-              {orderType === "dine_in" ? "매장식사" : "포장"}
+              {orderType === "dine_in" ? t("매장식사", lang) : t("포장", lang)}
             </p>
           </div>
           <div className="w-10" />
@@ -277,7 +280,7 @@ export default function StoreMenuPage() {
       <main className="w-full max-w-[480px] flex-1 px-4 pb-28">
         {/* ▸ 젤라또·소르베또 섹션 */}
         <div className="pt-6" ref={gelatoSectionRef}>
-          <GelatoSection onAddToCart={handleAddToCart} orderType={orderType as "dine_in" | "takeaway"} soldOutIds={soldOutIds} />
+          <GelatoSection onAddToCart={handleAddToCart} orderType={orderType as "dine_in" | "takeaway"} soldOutIds={soldOutIds} lang={lang} />
         </div>
 
         {/* ▸ 주류 섹션 — 매장식사일 때만 표시 */}
@@ -460,7 +463,7 @@ export default function StoreMenuPage() {
               <div className="w-14 h-14 rounded-full bg-[#1B4332]/10 flex items-center justify-center mx-auto mb-4">
                 <Check size={28} className="text-[#1B4332]" />
               </div>
-              <p className="text-lg font-bold text-[#2A2A2A] mb-2">장바구니에 담았습니다</p>
+              <p className="text-lg font-bold text-[#2A2A2A] mb-2">{ t("장바구니에 담았습니다", lang) }</p>
               {orderType === "dine_in" && lastAddedType === "gelato" && (
                 <button
                   onClick={() => {
@@ -472,7 +475,7 @@ export default function StoreMenuPage() {
                   }}
                   className="text-sm text-[#A68B5B] mb-6 underline underline-offset-2"
                 >
-                  🥃 위스키·와인도 함께 어떠세요?
+                  🥃 {t("위스키·와인도 함께 어떠세요?", lang)}
                 </button>
               )}
               {orderType === "dine_in" && lastAddedType === "drink" && (
@@ -485,7 +488,7 @@ export default function StoreMenuPage() {
                   }}
                   className="text-sm text-[#A68B5B] mb-6 underline underline-offset-2"
                 >
-                  🍨 젤라또도 함께 어떠세요?
+                  🍨 {t("젤라또도 함께 어떠세요?", lang)}
                 </button>
               )}
               {orderType !== "dine_in" && (
@@ -501,7 +504,7 @@ export default function StoreMenuPage() {
                   }}
                   className="flex-1 py-3.5 rounded-xl border border-[#EDE6DD] text-[#555] font-medium text-sm"
                 >
-                  더 담기
+                  {t("더 담기", lang)}
                 </button>
                 <button
                   onClick={() => {
@@ -510,7 +513,7 @@ export default function StoreMenuPage() {
                   }}
                   className="flex-1 py-3.5 rounded-xl bg-[#1B4332] text-white font-bold text-sm"
                 >
-                  주문하기 →
+                  {t("주문하기", lang)} →
                 </button>
               </div>
             </motion.div>
@@ -528,10 +531,12 @@ function GelatoSection({
   onAddToCart,
   orderType,
   soldOutIds = new Set(),
+  lang = "ko",
 }: {
   onAddToCart: (item: CartItem) => void;
   orderType: "dine_in" | "takeaway";
   soldOutIds?: Set<string>;
+  lang?: OrderLang;
 }) {
   const [selectedPrice, setSelectedPrice] = useState<GelatoPrice | null>(null);
   const [selectedFlavors, setSelectedFlavors] = useState<MenuItem[]>([]);
@@ -594,7 +599,7 @@ function GelatoSection({
 
       {/* STEP 1: 맛 수 선택 (1~6가지 전부 표시) */}
       <div className="mb-5">
-        <p className="text-sm font-semibold text-[#2A2A2A] mb-3">몇 가지 맛을 고르실 건가요?</p>
+        <p className="text-sm font-semibold text-[#2A2A2A] mb-3">{t("몇 가지 맛을 고르실 건가요?", lang)}</p>
         <div className="grid grid-cols-2 gap-2">
           {allPrices.map((p) => {
             const isCup = p.flavorCount <= 2;
@@ -759,7 +764,7 @@ function GelatoSection({
               onClick={handleAddToCartClick}
               className="w-full py-4 rounded-2xl text-sm font-bold bg-[#1B4332] text-white shadow-lg active:scale-[0.98] transition-transform mb-2"
             >
-              장바구니에 추가 · {formatPrice(isTakeaway ? selectedPrice.price - TAKEAWAY_DISCOUNT : selectedPrice.price)}
+              {t("장바구니에 추가", lang)} · {formatPrice(isTakeaway ? selectedPrice.price - TAKEAWAY_DISCOUNT : selectedPrice.price)}
             </button>
           </div>
         </div>

@@ -41,10 +41,10 @@ export default function StoreLayout({ children }: { children: React.ReactNode })
   // 점주용 하단 탭바
   const storeTabs = [
     { href: "/admin/store", icon: <LayoutDashboard size={20} />, label: "홈" },
-    { href: "/admin/store/employees", icon: <Users size={20} />, label: "직원" },
     { href: "/admin/store/tasks", icon: <ListTodo size={20} />, label: "할일" },
     { href: "/admin/store/menu", icon: <UtensilsCrossed size={20} />, label: "메뉴" },
-    { href: "/admin/store/sales", icon: <BarChart3 size={20} />, label: "매출" },
+    { href: "/admin/store/settlement", icon: <BarChart3 size={20} />, label: "정산" },
+    { href: "/admin/store/employees", icon: <Users size={20} />, label: "직원" },
   ];
 
   // 본사 열람 시: 데스크탑 사이드바 + "본사로 돌아가기"

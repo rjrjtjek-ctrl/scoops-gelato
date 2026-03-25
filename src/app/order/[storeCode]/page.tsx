@@ -29,6 +29,7 @@ import {
   getDrinkDescription,
 } from "@/lib/order-data";
 import type { CartItem, MenuItem, GelatoPrice } from "@/lib/order-types";
+import { ORDER_LANGS, t, tFlavor, type OrderLang } from "@/lib/order-i18n";
 
 // ============================================
 // 메인 페이지 컴포넌트
@@ -46,6 +47,8 @@ export default function StoreMenuPage() {
     if (storeCode) setStoreCode(storeCode);
   }, [storeCode, setStoreCode]);
 
+  const [lang, setLang] = useState<OrderLang>("ko");
+  const [showLangPicker, setShowLangPicker] = useState(false);
   const [orderType, setOrderType] = useState<"dine_in" | "takeaway" | null>(null);
   const [ageVerified, setAgeVerified] = useState(false);
   const [soldOutIds, setSoldOutIds] = useState<Set<string>>(new Set());
@@ -161,7 +164,16 @@ export default function StoreMenuPage() {
   // ---- 주문 유형 선택 화면 (첫 화면) ----
   if (!orderType) {
     return (
-      <div className="min-h-dvh bg-[#FDFBF8] flex flex-col items-center justify-center px-6">
+      <div className="min-h-dvh bg-[#FDFBF8] flex flex-col items-center justify-center px-6 relative">
+        {/* 언어 선택 */}
+        <div className="absolute top-4 right-4 flex items-center gap-1">
+          {ORDER_LANGS.map(l => (
+            <button key={l.code} onClick={() => setLang(l.code)}
+              className={`text-xl w-9 h-9 rounded-full flex items-center justify-center transition-all ${lang === l.code ? "bg-[#1B4332]/10 scale-110 ring-2 ring-[#1B4332]/30" : "opacity-50 hover:opacity-80"}`}
+              title={l.label}>{l.flag}</button>
+          ))}
+        </div>
+
         <Image
           src="/images/logo_symbol.png"
           alt="SCOOPS GELATERIA"
@@ -177,27 +189,27 @@ export default function StoreMenuPage() {
             onClick={() => { setOrderType("dine_in"); track("order_type", storeCode, { type: "dine_in" }); }}
             className="w-full py-6 bg-[#1B4332] text-white rounded-2xl text-center shadow-lg active:scale-[0.98] transition-transform"
           >
-            <span className="text-xl font-bold block">매장식사</span>
-            <span className="text-sm opacity-70 block mt-1">젤라또 · 소르베또 · 주류</span>
+            <span className="text-xl font-bold block">{t("매장식사", lang)}</span>
+            <span className="text-sm opacity-70 block mt-1">{t("젤라또 · 소르베또 · 주류", lang)}</span>
           </button>
 
           <button
             onClick={() => { setOrderType("takeaway"); track("order_type", storeCode, { type: "takeaway" }); }}
             className="w-full py-6 bg-white text-[#2A2A2A] rounded-2xl text-center border-2 border-[#1B4332] active:scale-[0.98] transition-transform"
           >
-            <span className="text-xl font-bold block">포장</span>
-            <span className="text-sm text-[#999] block mt-1">젤라또 · 소르베또</span>
+            <span className="text-xl font-bold block">{t("포장", lang)}</span>
+            <span className="text-sm text-[#999] block mt-1">{t("젤라또 · 소르베또", lang)}</span>
           </button>
         </div>
 
         <div className="w-full max-w-[360px] mt-10 bg-[#F5F0EB] rounded-2xl px-5 py-4 text-center">
-          <p className="text-[11px] text-[#BBB] mb-3">QR 모바일 주문</p>
+          <p className="text-[11px] text-[#BBB] mb-3">{t("QR 모바일 주문", lang)}</p>
           <div className="flex gap-3">
             <a
               href="https://scoopsgelato.kr"
               className="flex-1 h-9 flex items-center justify-center bg-white rounded-xl text-[13px] font-medium text-[#1B4332]"
             >
-              공식홈페이지
+              {t("공식홈페이지", lang)}
             </a>
             <a
               href="https://www.instagram.com/_scoopsgelato_"

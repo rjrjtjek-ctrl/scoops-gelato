@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseSelect, supabaseInsert } from "@/lib/supabase-client";
 import { requireAuth, handleAuthError } from "@/lib/fms/middleware";
+import { sendStoreNotification } from "@/lib/kakao";
 
 /*
  * 공지사항 권한 규칙:
@@ -95,6 +96,15 @@ export async function POST(req: NextRequest) {
       target_store_id: user.storeId || null,
       created_by: user.userId,
     });
+
+    // 본사 공지 시 카카오 알림
+    if (user.role === "hq_admin") {
+      sendStoreNotification({
+        storeName: "전체 매장",
+        type: "announcement",
+        title: body.title.trim(),
+      }).catch(() => {});
+    }
 
     return NextResponse.json({ announcement: Array.isArray(result) ? result[0] : result });
   } catch (err) { return handleAuthError(err); }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseSelect, supabaseInsert, supabaseUpdate } from "@/lib/supabase-client";
 import { requireAuth, handleAuthError } from "@/lib/fms/middleware";
+import { sendStoreNotification } from "@/lib/kakao";
 
 // GET: 정산 데이터 조회
 export async function GET(req: NextRequest) {
@@ -71,6 +72,19 @@ export async function POST(req: NextRequest) {
         supply_amount: supplyAmount || 0, tax_amount: taxAmount || 0,
         total_amount: totalAmount || 0, memo: memo || "", status: "completed",
       });
+
+      // 출고 시 점주에게 카카오 알림
+      try {
+        const custs = await supabaseSelect<any[]>("settlement_customers", `id=eq.${customerId}&limit=1`);
+        const storeName = custs?.[0]?.store_name || "매장";
+        sendStoreNotification({
+          storeName,
+          type: "general",
+          title: `출고 등록: ${title}`,
+          detail: `합계: ${(totalAmount || 0).toLocaleString()}원`,
+        }).catch(() => {});
+      } catch {}
+
       return NextResponse.json({ success: true, transaction: result });
     }
 

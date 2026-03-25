@@ -29,7 +29,7 @@ import {
   getDrinkDescription,
 } from "@/lib/order-data";
 import type { CartItem, MenuItem, GelatoPrice } from "@/lib/order-types";
-import { ORDER_LANGS, t, tFlavor, saveLang, loadLang, type OrderLang } from "@/lib/order-i18n";
+import { ORDER_LANGS, t, tFlavor, tFlavorCount, tPrice, saveLang, loadLang, type OrderLang } from "@/lib/order-i18n";
 
 // ============================================
 // 메인 페이지 컴포넌트
@@ -287,18 +287,18 @@ export default function StoreMenuPage() {
         {orderType === "dine_in" && (
         <div ref={drinkSectionRef} className="pt-10">
           <div className="flex items-center justify-between mb-1">
-            <h2 className="text-lg font-bold text-[#2A2A2A]">주류</h2>
-            <span className="text-[10px] text-[#999]">만 19세 이상</span>
+            <h2 className="text-lg font-bold text-[#2A2A2A]">{t("주류", lang)}</h2>
+            <span className="text-[10px] text-[#999]">{t("만 19세 이상", lang)}</span>
           </div>
-          <p className="text-xs text-[#999] mb-4">위스키 · 와인 · 리큐르 · 소주</p>
+          <p className="text-xs text-[#999] mb-4">{t("위스키", lang)} · {t("와인", lang)} · {t("리큐르", lang)} · {t("소주", lang)}</p>
 
           {/* 주류 서브탭 */}
           <div className="flex gap-2 mb-5">
             {([
-              { id: "cat3" as const, name: "위스키" },
-              { id: "cat4" as const, name: "와인" },
-              { id: "cat5" as const, name: "리큐르" },
-              { id: "cat6" as const, name: "소주" },
+              { id: "cat3" as const, name: t("위스키", lang) },
+              { id: "cat4" as const, name: t("와인", lang) },
+              { id: "cat5" as const, name: t("리큐르", lang) },
+              { id: "cat6" as const, name: t("소주", lang) },
             ]).map((tab) => (
               <button
                 key={tab.id}
@@ -373,7 +373,7 @@ export default function StoreMenuPage() {
                 <div className="flex items-center gap-3">
                   <ShoppingCart size={20} />
                   <span className="font-semibold">
-                    장바구니 ({totalCount})
+                    {t("장바구니", lang)} ({totalCount})
                   </span>
                 </div>
                 <span className="font-bold">{formatPrice(totalAmount)}</span>
@@ -594,8 +594,8 @@ function GelatoSection({
 
   return (
     <section>
-      <h2 className="text-lg font-bold text-[#2A2A2A] mb-1">젤라또 · 소르베또</h2>
-      <p className="text-xs text-[#999] mb-5">젤라또 15종 + 소르베또 5종, 총 20가지 맛</p>
+      <h2 className="text-lg font-bold text-[#2A2A2A] mb-1">{t("젤라또 · 소르베또 섹션", lang)}</h2>
+      <p className="text-xs text-[#999] mb-5">{lang === "ko" ? "젤라또 15종 + 소르베또 5종, 총 20가지 맛" : lang === "en" ? "15 Gelato + 5 Sorbetto, 20 flavors" : lang === "zh" ? "15种冰淇淋 + 5种雪芭, 共20种口味" : "ジェラート15種 + ソルベット5種, 全20種類"}</p>
 
       {/* STEP 1: 맛 수 선택 (1~6가지 전부 표시) */}
       <div className="mb-5">
@@ -614,7 +614,7 @@ function GelatoSection({
                     : "bg-white text-[#2A2A2A] border border-[#EDE6DD] hover:border-[#1B4332]/30"
                 }`}
               >
-                <span className="text-sm font-bold">{p.flavorCount}가지 맛</span>
+                <span className="text-sm font-bold">{tFlavorCount(p.flavorCount, lang)}</span>
                 <span
                   className={`block text-sm mt-0.5 ${
                     selectedPrice?.id === p.id ? "text-white/80" : "text-[#A68B5B]"
@@ -634,15 +634,14 @@ function GelatoSection({
                     selectedPrice?.id === p.id ? "text-white/60" : "text-[#999]"
                   }`}
                 >
-                  {isCup ? "🍨 컵에 담아드려요" : "📦 테이크아웃 전용 박스"}
+                  {isCup ? `🍨 ${t("컵에 담아드려요", lang)}` : `📦 ${t("테이크아웃 전용 박스", lang)}`}
                 </span>
               </button>
             );
           })}
         </div>
         <p className="text-[11px] text-[#999] mt-3 leading-relaxed px-1">
-          1~2가지 맛은 컵에 담아드리며, 3가지 맛부터는 테이크아웃 전용 박스에 담아드립니다.
-          매장에서 드시는 경우에도 동일하게 제공됩니다.
+          {t("1~2가지 맛은 컵에 담아드리며, 3가지 맛부터는 테이크아웃 전용 박스에 담아드립니다.", lang)}
         </p>
       </div>
 
@@ -711,9 +710,9 @@ function GelatoSection({
                             <Check size={12} className="text-[#1B4332]" />
                           </div>
                         )}
-                        <p className="text-sm font-bold leading-tight">{flavor.name}</p>
+                        <p className="text-sm font-bold leading-tight">{tFlavor(flavor.name, lang)}</p>
                         {isInactive && soldOutIds.has(flavor.id) && (
-                          <span className="text-[10px] text-red-400 font-medium">품절</span>
+                          <span className="text-[10px] text-red-400 font-medium">{t("품절", lang)}</span>
                         )}
                         {flavor.badge && (
                           <div className="flex flex-wrap gap-1 mt-1.5">

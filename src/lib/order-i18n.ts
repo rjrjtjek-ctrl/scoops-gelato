@@ -28,13 +28,18 @@ const translations: Record<string, Record<OrderLang, string>> = {
   "인스타그램": { ko: "인스타그램", en: "Instagram", zh: "Instagram", ja: "Instagram" },
 
   // 메뉴 화면
-  "젤라또 · 소르베또2": { ko: "젤라또 · 소르베또", en: "Gelato · Sorbetto", zh: "冰淇淋 · 雪芭", ja: "ジェラート · ソルベット" },
+  "젤라또 · 소르베또 섹션": { ko: "젤라또 · 소르베또", en: "Gelato · Sorbetto", zh: "冰淇淋 · 雪芭", ja: "ジェラート · ソルベット" },
   "몇 가지 맛을 고르실 건가요?": { ko: "몇 가지 맛을 고르실 건가요?", en: "How many flavors?", zh: "请选择几种口味？", ja: "何種類の味を選びますか？" },
-  "가지 맛": { ko: "가지 맛", en: "flavor(s)", zh: "种口味", ja: "種類" },
-  "컵": { ko: "컵", en: "Cup", zh: "杯", ja: "カップ" },
+  "컵에 담아드려요": { ko: "컵에 담아드려요", en: "Served in cup", zh: "杯装", ja: "カップでご提供" },
+  "테이크아웃 전용 박스": { ko: "테이크아웃 전용 박스", en: "Takeout box", zh: "外带专用盒", ja: "テイクアウト専用ボックス" },
   "맛 선택": { ko: "맛 선택", en: "Select flavors", zh: "选择口味", ja: "味を選ぶ" },
   "장바구니에 추가": { ko: "장바구니에 추가", en: "Add to cart", zh: "加入购物车", ja: "カートに追加" },
   "장바구니": { ko: "장바구니", en: "Cart", zh: "购物车", ja: "カート" },
+  "만 19세 이상": { ko: "만 19세 이상", en: "19+ only", zh: "19岁以上", ja: "19歳以上" },
+  "닫기": { ko: "닫기", en: "Close", zh: "关闭", ja: "閉じる" },
+  "내 주문번호": { ko: "내 주문번호", en: "My Order No.", zh: "我的订单号", ja: "注文番号" },
+  "다른 맛도 추가할 수 있습니다": { ko: "다른 맛도 추가할 수 있습니다", en: "You can add more flavors", zh: "可以添加更多口味", ja: "他の味も追加できます" },
+  "1~2가지 맛은 컵에 담아드리며, 3가지 맛부터는 테이크아웃 전용 박스에 담아드립니다.": { ko: "1~2가지 맛은 컵에 담아드리며, 3가지 맛부터는 테이크아웃 전용 박스에 담아드립니다.\n매장에서 드시는 경우에도 동일하게 제공됩니다.", en: "1-2 flavors are served in a cup. 3+ flavors are served in a takeout box.\nSame packaging for dine-in.", zh: "1-2种口味用杯装。3种以上用外带盒装。\n堂食也是相同包装。", ja: "1〜2種類はカップ、3種類以上はテイクアウトボックスでご提供します。\n店内でお召し上がりの場合も同様です。" },
 
   // 주류
   "주류": { ko: "주류", en: "Drinks", zh: "酒类", ja: "ドリンク" },
@@ -107,4 +112,22 @@ export function t(key: string, lang: OrderLang): string {
 export function tFlavor(name: string, lang: OrderLang): string {
   if (lang === "ko") return name;
   return translations[name]?.[lang] || name;
+}
+
+// "N가지 맛" 번역
+export function tFlavorCount(n: number, lang: OrderLang): string {
+  if (lang === "ko") return `${n}가지 맛`;
+  if (lang === "en") return `${n} Flavor${n > 1 ? "s" : ""}`;
+  if (lang === "zh") return `${n}种口味`;
+  if (lang === "ja") return `${n}種類`;
+  return `${n}가지 맛`;
+}
+
+// 가격 번역 (원 → 통화)
+export function tPrice(price: number, lang: OrderLang): string {
+  if (lang === "ko") return `${price.toLocaleString()}원`;
+  if (lang === "en") return `₩${price.toLocaleString()}`;
+  if (lang === "zh") return `₩${price.toLocaleString()}`;
+  if (lang === "ja") return `₩${price.toLocaleString()}`;
+  return `${price.toLocaleString()}원`;
 }

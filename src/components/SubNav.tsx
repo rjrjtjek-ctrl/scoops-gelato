@@ -38,6 +38,8 @@ const navMap: Record<string, SubNavItem[]> = {
   ],
   CUSTOMER: [
     { href: "/customer", label: "고객의 소리" },
+    { href: "/privacy", label: "개인정보처리방침" },
+    { href: "/refund", label: "환불정책" },
   ],
 };
 

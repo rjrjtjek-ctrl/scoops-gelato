@@ -38,5 +38,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
     // ── 기타 ──
     { url: `${baseUrl}/privacy`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
+    { url: `${baseUrl}/refund`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
   ];
 }

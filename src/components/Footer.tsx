@@ -92,6 +92,13 @@ export default function Footer() {
         </div>
       </div>
 
+      {/* 사업자 정보 */}
+      <div className="border-t border-black/5">
+        <div className="max-w-[1400px] mx-auto px-6 md:px-12 py-4 text-[11px] text-text-light leading-relaxed">
+          <p>상호명: 스쿱스젤라또 | 대표자: 정석주 | 사업장 주소: 충북 청주시 서원구 1순환로 672번길 35, 1층</p>
+          <p>대표번호: 1811-0259 | 이메일: scoopsgelato10@gmail.com</p>
+        </div>
+      </div>
       {/* 하단 카피라이트 */}
       <div className="border-t border-black/5">
         <div className="max-w-[1400px] mx-auto px-6 md:px-12 py-5 flex flex-col md:flex-row items-center justify-between gap-2 text-xs text-text-light">
@@ -101,6 +108,8 @@ export default function Footer() {
           </p>
           <div className="flex items-center gap-4">
             <Link href="/privacy" className="hover:text-brand-primary transition-colors">개인정보처리방침</Link>
+            <span>|</span>
+            <Link href="/refund" className="hover:text-brand-primary transition-colors">환불정책</Link>
             <span>|</span>
             <p>가맹 상담 1811-0259</p>
             <span>|</span>

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseSelect, supabaseInsert, supabaseUpdate } from "@/lib/supabase-client";
 import { requireAuth, handleAuthError } from "@/lib/fms/middleware";
+import { sendStoreNotification } from "@/lib/kakao";
 
 // GET: 할일 목록
 export async function GET(req: NextRequest) {
@@ -112,6 +113,24 @@ export async function POST(req: NextRequest) {
       is_recurring: body.isRecurring || false,
       recur_pattern: body.recurPattern || null,
     });
+
+    // 카카오 알림 — 구매요청이거나 직원이 생성한 할일일 때 점주에게 알림
+    const title = body.title || "";
+    const isPurchaseRequest = title.startsWith("[구매요청]");
+    if (isPurchaseRequest || user.role === "employee") {
+      try {
+        // 매장명 조회
+        const stores = await supabaseSelect<any[]>("stores", `id=eq.${storeId}&limit=1`);
+        const storeName = stores?.[0]?.name || "매장";
+        sendStoreNotification({
+          storeName,
+          type: isPurchaseRequest ? "purchase_request" : "general",
+          title,
+          employeeName: user.name,
+          detail: body.description || undefined,
+        }).catch(() => {}); // 알림 실패해도 할일 생성은 성공
+      } catch {}
+    }
 
     return NextResponse.json({ task: Array.isArray(result) ? result[0] : result });
   } catch (err) { return handleAuthError(err); }

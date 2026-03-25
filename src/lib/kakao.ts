@@ -111,3 +111,58 @@ export async function sendKakaoNotification(inquiry: {
     return { success: false, error: String(err) };
   }
 }
+
+// 매장 알림 — 구매요청, 할일완료, 공지 등 점주에게 알림
+export async function sendStoreNotification(params: {
+  storeName: string;
+  type: "purchase_request" | "task_complete" | "announcement" | "general";
+  title: string;
+  detail?: string;
+  employeeName?: string;
+}): Promise<KakaoSendResult> {
+  const token = await getAccessToken();
+  if (!token) return { success: false, error: "카카오 토큰 발급 실패" };
+
+  const typeLabels: Record<string, string> = {
+    purchase_request: "🛒 구매 요청",
+    task_complete: "✅ 할일 완료",
+    announcement: "📢 공지사항",
+    general: "📋 알림",
+  };
+
+  const templateObject = {
+    object_type: "text",
+    text: [
+      `${typeLabels[params.type] || "📋 알림"}`,
+      "",
+      `▪ 매장: ${params.storeName}`,
+      params.employeeName ? `▪ 직원: ${params.employeeName}` : null,
+      `▪ 내용: ${params.title}`,
+      params.detail ? `▪ 상세: ${params.detail}` : null,
+      "",
+      `⏰ ${new Date().toLocaleString("ko-KR", { timeZone: "Asia/Seoul" })}`,
+    ].filter(Boolean).join("\n"),
+    link: {
+      web_url: "https://scoopsgelato.kr/admin/store",
+      mobile_web_url: "https://scoopsgelato.kr/store/login",
+    },
+  };
+
+  try {
+    const res = await fetch(KAKAO_SEND_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        Authorization: `Bearer ${token}`,
+      },
+      body: new URLSearchParams({ template_object: JSON.stringify(templateObject) }),
+    });
+    const data = await res.json();
+    if (data.result_code === 0) return { success: true };
+    console.error("매장 알림 전송 실패:", data);
+    return { success: false, error: JSON.stringify(data) };
+  } catch (err) {
+    console.error("매장 알림 에러:", err);
+    return { success: false, error: String(err) };
+  }
+}

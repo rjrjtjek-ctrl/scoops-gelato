@@ -13,6 +13,7 @@ export default function HQProductsPage() {
   const [showAdd, setShowAdd] = useState(false);
   const [newProduct, setNewProduct] = useState({ name: "", category: "프리믹스", spec: "", unit: "", price: 0 });
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [editData, setEditData] = useState({ name: "", category: "", spec: "", unit: "", price: 0 });
   const [editPrice, setEditPrice] = useState(0);
   const [filterCat, setFilterCat] = useState("전체");
   const [search, setSearch] = useState("");
@@ -36,10 +37,15 @@ export default function HQProductsPage() {
     fetchProducts();
   };
 
-  const savePrice = async (id: string) => {
+  const startEdit = (p: Product) => {
+    setEditingId(p.id);
+    setEditData({ name: p.name, category: p.category, spec: p.spec, unit: p.unit, price: p.price });
+  };
+
+  const saveEdit = async (id: string) => {
     await fetch("/api/fms/settlement", {
       method: "PATCH", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ type: "product", id, price: editPrice }),
+      body: JSON.stringify({ type: "product", id, ...editData }),
     });
     setEditingId(null);
     fetchProducts();
@@ -113,31 +119,52 @@ export default function HQProductsPage() {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {filtered.map(p => (
-                  <tr key={p.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 font-medium text-gray-800">{p.name}</td>
-                    <td className="px-4 py-3">
-                      <span className="px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-600">{p.category || "기타"}</span>
-                    </td>
-                    <td className="px-4 py-3 text-gray-500">{p.spec || "-"}</td>
-                    <td className="px-4 py-3 text-right">
-                      {editingId === p.id ? (
-                        <div className="flex items-center justify-end gap-1">
-                          <input type="number" value={editPrice} onChange={e => setEditPrice(Number(e.target.value))} className="w-24 px-2 py-1 border rounded text-sm text-right" autoFocus
-                            onKeyDown={e => { if (e.key === "Enter") savePrice(p.id); if (e.key === "Escape") setEditingId(null); }} />
-                          <button onClick={() => savePrice(p.id)} className="p-1 text-green-600"><Save size={14} /></button>
+                  editingId === p.id ? (
+                    <tr key={p.id} className="bg-blue-50">
+                      <td className="px-3 py-2">
+                        <input value={editData.name} onChange={e => setEditData({...editData, name: e.target.value})}
+                          className="w-full px-2 py-1 border rounded text-sm" />
+                      </td>
+                      <td className="px-3 py-2">
+                        <select value={editData.category} onChange={e => setEditData({...editData, category: e.target.value})}
+                          className="w-full px-2 py-1 border rounded text-sm">
+                          {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                        </select>
+                      </td>
+                      <td className="px-3 py-2">
+                        <input value={editData.spec} onChange={e => setEditData({...editData, spec: e.target.value})}
+                          className="w-full px-2 py-1 border rounded text-sm" placeholder="규격" />
+                      </td>
+                      <td className="px-3 py-2">
+                        <input type="number" value={editData.price} onChange={e => setEditData({...editData, price: Number(e.target.value)})}
+                          className="w-24 px-2 py-1 border rounded text-sm text-right"
+                          onKeyDown={e => { if (e.key === "Enter") saveEdit(p.id); if (e.key === "Escape") setEditingId(null); }} />
+                      </td>
+                      <td className="px-3 py-2 text-center">
+                        <div className="flex items-center justify-center gap-1">
+                          <button onClick={() => saveEdit(p.id)} className="px-2 py-1 bg-green-600 text-white text-xs rounded">저장</button>
+                          <button onClick={() => setEditingId(null)} className="px-2 py-1 bg-gray-300 text-gray-700 text-xs rounded">취소</button>
                         </div>
-                      ) : (
-                        <span className="cursor-pointer hover:text-blue-600 font-medium" onClick={() => { setEditingId(p.id); setEditPrice(p.price); }}>
-                          {p.price > 0 ? `${p.price.toLocaleString()}원` : "미설정"}
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <button onClick={() => deleteProduct(p.id, p.name)} className="text-red-400 hover:text-red-600">
-                        <Trash2 size={14} />
-                      </button>
-                    </td>
-                  </tr>
+                      </td>
+                    </tr>
+                  ) : (
+                    <tr key={p.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-3 font-medium text-gray-800">{p.name}</td>
+                      <td className="px-4 py-3">
+                        <span className="px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-600">{p.category || "기타"}</span>
+                      </td>
+                      <td className="px-4 py-3 text-gray-500">{p.spec || "-"}</td>
+                      <td className="px-4 py-3 text-right font-medium">{p.price > 0 ? `${p.price.toLocaleString()}원` : "미설정"}</td>
+                      <td className="px-4 py-3 text-center">
+                        <div className="flex items-center justify-center gap-2">
+                          <button onClick={() => startEdit(p)} className="text-blue-500 hover:text-blue-700 text-xs">수정</button>
+                          <button onClick={() => deleteProduct(p.id, p.name)} className="text-red-400 hover:text-red-600">
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
                 ))}
               </tbody>
             </table>

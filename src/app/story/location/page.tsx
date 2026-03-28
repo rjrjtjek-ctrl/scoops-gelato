@@ -48,7 +48,7 @@ export default function LocationPage() {
                   </div>
                   <div>
                     <h3 className="text-sm font-medium text-brand-primary mb-1">주소</h3>
-                    <p className="text-sm text-text-body">충청북도 청주시 상당구 사직대로 366 1층</p>
+                    <p className="text-sm text-text-body">충청북도 청주시 서원구 1순환로672번길 35, 1층</p>
                   </div>
                 </div>
 

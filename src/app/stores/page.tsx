@@ -59,7 +59,7 @@ export default function StoresPage() {
             <div className="text-text-body text-[15px] leading-[2] space-y-4">
               <p>저는 &ldquo;진짜 맛있는 젤라또를 더 많은 분들과 나누고 싶다&rdquo;는 마음 하나로 스쿱스를 시작했습니다. 이탈리아 정통 레시피를 바탕으로, 매일 매장에서 직접 만드는 신선한 수제 젤라또 — 그것이 스쿱스의 약속입니다.</p>
               <p>좋은 원재료를 고르는 것부터 한 스쿱 한 스쿱 정성을 담는 것까지, 저희가 가장 중요하게 생각하는 건 &ldquo;경험&rdquo;입니다. 매장에 들어서는 순간부터 젤라또를 맛보는 그 순간까지, 특별한 경험을 드리고 싶습니다.</p>
-              <p>전국 17개 매장에서 여러분을 기다리고 있습니다. 스쿱스에서 행복한 한 스쿱을 만나보세요.</p>
+              <p>전국 매장에서 여러분을 기다리고 있습니다. 스쿱스에서 행복한 한 스쿱을 만나보세요.</p>
             </div>
             <p className="mt-6 text-brand-primary font-semibold text-[15px]">스쿱스 젤라떼리아 대표 정석주</p>
           </motion.div>
@@ -89,7 +89,7 @@ export default function StoresPage() {
       <div className="max-w-[1400px] mx-auto px-6 md:px-12">
         <motion.div className="mb-8" initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
           <p className="text-sm text-text-light tracking-[0.15em] uppercase mb-3">Our Stores</p>
-          <h2 className="text-2xl md:text-3xl font-bold text-brand-primary">전국 17개 매장</h2>
+          <h2 className="text-2xl md:text-3xl font-bold text-brand-primary">전국 매장 안내</h2>
         </motion.div>
         <motion.div variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-80px" }}>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">

@@ -107,7 +107,7 @@ export async function POST(req: NextRequest) {
         id: newUser?.id,
         loginId: owner.loginId,
         name: owner.name,
-        password: owner.password, // 초기 비밀번호 안내용
+        tempPassword: "********", // 보안: 비밀번호 API 노출 금지 — UI에서 직접 표시
       },
     });
   } catch (err) {

@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     console.error("가맹문의 처리 오류:", err);
     return NextResponse.json(
-      { error: "서버 오류가 발생했습니다.", detail: String(err) },
+      { error: "서버 오류가 발생했습니다." },
       { status: 500 }
     );
   }

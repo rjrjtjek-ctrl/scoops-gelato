@@ -192,6 +192,12 @@ export async function GET(req: NextRequest) {
 // PATCH: 주문 상태 변경 (관리자용)
 export async function PATCH(req: NextRequest) {
   try {
+    // 인증 체크 — admin 쿠키 또는 FMS 토큰 필요
+    const adminCookie = req.cookies.get("scoops_admin")?.value;
+    const fmsCookie = req.cookies.get("fms_token")?.value;
+    if (!adminCookie && !fmsCookie) {
+      return NextResponse.json({ error: "인증이 필요합니다." }, { status: 401 });
+    }
     const body = await req.json();
     const { orderId, status, paymentStatus, paymentMethod } = body;
 
@@ -225,6 +231,12 @@ export async function PATCH(req: NextRequest) {
 // DELETE: 주문 삭제 (관리자용)
 export async function DELETE(req: NextRequest) {
   try {
+    // 인증 체크
+    const adminCookie = req.cookies.get("scoops_admin")?.value;
+    const fmsCookie = req.cookies.get("fms_token")?.value;
+    if (!adminCookie && !fmsCookie) {
+      return NextResponse.json({ error: "인증이 필요합니다." }, { status: 401 });
+    }
     const { searchParams } = new URL(req.url);
     const orderId = searchParams.get("orderId");
 

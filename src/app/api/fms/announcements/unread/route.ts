@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
     const myAnnouncements = (announcements || []).filter((a: any) => {
       if (a.type === "all") return true;
       if (a.target_store_id === user.storeId) return true;
-      if (a.author_id === user.userId) return true;
+      if (a.created_by === user.userId) return true;
       return false;
     });
 

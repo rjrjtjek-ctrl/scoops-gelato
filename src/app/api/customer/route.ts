@@ -27,6 +27,12 @@ export async function POST(req: NextRequest) {
 // 답변 작성 (관리자용)
 export async function PATCH(req: NextRequest) {
   try {
+    // 관리자 인증 체크
+    const adminCookie = req.cookies.get("scoops_admin")?.value;
+    const fmsCookie = req.cookies.get("fms_token")?.value;
+    if (!adminCookie && !fmsCookie) {
+      return NextResponse.json({ error: "관리자 인증이 필요합니다." }, { status: 401 });
+    }
     const body = await req.json();
     const { id, reply } = body;
 

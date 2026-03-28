@@ -57,14 +57,12 @@ export async function POST(req: NextRequest) {
     const store = stores[0];
     const storeHasGps = store?.latitude && store?.longitude;
 
-    // GPS 검증
+    // GPS 검증 — 위치 못 가져오면 출근은 허용하되 "위치 미확인"으로 기록
     let distance: number | null = null;
-    if (storeHasGps) {
-      if (!latitude || !longitude) {
-        return NextResponse.json({ error: "위치 정보가 필요합니다. 위치 권한을 허용해주세요." }, { status: 400 });
-      }
+    let gpsWarning: string | null = null;
+    if (storeHasGps && latitude && longitude) {
       distance = Math.round(getDistanceMeters(latitude, longitude, store.latitude, store.longitude));
-      const radius = store.gps_radius || 100;
+      const radius = store.gps_radius || 200;
       if (distance > radius) {
         return NextResponse.json({
           error: `매장에서 ${distance}m 떨어져 있습니다. 매장 반경 ${radius}m 이내에서 ${action === "clock_in" ? "출근" : "퇴근"}해주세요.`,
@@ -72,6 +70,9 @@ export async function POST(req: NextRequest) {
           radius,
         }, { status: 400 });
       }
+    } else if (storeHasGps && (!latitude || !longitude)) {
+      // GPS 못 가져왔지만 출근은 허용 — 점주에게 "위치 미확인" 알림
+      gpsWarning = "위치 정보를 가져올 수 없어 위치 미확인으로 기록됩니다.";
     }
 
     if (action === "clock_in") {
@@ -94,7 +95,7 @@ export async function POST(req: NextRequest) {
         clock_in_distance: distance,
         memo: body.memo || null,
       });
-      return NextResponse.json({ success: true, record: result, clockIn: now, distance });
+      return NextResponse.json({ success: true, record: result, clockIn: now, distance, gpsWarning });
 
     } else if (action === "clock_out") {
       const active = await supabaseSelect<any[]>(

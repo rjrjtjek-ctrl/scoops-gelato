@@ -23,7 +23,8 @@ export default function HQCatalogPage() {
 
   const addProduct = async () => {
     if (!newP.name || !newP.searchKeyword) return;
-    await fetch("/api/fms/products", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(newP) });
+    const res = await fetch("/api/fms/products", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(newP) });
+    if (!res.ok) { alert("오류가 발생했습니다."); return; }
     setShowAdd(false); setNewP({ name: "", brand: "", specification: "", category: "원재료", searchKeyword: "", purchaseMode: "store_purchase" });
     fetchProducts();
   };
@@ -31,7 +32,8 @@ export default function HQCatalogPage() {
   const testSearch = async (keyword: string, id: string) => {
     setSearching(id);
     const res = await fetch("/api/fms/price-search", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ keyword }) });
-    if (res.ok) { const d = await res.json(); setSearchResults(d.results || []); }
+    if (!res.ok) { alert("오류가 발생했습니다."); setSearching(null); return; }
+    const d = await res.json(); setSearchResults(d.results || []);
     setSearching(null);
   };
 
@@ -64,7 +66,9 @@ export default function HQCatalogPage() {
         </div>
       )}
 
-      {loading ? <div className="text-center py-12 text-gray-400">로딩 중...</div> : (
+      {loading ? <div className="text-center py-12 text-gray-400">로딩 중...</div> : products.length === 0 ? (
+        <div className="text-center py-12 text-gray-400">등록된 제품이 없습니다</div>
+      ) : (
         <div className="space-y-3">
           {products.map(p => (
             <div key={p.id} className="bg-white rounded-xl shadow-sm p-4">

@@ -56,7 +56,7 @@ export default function HQDashboard() {
         <StatCard label="오늘 매출" value={`${(stats?.todayRevenue || 0).toLocaleString()}원`} icon={<TrendingUp size={20} />} color="#1B4332" href="/admin/orders/analytics" />
         <StatCard label="오늘 주문" value={`${stats?.todayOrders || 0}건`} icon={<ShoppingCart size={20} />} color="#2D6A4F" href="/admin/orders" />
         <StatCard label="운영 매장" value={`${stats?.storeCount || 0}개`} icon={<Store size={20} />} color="#A68B5B" href="/admin/hq/stores" />
-        <StatCard label="전체 직원" value={`${stats?.employeeCount || 0}명`} icon={<Users size={20} />} color="#6B5B4E" href="/admin/store/employees" />
+        <StatCard label="전체 직원" value={`${stats?.employeeCount || 0}명`} icon={<Users size={20} />} color="#6B5B4E" href="/admin/hq/stores" />
       </div>
 
       {/* 긴급 알림 */}

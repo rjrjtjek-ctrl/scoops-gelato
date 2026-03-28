@@ -19,24 +19,33 @@ export default function StoreAnnouncementsPage() {
   const [sending, setSending] = useState(false);
 
   const fetchData = async () => {
-    const res = await fetch("/api/fms/announcements", { cache: "no-store" });
-    if (res.ok) { const d = await res.json(); setAnnouncements(d.announcements || []); }
+    try {
+      const res = await fetch("/api/fms/announcements", { cache: "no-store" });
+      if (!res.ok) throw new Error();
+      const d = await res.json(); setAnnouncements(d.announcements || []);
+    } catch { /* 무시 */ }
     setLoading(false);
   };
   useEffect(() => { fetchData(); }, []);
 
   const markRead = async (id: string) => {
     setExpanded(expanded === id ? null : id);
-    await fetch(`/api/fms/announcements/${id}/read`, { method: "POST" });
+    try {
+      await fetch(`/api/fms/announcements/${id}/read`, { method: "POST" });
+    } catch { /* 무시 */ }
     setAnnouncements(prev => prev.map(a => a.id === id ? { ...a, isRead: true } : a));
   };
 
   const submit = async () => {
     if (!form.title || !form.content) return;
     setSending(true);
-    await fetch("/api/fms/announcements", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
-    setShowForm(false); setForm({ title: "", content: "" });
-    fetchData(); setSending(false);
+    try {
+      const res = await fetch("/api/fms/announcements", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
+      if (!res.ok) throw new Error();
+      setShowForm(false); setForm({ title: "", content: "" });
+      fetchData();
+    } catch { alert("오류가 발생했습니다."); }
+    setSending(false);
   };
 
   return (

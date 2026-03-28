@@ -23,7 +23,8 @@ export default function HQKnowledgePage() {
 
   const deleteItem = async (id: string) => {
     if (!confirm("삭제하시겠습니까?")) return;
-    await fetch(`/api/fms/knowledge/${id}`, { method: "DELETE" });
+    const res = await fetch(`/api/fms/knowledge/${id}`, { method: "DELETE" });
+    if (!res.ok) { alert("오류가 발생했습니다."); return; }
     fetchItems();
   };
 
@@ -46,7 +47,9 @@ export default function HQKnowledgePage() {
 
       <p className="text-sm text-gray-500 mb-4">{items.length}개 항목</p>
 
-      {loading ? <div className="text-center py-12 text-gray-400">로딩 중...</div> : (
+      {loading ? <div className="text-center py-12 text-gray-400">로딩 중...</div> : items.length === 0 ? (
+        <div className="text-center py-12 text-gray-400">등록된 지식이 없습니다. 새로운 지식을 추가해보세요.</div>
+      ) : (
         <div className="space-y-2">
           {items.map(item => (
             <div key={item.id} className="bg-white rounded-xl shadow-sm p-4">

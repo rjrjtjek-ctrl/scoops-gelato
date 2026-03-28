@@ -13,14 +13,16 @@ export default function HQMenuPage() {
 
   const fetchMenu = async () => {
     const res = await fetch("/api/fms/menu", { cache: "no-store" });
-    if (res.ok) { const d = await res.json(); setItems(d.menuItems || []); }
+    if (!res.ok) { setLoading(false); return; }
+    const d = await res.json(); setItems(d.menuItems || []);
     setLoading(false);
   };
   useEffect(() => { fetchMenu(); }, []);
 
   const addItem = async () => {
     if (!newItem.name) return;
-    await fetch("/api/fms/menu", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(newItem) });
+    const res = await fetch("/api/fms/menu", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(newItem) });
+    if (!res.ok) { alert("오류가 발생했습니다."); return; }
     setShowAdd(false); setNewItem({ name: "", category: "젤라또", price: 0 });
     fetchMenu();
   };
@@ -47,7 +49,9 @@ export default function HQMenuPage() {
         </div>
       )}
 
-      {loading ? <div className="text-center py-12 text-gray-400">로딩 중...</div> : (
+      {loading ? <div className="text-center py-12 text-gray-400">로딩 중...</div> : items.length === 0 ? (
+        <div className="text-center py-12 text-gray-400">등록된 메뉴가 없습니다</div>
+      ) : (
         <div className="space-y-6">
           {categories.map(cat => (
             <div key={cat}>

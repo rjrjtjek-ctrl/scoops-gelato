@@ -40,10 +40,11 @@ export default function HQAnnouncementsPage() {
   const submit = async () => {
     if (!form.title || !form.content) return;
     setSending(true);
-    await fetch("/api/fms/announcements", {
+    const res = await fetch("/api/fms/announcements", {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify(form),
     });
+    if (!res.ok) { alert("오류가 발생했습니다."); setSending(false); return; }
     setShowForm(false); setForm({ title: "", content: "" });
     fetchAnnouncements();
     setSending(false);

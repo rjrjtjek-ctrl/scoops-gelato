@@ -29,14 +29,21 @@ export default function AdminCustomerPage() {
   }, []);
 
   const checkAuthAndFetch = async () => {
-    const authRes = await fetch("/api/admin");
-    const authData = await authRes.json();
-    if (!authData.authenticated) { router.push("/admin/login"); return; }
+    try {
+      const authRes = await fetch("/api/admin");
+      if (!authRes.ok) { router.push("/admin/login"); return; }
+      const authData = await authRes.json();
+      if (!authData.authenticated) { router.push("/admin/login"); return; }
 
-    const res = await fetch("/api/customer");
-    const data = await res.json();
-    setPosts(data.posts || []);
-    setLoading(false);
+      const res = await fetch("/api/customer");
+      if (!res.ok) { setLoading(false); return; }
+      const data = await res.json();
+      setPosts(data.posts || []);
+    } catch {
+      // 네트워크 오류
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleReply = async (id: string) => {

@@ -17,24 +17,24 @@ export default function HQOrdersPage() {
   const fetchOrders = async () => {
     const query = filter === "all" ? "" : `?status=${filter}`;
     const res = await fetch(`/api/fms/hq-orders${query}`, { cache: "no-store" });
-    if (res.ok) {
-      const data = await res.json();
-      setOrders((data.orders || []).map((o: any) => ({
-        ...o,
-        items: typeof o.items === "string" ? JSON.parse(o.items) : o.items,
-      })));
-    }
+    if (!res.ok) { alert("오류가 발생했습니다."); setLoading(false); return; }
+    const data = await res.json();
+    setOrders((data.orders || []).map((o: any) => ({
+      ...o,
+      items: typeof o.items === "string" ? JSON.parse(o.items) : o.items,
+    })));
     setLoading(false);
   };
 
   useEffect(() => { fetchOrders(); }, [filter]);
 
   const updateStatus = async (orderId: string, status: string) => {
-    await fetch(`/api/fms/hq-orders/${orderId}/status`, {
+    const res = await fetch(`/api/fms/hq-orders/${orderId}/status`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status }),
     });
+    if (!res.ok) { alert("오류가 발생했습니다."); return; }
     fetchOrders();
   };
 

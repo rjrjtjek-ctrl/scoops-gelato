@@ -16,7 +16,7 @@ export default function OrderHistoryPage() {
   useEffect(() => {
     if (!selectedStore) return;
     fetch(`/api/order?storeId=${selectedStore}`)
-      .then((r) => r.json())
+      .then((r) => { if (!r.ok) throw new Error(); return r.json(); })
       .then((d) => setOrders(d.orders || []))
       .catch(() => setOrders([]));
   }, [selectedStore]);

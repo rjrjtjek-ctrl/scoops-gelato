@@ -61,7 +61,7 @@ export default function AnalyticsPage() {
   const fetchData = () => {
     setLoading(true);
     fetch(`/api/tracking?days=${days}`)
-      .then((r) => r.json())
+      .then((r) => { if (!r.ok) throw new Error(); return r.json(); })
       .then((d) => { setData(d); setLoading(false); })
       .catch(() => setLoading(false));
   };

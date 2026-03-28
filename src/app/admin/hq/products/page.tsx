@@ -28,10 +28,11 @@ export default function HQProductsPage() {
 
   const addProduct = async () => {
     if (!newProduct.name) return;
-    await fetch("/api/fms/settlement", {
+    const res = await fetch("/api/fms/settlement", {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ type: "product", ...newProduct }),
     });
+    if (!res.ok) { alert("오류가 발생했습니다."); return; }
     setShowAdd(false);
     setNewProduct({ name: "", category: "프리믹스", spec: "", unit: "", price: 0 });
     fetchProducts();
@@ -43,10 +44,11 @@ export default function HQProductsPage() {
   };
 
   const saveEdit = async (id: string) => {
-    await fetch("/api/fms/settlement", {
+    const res = await fetch("/api/fms/settlement", {
       method: "PATCH", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ type: "product", id, ...editData }),
     });
+    if (!res.ok) { alert("오류가 발생했습니다."); return; }
     setEditingId(null);
     fetchProducts();
   };

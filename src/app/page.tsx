@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { timeline, stores, menuItems } from "@/lib/data";
+import { track } from "@/lib/tracking";
 
 const fadeUp = { hidden: { opacity: 0, y: 24 }, visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: "easeOut" as const } } };
 const fadeIn = { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { duration: 0.8, ease: "easeOut" as const } } };
@@ -192,6 +193,8 @@ export default function HomePage() {
         body: JSON.stringify({ phone: leadPhone, message: "[홈페이지] 마진표 자료 요청" }),
       });
     } catch { /* 실패해도 공개 */ }
+    // 마진 열람 추적 (전화번호 포함)
+    track("margin_lead", undefined, { phone: leadPhone });
     setMarginRevealed(true);
     setLeadDone(true);
     setLeadSubmitting(false);

@@ -15,6 +15,8 @@ import {
   BarChart3,
   Clock,
   RefreshCw,
+  Eye,
+  Phone,
 } from "lucide-react";
 
 interface AnalyticsData {
@@ -30,7 +32,8 @@ interface AnalyticsData {
   pairingCount: number;
   funnel: { qrScan: number; orderType: number; cartView: number; orderComplete: number };
   devices: Record<string, number>;
-  recent: { event: string; storeCode?: string; data?: Record<string, unknown>; timestamp: string }[];
+  marginLeads: { phone: string; ip: string; timestamp: string; device: string }[];
+  recent: { event: string; storeCode?: string; data?: Record<string, unknown>; ip?: string; timestamp: string }[];
 }
 
 const EVENT_LABELS: Record<string, string> = {
@@ -51,6 +54,7 @@ const EVENT_LABELS: Record<string, string> = {
   pwa_dismiss: "PWA 다음에",
   link_homepage: "홈페이지 클릭",
   link_instagram: "인스타 클릭",
+  margin_lead: "📊 마진표 열람",
 };
 
 export default function AnalyticsPage() {
@@ -111,6 +115,41 @@ export default function AnalyticsPage() {
 
       {data && (
         <div className="max-w-4xl mx-auto px-4 py-5 space-y-5">
+
+          {/* ▸ 마진표 열람자 (최상단 고정) */}
+          {data.marginLeads && data.marginLeads.length > 0 && (
+            <div className="bg-amber-50 rounded-xl border-2 border-amber-300 p-5">
+              <h2 className="text-sm font-bold text-amber-800 mb-1 flex items-center gap-2">
+                <Eye size={16} className="text-amber-600" /> 마진표 열람자
+                <span className="ml-auto bg-amber-200 text-amber-800 text-xs font-bold px-2.5 py-0.5 rounded-full">
+                  {data.marginLeads.length}명
+                </span>
+              </h2>
+              <p className="text-xs text-amber-600 mb-3">번호를 남기고 마진 데이터를 확인한 잠재 가맹 문의자</p>
+              <div className="space-y-2">
+                {data.marginLeads.map((lead, i) => (
+                  <div key={i} className="bg-white rounded-lg p-3 border border-amber-200">
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
+                        <Phone size={14} className="text-amber-600" />
+                        <span className="font-bold text-gray-900 text-sm">{lead.phone}</span>
+                      </div>
+                      <span className="text-xs text-gray-400">
+                        {new Date(lead.timestamp).toLocaleString("ko-KR", {
+                          month: "numeric", day: "numeric",
+                          hour: "2-digit", minute: "2-digit",
+                        })}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3 text-xs text-gray-400">
+                      <span>IP: {lead.ip}</span>
+                      <span>{lead.device}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* ▸ 주문 퍼널 */}
           <div className="bg-white rounded-xl border border-gray-200 p-5">
@@ -345,13 +384,19 @@ export default function AnalyticsPage() {
             <h2 className="text-sm font-bold text-gray-900 mb-3">최근 이벤트</h2>
             <div className="space-y-2">
               {data.recent.map((ev, i) => (
-                <div key={i} className="flex items-center justify-between text-xs py-1 border-b border-gray-50 last:border-0">
-                  <div className="flex items-center gap-2">
-                    <span className="px-2 py-0.5 bg-gray-100 rounded text-gray-600">
+                <div key={i} className={`flex items-center justify-between text-xs py-1.5 border-b border-gray-50 last:border-0 ${ev.event === "margin_lead" ? "bg-amber-50 -mx-2 px-2 rounded" : ""}`}>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className={`px-2 py-0.5 rounded ${ev.event === "margin_lead" ? "bg-amber-200 text-amber-800 font-bold" : "bg-gray-100 text-gray-600"}`}>
                       {EVENT_LABELS[ev.event] || ev.event}
                     </span>
-                    {ev.storeCode && <span className="text-gray-400">{ev.storeCode}</span>}
-                    {ev.data && (
+                    {ev.event === "margin_lead" && ev.data?.phone ? (
+                      <span className="font-bold text-gray-900">{String(ev.data.phone)}</span>
+                    ) : null}
+                    {ev.event === "margin_lead" && ev.ip && (
+                      <span className="text-gray-400">IP: {ev.ip}</span>
+                    )}
+                    {ev.event !== "margin_lead" && ev.storeCode && <span className="text-gray-400">{ev.storeCode}</span>}
+                    {ev.event !== "margin_lead" && ev.data && (
                       <span className="text-gray-400 truncate max-w-[150px]">
                         {JSON.stringify(ev.data).slice(0, 40)}
                       </span>

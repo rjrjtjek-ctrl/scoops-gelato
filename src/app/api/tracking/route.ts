@@ -167,11 +167,23 @@ export async function GET(req: NextRequest) {
     else devices.other++;
   });
 
-  // 최근 이벤트 20건
+  // 마진표 열람자 (전화번호 + IP + 시간)
+  const marginLeads = filtered
+    .filter((l) => l.event === "margin_lead" && l.data?.phone)
+    .map((l) => ({
+      phone: l.data!.phone as string,
+      ip: l.ip,
+      timestamp: l.created_at,
+      userAgent: l.user_agent,
+      device: /iPhone|iPad/.test(l.user_agent) ? "iOS" : /Android/.test(l.user_agent) ? "Android" : "PC",
+    }));
+
+  // 최근 이벤트 20건 (마진 열람은 전화번호·IP 포함)
   const recent = filtered.slice(0, 20).map((l) => ({
     event: l.event,
     storeCode: l.store_code,
     data: l.data,
+    ip: l.ip,
     timestamp: l.created_at,
   }));
 
@@ -189,6 +201,7 @@ export async function GET(req: NextRequest) {
     pairingCount,
     funnel,
     devices,
+    marginLeads,
     recent,
   });
 }

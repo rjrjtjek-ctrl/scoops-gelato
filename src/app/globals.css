@@ -1,7 +1,7 @@
-@import "tailwindcss";
-
 /* IBM Plex Sans KR 한글 폰트 명시적 로드 */
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@300;400;500;600;700&display=swap');
+
+@import "tailwindcss";
 
 :root {
   /* 메인 컬러 — 딥 그린 브랜딩 */

@@ -151,8 +151,51 @@ function HeroSlideshow() {
   );
 }
 
+/* ─── 마진 데이터 ─── */
+const marginData = [
+  { name: "1가지맛", price: "4,000원", profit: "3,258원", margin: "81.5" },
+  { name: "2가지맛", price: "5,000원", profit: "4,169원", margin: "83.4" },
+  { name: "3가지맛 M", price: "16,000원", profit: "12,063원", margin: "75.4" },
+  { name: "4가지맛 L", price: "22,000원", profit: "16,504원", margin: "75.0" },
+  { name: "5가지맛 XL", price: "30,000원", profit: "22,680원", margin: "75.6" },
+  { name: "6가지맛 XXL", price: "40,000원", profit: "30,350원", margin: "75.9" },
+];
+const drinkData = [
+  { name: "위스키 (30ml)", price: "9,800원", profit: "5,416원", margin: "55.3" },
+  { name: "와인 (50ml)", price: "2,900원", profit: "2,404원", margin: "82.9" },
+];
+
 export default function HomePage() {
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
+  const [marginRevealed, setMarginRevealed] = useState(false);
+  const [leadPhone, setLeadPhone] = useState("");
+  const [leadSubmitting, setLeadSubmitting] = useState(false);
+  const [leadDone, setLeadDone] = useState(false);
+  const [privacyAgreed, setPrivacyAgreed] = useState(false);
+
+  // 전화번호 포맷팅 (010-1234-5678)
+  const formatPhone = (v: string) => {
+    const nums = v.replace(/\D/g, "").slice(0, 11);
+    if (nums.length <= 3) return nums;
+    if (nums.length <= 7) return `${nums.slice(0, 3)}-${nums.slice(3)}`;
+    return `${nums.slice(0, 3)}-${nums.slice(3, 7)}-${nums.slice(7)}`;
+  };
+
+  const submitLead = async () => {
+    const nums = leadPhone.replace(/\D/g, "");
+    if (nums.length < 10 || !privacyAgreed) return;
+    setLeadSubmitting(true);
+    try {
+      await fetch("/api/franchise", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: leadPhone, message: "[홈페이지] 마진표 자료 요청" }),
+      });
+    } catch { /* 실패해도 공개 */ }
+    setMarginRevealed(true);
+    setLeadDone(true);
+    setLeadSubmitting(false);
+  };
 
   const openLightbox = useCallback((idx: number) => setLightboxIdx(idx), []);
   const closeLightbox = useCallback(() => setLightboxIdx(null), []);
@@ -174,6 +217,171 @@ export default function HomePage() {
   const currentStore = lightboxIdx !== null ? storesWithImages[lightboxIdx] : null;
 
   return (<>
+    {/* ══════════ 마진 정보 히어로 (블러 + 리드캡처) ══════════ */}
+    <section className="pt-24 md:pt-28 pb-14 md:pb-20 bg-[#1B4332] relative overflow-hidden">
+      {/* 배경 패턴 */}
+      <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 0)', backgroundSize: '40px 40px' }} />
+      <div className="relative z-10 max-w-[1200px] mx-auto px-5 md:px-12">
+        {/* 헤드라인 */}
+        <motion.div initial="hidden" animate="visible" variants={stagger} className="text-center mb-10 md:mb-14">
+          <motion.p variants={fadeUp} className="text-[#A68B5B] text-xs md:text-sm tracking-[0.2em] uppercase mb-3 font-medium">Profit Structure</motion.p>
+          <motion.h1 variants={fadeUp} className="text-3xl md:text-5xl lg:text-6xl font-bold text-white leading-[1.2] mb-4">
+            젤라또 창업,<br /> 마진율 <span className="text-[#A68B5B]">75~83%</span>
+          </motion.h1>
+          <motion.p variants={fadeUp} className="text-white/50 text-sm md:text-base max-w-xl mx-auto leading-relaxed">
+            전 품목 실제 마진 데이터를 공개합니다.<br />
+            카드수수료 1% 포함, 1인 운영 기준.
+          </motion.p>
+        </motion.div>
+
+        {/* 마진 테이블 + 월 수익 시뮬레이션 */}
+        <div className="grid lg:grid-cols-5 gap-6">
+          {/* 왼쪽: 마진 테이블 (3/5) */}
+          <motion.div
+            initial="hidden" whileInView="visible" viewport={{ once: true }}
+            variants={fadeUp}
+            className="lg:col-span-3 bg-white/[0.07] backdrop-blur-sm rounded-2xl border border-white/10 overflow-hidden"
+          >
+            <div className="px-5 md:px-6 py-4 border-b border-white/10">
+              <h3 className="text-white font-bold text-base">가맹점 전 품목 마진표</h3>
+              <p className="text-white/40 text-xs mt-0.5">카드수수료 1% 포함 기준</p>
+            </div>
+            {/* 테이블 헤더 */}
+            <div className="grid grid-cols-3 px-5 md:px-6 py-3 bg-white/[0.03] border-b border-white/5 text-xs text-white/40">
+              <span>품목</span>
+              <span className="text-right">판매가</span>
+              <span className="text-right">순이익 (마진율)</span>
+            </div>
+            {/* 젤라또 */}
+            <div className="divide-y divide-white/5">
+              {marginData.map((item, i) => (
+                <div key={i} className="grid grid-cols-3 px-5 md:px-6 py-3 items-center">
+                  <span className="text-white text-sm font-medium">{item.name}</span>
+                  <span className="text-white/70 text-sm text-right">{item.price}</span>
+                  <span className={`text-right transition-all duration-700 ${marginRevealed ? "" : "blur-[6px] select-none"}`}>
+                    <span className="text-[#A68B5B] text-sm font-semibold">{item.profit}</span>
+                    <span className="text-white/30 text-xs ml-1">({item.margin}%)</span>
+                  </span>
+                </div>
+              ))}
+            </div>
+            {/* 구분선 + 주류 */}
+            <div className="px-5 md:px-6 py-2 bg-white/[0.03] border-t border-white/10">
+              <span className="text-white/40 text-xs">주류</span>
+            </div>
+            <div className="divide-y divide-white/5">
+              {drinkData.map((item, i) => (
+                <div key={i} className="grid grid-cols-3 px-5 md:px-6 py-3 items-center">
+                  <span className="text-white text-sm font-medium">{item.name}</span>
+                  <span className="text-white/70 text-sm text-right">{item.price}</span>
+                  <span className={`text-right transition-all duration-700 ${marginRevealed ? "" : "blur-[6px] select-none"}`}>
+                    <span className="text-[#A68B5B] text-sm font-semibold">{item.profit}</span>
+                    <span className="text-white/30 text-xs ml-1">({item.margin}%)</span>
+                  </span>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+
+          {/* 오른쪽: 월 수익 시뮬레이션 (2/5) */}
+          <motion.div
+            initial="hidden" whileInView="visible" viewport={{ once: true }}
+            variants={fadeUp}
+            className="lg:col-span-2 flex flex-col gap-5"
+          >
+            {/* 월 순수익 카드 */}
+            <div className="bg-gradient-to-br from-[#A68B5B] to-[#8B7348] rounded-2xl p-6 md:p-7 text-center relative overflow-hidden">
+              <p className="text-white/60 text-xs tracking-[0.15em] uppercase mb-1">월 순수익 (1인 운영)</p>
+              <p className={`text-white text-4xl md:text-5xl font-bold mb-1 transition-all duration-700 ${marginRevealed ? "" : "blur-[8px] select-none"}`}>
+                630<span className="text-2xl md:text-3xl">만원</span>
+              </p>
+              <p className="text-white/50 text-xs">매출 1,000만원 기준</p>
+            </div>
+
+            {/* 수익 계산 내역 */}
+            <div className="bg-white/[0.07] backdrop-blur-sm rounded-2xl border border-white/10 p-5 md:p-6 flex-1 relative">
+              <h4 className="text-white font-bold text-sm mb-4">수익 계산 구조</h4>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-white/60 text-sm">월 매출</span>
+                  <span className="text-white font-semibold text-sm">10,000,000원</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-white/60 text-sm">원재료비 (평균)</span>
+                  <span className={`text-red-400/80 text-sm transition-all duration-700 ${marginRevealed ? "" : "blur-[6px] select-none"}`}>-2,200,000원</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-white/60 text-sm">카드수수료 (1%)</span>
+                  <span className="text-white/40 text-xs">원가에 포함</span>
+                </div>
+                <div className="border-t border-white/10 pt-3 flex justify-between items-center">
+                  <span className="text-white/60 text-sm">매출이익</span>
+                  <span className={`text-white font-semibold text-sm transition-all duration-700 ${marginRevealed ? "" : "blur-[6px] select-none"}`}>7,800,000원</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-white/60 text-sm">월세</span>
+                  <span className="text-red-400/80 text-sm">-1,000,000원</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-white/60 text-sm">전기 · 수도</span>
+                  <span className="text-red-400/80 text-sm">-500,000원</span>
+                </div>
+                <div className="border-t border-white/10 pt-3 flex justify-between items-center">
+                  <span className="text-white font-bold text-sm">월 순수익</span>
+                  <span className={`text-[#A68B5B] font-bold text-lg transition-all duration-700 ${marginRevealed ? "" : "blur-[6px] select-none"}`}>6,300,000원</span>
+                </div>
+              </div>
+              <p className="text-white/25 text-[10px] mt-4 leading-relaxed">
+                * 1인 운영 기준, 인건비 미포함<br />
+                * 실제 수익은 매장 위치·규모·운영 방식에 따라 달라질 수 있습니다
+              </p>
+            </div>
+
+            {/* 리드캡처 폼 또는 완료 메시지 */}
+            {!leadDone ? (
+              <div className="bg-white rounded-2xl p-5 md:p-6">
+                <p className="text-[#1B4332] font-bold text-sm mb-1">상세 마진 데이터 받기</p>
+                <p className="text-[#1B4332]/50 text-xs mb-4">연락처를 남겨주시면 전체 수익 구조를 확인하실 수 있습니다.</p>
+                <div className="flex gap-2">
+                  <input
+                    type="tel"
+                    placeholder="010-0000-0000"
+                    value={leadPhone}
+                    onChange={(e) => setLeadPhone(formatPhone(e.target.value))}
+                    onKeyDown={(e) => e.key === "Enter" && submitLead()}
+                    className="flex-1 px-4 py-3 bg-[#F5F0EB] rounded-xl text-sm text-[#1B4332] placeholder:text-[#1B4332]/30 outline-none focus:ring-2 focus:ring-[#A68B5B] transition-shadow"
+                  />
+                  <button
+                    onClick={submitLead}
+                    disabled={leadPhone.replace(/\D/g, "").length < 10 || !privacyAgreed || leadSubmitting}
+                    className="px-5 py-3 bg-[#1B4332] text-white rounded-xl text-sm font-bold whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#2D6A4F] transition-colors"
+                  >
+                    {leadSubmitting ? "..." : "자료 받기"}
+                  </button>
+                </div>
+                <label className="flex items-start gap-2 mt-3 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={privacyAgreed}
+                    onChange={(e) => setPrivacyAgreed(e.target.checked)}
+                    className="mt-0.5 w-4 h-4 accent-[#1B4332] rounded cursor-pointer flex-shrink-0"
+                  />
+                  <span className="text-[#1B4332]/60 text-[11px] leading-relaxed">
+                    가맹 상담을 위한 <Link href="/privacy" target="_blank" className="underline text-[#1B4332]/80 hover:text-[#1B4332]">개인정보 수집·이용</Link>에 동의합니다. (연락처, 상담 목적, 상담 완료 시 파기)
+                  </span>
+                </label>
+              </div>
+            ) : (
+              <div className="bg-white rounded-2xl p-5 md:p-6 text-center">
+                <p className="text-[#1B4332] font-bold text-sm mb-1">자료가 공개되었습니다!</p>
+                <p className="text-[#1B4332]/50 text-xs">담당자가 곧 연락드리겠습니다.</p>
+              </div>
+            )}
+          </motion.div>
+        </div>
+      </div>
+    </section>
+
     {/* ══════════ 라이트박스 ══════════ */}
     <AnimatePresence>
       {lightboxIdx !== null && currentStore && (

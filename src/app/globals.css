@@ -89,9 +89,9 @@ html {
   display: none;
 }
 
-/* 전체 페이지 가로 스크롤 방지 — overflow-y는 건드리지 않음 */
-html {
-  overflow-x: clip;
+/* 전체 페이지 가로 스크롤 방지 — Safari는 clip을 무시할 수 있으므로 hidden도 추가 */
+html, body {
+  overflow-x: hidden;
 }
 
 ::-webkit-scrollbar {

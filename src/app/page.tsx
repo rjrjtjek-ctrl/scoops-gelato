@@ -221,10 +221,10 @@ export default function HomePage() {
 
   return (<>
     {/* ══════════ 마진 정보 히어로 (블러 + 리드캡처) ══════════ */}
-    <section className="pt-24 md:pt-28 pb-14 md:pb-20 bg-[#1B4332] relative overflow-hidden">
+    <section className="pt-24 md:pt-28 pb-14 md:pb-20 bg-[#1B4332] relative overflow-hidden w-full max-w-[100vw]">
       {/* 배경 패턴 */}
       <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 0)', backgroundSize: '40px 40px' }} />
-      <div className="relative z-10 max-w-[1200px] mx-auto px-3 md:px-12">
+      <div className="relative z-10 max-w-[1200px] mx-auto px-3 md:px-12 w-full box-border">
         {/* 헤드라인 */}
         <motion.div initial="hidden" animate="visible" variants={stagger} className="text-center mb-10 md:mb-14">
           <motion.p variants={fadeUp} className="text-[#A68B5B] text-xs md:text-sm tracking-[0.2em] uppercase mb-3 font-medium">Profit Structure</motion.p>
@@ -245,41 +245,41 @@ export default function HomePage() {
             variants={fadeUp}
             className="lg:col-span-3 bg-white/[0.07] backdrop-blur-sm rounded-2xl border border-white/10 overflow-hidden"
           >
-            <div className="px-5 md:px-6 py-4 border-b border-white/10">
+            <div className="px-3 md:px-6 py-4 border-b border-white/10">
               <h3 className="text-white font-bold text-base">가맹점 전 품목 마진표</h3>
               <p className="text-white/40 text-xs mt-0.5">카드수수료 1% 포함 기준</p>
             </div>
             {/* 테이블 헤더 */}
-            <div className="grid grid-cols-[1fr_auto_auto] gap-x-3 px-4 md:px-6 py-3 bg-white/[0.03] border-b border-white/5 text-xs text-white/40">
-              <span>품목</span>
-              <span className="text-right">판매가</span>
-              <span className="text-right min-w-[90px]">순이익 (마진율)</span>
+            <div className="flex justify-between px-3 md:px-6 py-3 bg-white/[0.03] border-b border-white/5 text-xs text-white/40">
+              <span className="flex-shrink-0">품목</span>
+              <span className="flex-shrink-0">판매가</span>
+              <span className="flex-shrink-0">순이익 (마진율)</span>
             </div>
             {/* 젤라또 */}
             <div className="divide-y divide-white/5">
               {marginData.map((item, i) => (
-                <div key={i} className="grid grid-cols-[1fr_auto_auto] gap-x-3 px-4 md:px-6 py-3 items-center">
-                  <span className="text-white text-[13px] md:text-sm font-medium">{item.name}</span>
-                  <span className="text-white/70 text-[13px] md:text-sm text-right whitespace-nowrap">{item.price}</span>
-                  <span className={`text-right min-w-[90px] transition-all duration-700 ${marginRevealed ? "" : "blur-[6px] select-none"}`}>
-                    <span className="text-[#A68B5B] text-[13px] md:text-sm font-semibold">{item.profit}</span>
-                    <span className="text-white/30 text-[10px] md:text-xs ml-0.5">({item.margin}%)</span>
+                <div key={i} className="flex items-center justify-between px-3 md:px-6 py-3">
+                  <span className="text-white text-[13px] md:text-sm font-medium flex-shrink-0">{item.name}</span>
+                  <span className="text-white/70 text-[13px] md:text-sm text-right flex-shrink-0 mx-2">{item.price}</span>
+                  <span className={`text-right flex-shrink-0 transition-all duration-700 ${marginRevealed ? "" : "blur-[6px] select-none"}`}>
+                    <span className="text-[#A68B5B] text-[12px] md:text-sm font-semibold">{item.profit}</span>
+                    <span className="text-white/30 text-[10px] ml-0.5">({item.margin}%)</span>
                   </span>
                 </div>
               ))}
             </div>
             {/* 구분선 + 주류 */}
-            <div className="px-4 md:px-6 py-2 bg-white/[0.03] border-t border-white/10">
+            <div className="px-3 md:px-6 py-2 bg-white/[0.03] border-t border-white/10">
               <span className="text-white/40 text-xs">주류</span>
             </div>
             <div className="divide-y divide-white/5">
               {drinkData.map((item, i) => (
-                <div key={i} className="grid grid-cols-[1fr_auto_auto] gap-x-3 px-4 md:px-6 py-3 items-center">
-                  <span className="text-white text-[13px] md:text-sm font-medium">{item.name}</span>
-                  <span className="text-white/70 text-[13px] md:text-sm text-right whitespace-nowrap">{item.price}</span>
-                  <span className={`text-right min-w-[90px] transition-all duration-700 ${marginRevealed ? "" : "blur-[6px] select-none"}`}>
-                    <span className="text-[#A68B5B] text-[13px] md:text-sm font-semibold">{item.profit}</span>
-                    <span className="text-white/30 text-[10px] md:text-xs ml-0.5">({item.margin}%)</span>
+                <div key={i} className="flex items-center justify-between px-3 md:px-6 py-3">
+                  <span className="text-white text-[13px] md:text-sm font-medium flex-shrink-0">{item.name}</span>
+                  <span className="text-white/70 text-[13px] md:text-sm text-right flex-shrink-0 mx-2">{item.price}</span>
+                  <span className={`text-right flex-shrink-0 transition-all duration-700 ${marginRevealed ? "" : "blur-[6px] select-none"}`}>
+                    <span className="text-[#A68B5B] text-[12px] md:text-sm font-semibold">{item.profit}</span>
+                    <span className="text-white/30 text-[10px] ml-0.5">({item.margin}%)</span>
                   </span>
                 </div>
               ))}

@@ -1,4 +1,4 @@
-const CACHE_NAME = "scoops-v2";
+const CACHE_NAME = "scoops-v3";
 const OFFLINE_URL = "/offline.html";
 
 // 설치 시 오프라인 페이지 캐싱

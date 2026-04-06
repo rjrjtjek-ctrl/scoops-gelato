@@ -404,10 +404,12 @@ export default function AdminOrdersPage() {
     };
   }, [selectedStore]); // fetchOrders 제외 — ref로 참조
 
-  // [PERF] 폴링 — Realtime 연결 시 5초 백업, 미연결 시 700ms
+  // [PERF] 폴링 — Realtime 연결 여부 무관하게 700ms 고정
+  // Realtime은 "보너스 속도"로만 사용, 폴링이 항상 주 감지 수단
+  // (Realtime이 SUBSCRIBED여도 이벤트 누락 가능 — 5초 백업은 너무 느림)
   useEffect(() => {
     let active = true;
-    const interval = realtimeConnected ? 5000 : 700;
+    const interval = 700;
     const poll = async () => {
       await fetchOrders();
       if (active) setTimeout(poll, interval);
@@ -426,7 +428,7 @@ export default function AdminOrdersPage() {
       active = false;
       document.removeEventListener("visibilitychange", handleVisibility);
     };
-  }, [fetchOrders, realtimeConnected]);
+  }, [fetchOrders]);
 
   // [PERF] 매장 변경 시 상태 리셋
   useEffect(() => {

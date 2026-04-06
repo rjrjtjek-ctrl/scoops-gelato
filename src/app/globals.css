@@ -39,11 +39,9 @@ body {
   overscroll-behavior-y: none;
   /* iOS 터치 300ms 딜레이 제거 */
   touch-action: manipulation;
-  /* iOS safe area 패딩 */
+  /* iOS safe area — 상하만 적용, 좌우는 컨텐츠 잘림 방지를 위해 제거 */
   padding-top: env(safe-area-inset-top);
   padding-bottom: env(safe-area-inset-bottom);
-  padding-left: env(safe-area-inset-left);
-  padding-right: env(safe-area-inset-right);
   /* iOS 텍스트 크기 자동조절 방지 */
   -webkit-text-size-adjust: 100%;
 }

@@ -250,18 +250,18 @@ export default function HomePage() {
               <p className="text-white/40 text-xs mt-0.5">카드수수료 1% 포함 기준</p>
             </div>
             {/* 테이블 헤더 */}
-            <div className="flex justify-between px-3 md:px-6 py-3 bg-white/[0.03] border-b border-white/5 text-xs text-white/40">
-              <span className="flex-shrink-0">품목</span>
-              <span className="flex-shrink-0">판매가</span>
-              <span className="flex-shrink-0">순이익 (마진율)</span>
+            <div className="flex w-full px-3 md:px-6 py-3 bg-white/[0.03] border-b border-white/5 text-xs text-white/40">
+              <span className="w-[35%]">품목</span>
+              <span className="w-[30%] text-right">판매가</span>
+              <span className="w-[35%] text-right">순이익 (마진율)</span>
             </div>
             {/* 젤라또 */}
             <div className="divide-y divide-white/5">
               {marginData.map((item, i) => (
-                <div key={i} className="flex items-center justify-between px-3 md:px-6 py-3">
-                  <span className="text-white text-[13px] md:text-sm font-medium flex-shrink-0">{item.name}</span>
-                  <span className="text-white/70 text-[13px] md:text-sm text-right flex-shrink-0 mx-2">{item.price}</span>
-                  <span className={`text-right flex-shrink-0 transition-all duration-700 ${marginRevealed ? "" : "blur-[6px] select-none"}`}>
+                <div key={i} className="flex items-center w-full px-3 md:px-6 py-3">
+                  <span className="w-[35%] text-white text-[13px] md:text-sm font-medium truncate">{item.name}</span>
+                  <span className="w-[30%] text-white/70 text-[13px] md:text-sm text-right">{item.price}</span>
+                  <span className={`w-[35%] text-right transition-all duration-700 ${marginRevealed ? "" : "blur-[6px] select-none"}`}>
                     <span className="text-[#A68B5B] text-[12px] md:text-sm font-semibold">{item.profit}</span>
                     <span className="text-white/30 text-[10px] ml-0.5">({item.margin}%)</span>
                   </span>
@@ -274,10 +274,10 @@ export default function HomePage() {
             </div>
             <div className="divide-y divide-white/5">
               {drinkData.map((item, i) => (
-                <div key={i} className="flex items-center justify-between px-3 md:px-6 py-3">
-                  <span className="text-white text-[13px] md:text-sm font-medium flex-shrink-0">{item.name}</span>
-                  <span className="text-white/70 text-[13px] md:text-sm text-right flex-shrink-0 mx-2">{item.price}</span>
-                  <span className={`text-right flex-shrink-0 transition-all duration-700 ${marginRevealed ? "" : "blur-[6px] select-none"}`}>
+                <div key={i} className="flex items-center w-full px-3 md:px-6 py-3">
+                  <span className="w-[35%] text-white text-[13px] md:text-sm font-medium truncate">{item.name}</span>
+                  <span className="w-[30%] text-white/70 text-[13px] md:text-sm text-right">{item.price}</span>
+                  <span className={`w-[35%] text-right transition-all duration-700 ${marginRevealed ? "" : "blur-[6px] select-none"}`}>
                     <span className="text-[#A68B5B] text-[12px] md:text-sm font-semibold">{item.profit}</span>
                     <span className="text-white/30 text-[10px] ml-0.5">({item.margin}%)</span>
                   </span>

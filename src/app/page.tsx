@@ -46,13 +46,13 @@ function HeroSlideshow() {
             variants={fadeIn}
             className="relative"
           >
-            <div className="relative aspect-[4/5] rounded-2xl overflow-hidden shadow-xl">
+            <div className="relative aspect-[4/5] rounded-2xl overflow-hidden shadow-xl" style={{ WebkitMaskImage: '-webkit-radial-gradient(white, black)' }}>
               <AnimatePresence mode="popLayout">
                 <motion.div
                   key={current}
-                  initial={{ opacity: 0, x: 40 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -40 }}
+                  initial={{ opacity: 0, scale: 1.05 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
                   transition={{ duration: 0.8, ease: "easeInOut" }}
                   className="absolute inset-0"
                 >

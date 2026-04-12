@@ -149,3 +149,19 @@ html {
 .pb-safe-area {
   padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 0px);
 }
+
+/* 팝업 애니메이션 — framer-motion AnimatePresence 대체 (DOM 잔류 버그 방지) */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.92) translateY(20px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out both;
+}
+.animate-scaleIn {
+  animation: scaleIn 0.3s ease-out both;
+}

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { X, BarChart3, ArrowRight } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+// framer-motion AnimatePresence 제거 — exit 애니메이션 후 DOM 잔류 버그로 스크롤 차단됨
 
 export default function AnalysisPopup() {
   const [show, setShow] = useState(false);
@@ -33,27 +33,21 @@ export default function AnalysisPopup() {
     setShow(false);
   };
 
-  return (
-    <AnimatePresence>
-      {show && (
-        <>
-          {/* 배경 오버레이 */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999]"
-            onClick={handleClose}
-          />
+  // 팝업이 닫히면 즉시 DOM에서 제거 — AnimatePresence 제거로 유령 오버레이 방지
+  if (!show) return null;
 
-          {/* 팝업 */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.92, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.92, y: 20 }}
-            transition={{ duration: 0.3, ease: "easeOut" }}
-            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[10000] w-[92%] max-w-[420px]"
-          >
+  return (
+    <>
+      {/* 배경 오버레이 */}
+      <div
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] animate-fadeIn"
+        onClick={handleClose}
+      />
+
+      {/* 팝업 */}
+      <div
+        className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[10000] w-[92%] max-w-[420px] animate-scaleIn"
+      >
             <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
               {/* 상단 그라데이션 헤더 */}
               <div className="relative bg-gradient-to-br from-[#1B4332] to-[#2D6A4F] px-7 pt-8 pb-6">
@@ -113,9 +107,7 @@ export default function AnalysisPopup() {
                 </button>
               </div>
             </div>
-          </motion.div>
+          </div>
         </>
-      )}
-    </AnimatePresence>
   );
 }

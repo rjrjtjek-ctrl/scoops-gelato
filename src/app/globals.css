@@ -35,10 +35,6 @@
 body {
   background: var(--bg-cream);
   color: var(--text-dark);
-  /* iOS 바운스 스크롤 시 배경색 통일 */
-  overscroll-behavior-y: none;
-  /* iOS 터치 300ms 딜레이 제거 */
-  touch-action: manipulation;
   /* iOS safe area — 상하만 적용, 좌우는 컨텐츠 잘림 방지를 위해 제거 */
   padding-top: env(safe-area-inset-top);
   padding-bottom: env(safe-area-inset-bottom);
@@ -47,9 +43,10 @@ body {
 }
 
 html {
-  scroll-behavior: smooth;
   /* iOS Safari 100vh 문제 해결 — dvh 사용 */
   --vh-fallback: 100vh;
+  /* 세로 스크롤 명시적 허용 */
+  overflow-y: auto !important;
 }
 
 /* iOS Safari에서 100vh 대신 실제 뷰포트 높이 사용 */
@@ -89,9 +86,10 @@ html {
   display: none;
 }
 
-/* 전체 페이지 가로 스크롤 방지 — Safari는 clip을 무시할 수 있으므로 hidden도 추가 */
+/* 전체 페이지 가로 스크롤 방지 */
 html, body {
   overflow-x: hidden;
+  overflow-y: auto;
 }
 
 ::-webkit-scrollbar {
@@ -120,29 +118,18 @@ html, body {
   .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
 }
 
-/* 앱처럼 보이게 — 텍스트 선택 방지, 드래그 방지 */
+/* 앱처럼 보이게 — 텍스트 선택 방지, 드래그 방지 (PWA 전용) */
 @media (display-mode: standalone) {
   body {
     -webkit-user-select: none;
     user-select: none;
     -webkit-touch-callout: none;
     -webkit-tap-highlight-color: transparent;
-    overscroll-behavior-y: contain;
   }
   input, textarea, [contenteditable] {
     -webkit-user-select: text;
     user-select: text;
   }
-}
-
-/* iOS Safari 바운스 스크롤 제거 */
-html {
-  overscroll-behavior: none;
-}
-
-/* 앱 네이티브 느낌 전환 */
-* {
-  -webkit-overflow-scrolling: touch;
 }
 
 /* 하단 안전영역 (홈바) */

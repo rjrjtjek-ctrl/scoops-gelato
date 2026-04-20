@@ -55,6 +55,7 @@ const EVENT_LABELS: Record<string, string> = {
   link_homepage: "홈페이지 클릭",
   link_instagram: "인스타 클릭",
   margin_lead: "📊 마진표 열람",
+  home_view: "🏠 홈페이지 방문",
 };
 
 export default function AnalyticsPage() {
@@ -115,6 +116,31 @@ export default function AnalyticsPage() {
 
       {data && (
         <div className="max-w-4xl mx-auto px-4 py-5 space-y-5">
+
+          {/* ▸ 홈페이지 방문자 통계 */}
+          <div className="bg-gradient-to-br from-[#1B4332] to-[#2D6A4F] rounded-xl p-5 text-white">
+            <h2 className="text-sm font-bold mb-3 flex items-center gap-2">
+              <Eye size={16} /> 홈페이지 방문자
+            </h2>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="bg-white/10 rounded-lg p-3 text-center">
+                <p className="text-3xl font-black">{data.eventCounts["home_view"] || 0}</p>
+                <p className="text-xs text-white/70 mt-1">총 방문 ({days === 1 ? "오늘" : `${days}일`})</p>
+              </div>
+              <div className="bg-white/10 rounded-lg p-3 text-center">
+                <p className="text-3xl font-black">{data.marginLeads?.length || 0}</p>
+                <p className="text-xs text-white/70 mt-1">마진표 열람</p>
+              </div>
+              <div className="bg-white/10 rounded-lg p-3 text-center">
+                <p className="text-3xl font-black">
+                  {data.eventCounts["home_view"]
+                    ? `${Math.round(((data.marginLeads?.length || 0) / data.eventCounts["home_view"]) * 100)}%`
+                    : "-"}
+                </p>
+                <p className="text-xs text-white/70 mt-1">리드 전환율</p>
+              </div>
+            </div>
+          </div>
 
           {/* ▸ 마진표 열람자 (최상단 고정) */}
           {data.marginLeads && data.marginLeads.length > 0 && (

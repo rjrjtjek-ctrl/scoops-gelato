@@ -205,6 +205,13 @@ export default function HomePage() {
   const goPrev = useCallback(() => setLightboxIdx(i => i !== null ? (i - 1 + storesWithImages.length) % storesWithImages.length : null), []);
   const goNext = useCallback(() => setLightboxIdx(i => i !== null ? (i + 1) % storesWithImages.length : null), []);
 
+  // 홈페이지 방문 추적 (한 번만, 관리자 기기 제외)
+  useEffect(() => {
+    const device = /iPhone|iPad|iPod/i.test(navigator.userAgent) ? "iOS"
+      : /Android/i.test(navigator.userAgent) ? "Android" : "other";
+    track("home_view", undefined, { referrer: document.referrer || "direct", device });
+  }, []);
+
   useEffect(() => {
     if (lightboxIdx === null) return;
     const onKey = (e: KeyboardEvent) => {

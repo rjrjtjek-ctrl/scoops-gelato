@@ -11,6 +11,7 @@ import { stores, formatPrice } from "@/lib/order-data";
 import type { OrderType } from "@/lib/order-types";
 import { PwaInstallBanner } from "@/components/PwaInstallBanner";
 import { t, tFlavor, loadLang, type OrderLang } from "@/lib/order-i18n";
+import { track } from "@/lib/tracking";
 
 // [PERF] Optimistic UI — 주문 완료 상태를 같은 컴포넌트에서 즉시 렌더링
 // 페이지 전환 없이 상태만 변경하여 0ms 전환
@@ -32,6 +33,12 @@ function CartContent() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [lang, setLang] = useState<OrderLang>("ko");
   useEffect(() => { setLang(loadLang()); }, []);
+
+  // 장바구니 진입 추적 (한 번만)
+  useEffect(() => {
+    track("cart_view", storeCode, { itemCount: items.length, orderType });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // [PERF] Optimistic UI 상태 — null이면 장바구니, 값이 있으면 영수증 화면
   const [orderComplete, setOrderComplete] = useState<OrderComplete | null>(null);
@@ -128,6 +135,13 @@ function CartContent() {
           orderNumber: data.orderNumber,
           orderId: data.orderId,
           confirmed: true,
+        });
+        // 주문 완료 추적
+        track("order_complete", storeCode, {
+          orderNumber: data.orderNumber,
+          orderType,
+          totalAmount,
+          itemCount: savedItemsRef.current.length,
         });
         // 주문번호 저장 — 메뉴 페이지 + 공식홈페이지에서 배너로 표시
         try {

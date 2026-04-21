@@ -80,6 +80,7 @@ export const menuItems: MenuItem[] = [
   { id: "w7", categoryId: "cat3", name: "보모어", nameEn: "Bowmore", description: "보모어", badge: null, image: "/images/drinks/bowmore.png", isActive: true, sortOrder: 7 },
   { id: "w8", categoryId: "cat3", name: "조니워커 블랙", nameEn: "Johnnie Walker Black", description: "조니워커 블랙라벨", badge: null, image: "/images/drinks/johnnie-walker-black.jpg", isActive: true, sortOrder: 8 },
   { id: "w9", categoryId: "cat3", name: "닛카 프롬 더 배럴", nameEn: "Nikka From The Barrel", description: "닛카 위스키 프롬 더 배럴", badge: null, image: "/images/drinks/nikka.png", isActive: true, sortOrder: 9 },
+  { id: "w10", categoryId: "cat3", name: "맥캘란 12y 더블캐스크", nameEn: "Macallan 12y Double Cask", description: "맥캘란 12년 더블캐스크 싱글몰트", badge: "NEW", image: "/images/drinks/macallan-12.jpg", isActive: true, sortOrder: 10 },
 
   // ---- 와인 3종 ----
   { id: "wn1", categoryId: "cat4", name: "White 750ml Don Santiago", nameEn: "White Don Santiago", description: "화이트 와인", badge: "추천", image: "/images/drinks/don-santiago-white-hq.jpg", isActive: true, sortOrder: 1 },
@@ -132,6 +133,8 @@ export const menuPrices: MenuPrice[] = [
   { id: "wp16", itemId: "w8", optionName: "100ml", price: 19800, sortOrder: 2, isActive: true },
   { id: "wp17", itemId: "w9", optionName: "30ml", price: 9800, sortOrder: 1, isActive: true },
   { id: "wp18", itemId: "w9", optionName: "100ml", price: 19800, sortOrder: 2, isActive: true },
+  { id: "wp19", itemId: "w10", optionName: "30ml", price: 9800, sortOrder: 1, isActive: true },
+  { id: "wp20", itemId: "w10", optionName: "100ml", price: 19800, sortOrder: 2, isActive: true },
 
   // ---- 와인 ----
   { id: "wnp1", itemId: "wn1", optionName: "50ml", price: 2900, sortOrder: 1, isActive: true },
@@ -251,6 +254,15 @@ export const drinkDescriptions: Record<string, DrinkDescription> = {
     recommend: "일본 위스키의 자존심. 도수가 높지만 부드러워요. 니트로 한 모금씩 음미하세요.",
     gelatoPairing: "흑임자 — 깊은 깨 향과 일본 위스키의 섬세한 풍미가 동양적 하모니",
     gelatoPairingId: "g15",
+  },
+  w10: {
+    origin: "스코틀랜드 하이랜드(스페이사이드)", type: "싱글몰트", abv: "40%",
+    nose: "바닐라 크림, 신선한 과일, 은은한 진저 스파이스",
+    palate: "부드러운 바닐라와 건포도, 토피(캐러멜), 오렌지 필, 크리미한 질감",
+    finish: "따뜻하고 달콤한 셰리 여운, 스파이스의 은은한 마무리",
+    recommend: "셰리&아메리칸 더블 캐스크의 균형잡힌 맛. 싱글몰트의 클래식을 경험하고 싶다면 최고의 선택이에요.",
+    gelatoPairing: "크림치즈블루베리 — 셰리 캐스크의 건과일 향과 블루베리잼, 크림치즈의 부드러움이 완벽 조화",
+    gelatoPairingId: "g13",
   },
   // ---- 와인 3종 ----
   wn1: {

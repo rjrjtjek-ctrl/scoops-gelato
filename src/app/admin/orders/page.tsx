@@ -179,37 +179,54 @@ export default function AdminOrdersPage() {
   // Win7/Chrome 109에서 window.open()이 느리므로 팝업을 닫지 않고 재사용
   const printViaPopup = useCallback((html: string): Promise<void> => {
     return new Promise<void>((resolve) => {
-      // [PERF] 기존 팝업이 살아있으면 재사용, 없으면 새로 열기
-      let printWin = printWinRef.current;
-      if (!printWin || printWin.closed) {
-        printWin = window.open("", "scoops_receipt", "width=320,height=600");
-        printWinRef.current = printWin;
-      }
-      if (!printWin || printWin.closed) {
-        setPrintError("⚠️ 팝업이 차단되었습니다! 주소창의 팝업 차단 아이콘을 클릭하여 허용해주세요.");
+      try {
+        // [PERF] 기존 팝업이 살아있으면 재사용, 없으면 새로 열기
+        let printWin = printWinRef.current;
+        if (!printWin || printWin.closed) {
+          printWin = window.open("", "scoops_receipt", "width=320,height=600");
+          printWinRef.current = printWin;
+        }
+        if (!printWin || printWin.closed) {
+          // 팝업 차단됨 — 큰 경고 + 알림 소리 + 브라우저 알림
+          setPrintError("⛔ 팝업 차단됨! 영수증 인쇄 불가. 주소창의 팝업 차단 아이콘을 클릭하여 허용 후 새로고침해주세요.");
+          try { audioRef.current?.play().catch(() => {}); } catch {}
+          if (typeof Notification !== "undefined" && Notification.permission === "granted") {
+            new Notification("⛔ 영수증 인쇄 실패", { body: "팝업 차단을 해제하고 새로고침해주세요!" });
+          }
+          resolve();
+          return;
+        }
+        printWin.document.open();
+        printWin.document.write(html);
+        printWin.document.close();
+
+        let printed = false;
+        const doPrint = () => {
+          if (printed) return;
+          printed = true;
+          try { printWin!.print(); } catch (err) {
+            console.error("[print] print() 호출 실패:", err);
+            setPrintError("⚠️ 인쇄 호출 실패 — 프린터 상태/연결 확인 필요");
+          }
+          // [PERF] 팝업을 닫지 않고 재사용 — Win7에서 window.open() 비용 절약
+          setTimeout(() => resolve(), 50);
+        };
+
+        // [FIX6] onload + setTimeout 중 먼저 실행된 것만 호출
+        printWin.onload = () => doPrint();
+        setTimeout(doPrint, 60);
+        // [SAFETY] print()가 응답 안 해도 1.5초 후 강제 resolve (큐 멈춤 방지)
+        setTimeout(() => { if (!printed) { printed = true; resolve(); } }, 1500);
+      } catch (err) {
+        console.error("[print] printViaPopup 예외:", err);
+        setPrintError("⚠️ 인쇄 처리 중 오류 — 콘솔 확인");
         resolve();
-        return;
       }
-      printWin.document.open();
-      printWin.document.write(html);
-      printWin.document.close();
-
-      let printed = false;
-      const doPrint = () => {
-        if (printed) return;
-        printed = true;
-        try { printWin!.print(); } catch {}
-        // [PERF] 팝업을 닫지 않고 재사용 — Win7에서 window.open() 비용 절약
-        setTimeout(() => resolve(), 50);
-      };
-
-      // [FIX6] onload + setTimeout 중 먼저 실행된 것만 호출
-      printWin.onload = () => doPrint();
-      setTimeout(doPrint, 60);
     });
   }, []);
 
   // 인쇄 큐 — 주문 1건 = 큐 아이템 1개 (주방용+손님용 합본)
+  // [SAFETY] try/catch + watchdog로 큐가 절대 영구히 멈추지 않도록 보장
   const processNextPrint = useCallback(() => {
     setPrintQueue((queue) => {
       if (queue.length === 0 || isPrinting.current) return queue;
@@ -217,14 +234,37 @@ export default function AdminOrdersPage() {
       const item = queue[0];
       const remaining = queue.slice(1);
 
-      const receiptHtml = buildCombinedReceiptHtml(item.order);
-      printViaPopup(receiptHtml).then(() => {
+      // [SAFETY] 8초 안에 done 안 되면 락 강제 해제 (큐 영구 멈춤 방지)
+      const watchdog = setTimeout(() => {
+        if (isPrinting.current) {
+          console.warn("[print] watchdog 작동 — 8초 초과, 강제 락 해제");
+          isPrinting.current = false;
+          setPrintError("⚠️ 인쇄 응답 지연 — 락을 해제했습니다. 프린터 확인 필요.");
+          if (remaining.length > 0) setTimeout(() => processNextPrint(), 100);
+        }
+      }, 8000);
+
+      const done = () => {
+        clearTimeout(watchdog);
         isPrinting.current = false;
         printedIds.current.add(item.order.id);
         if (remaining.length > 0) {
           processNextPrint();
         }
-      });
+      };
+
+      try {
+        const receiptHtml = buildCombinedReceiptHtml(item.order);
+        printViaPopup(receiptHtml).then(done).catch((err) => {
+          console.error("[print] printViaPopup reject:", err);
+          done();
+        });
+      } catch (err) {
+        // buildCombinedReceiptHtml 등에서 예외 → 락 해제하고 다음 진행
+        console.error("[print] processNextPrint 예외:", err);
+        setPrintError("⚠️ 영수증 생성 실패 — 다음 주문 진행");
+        done();
+      }
 
       return remaining;
     });

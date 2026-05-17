@@ -62,9 +62,22 @@ const STATUS_COLORS: Record<OrderStatus, string> = {
 
 type TabFilter = "pending" | "active" | "completed";
 
+// [BUGFIX 2026-05-17] demo 매장이 첫 isActive라 기본 선택되어 실제 주문 못 보던 문제 해결
+// 우선순위: localStorage 저장값 > 첫 실제 매장(demo 제외) > demo
+function getInitialStore(): string {
+  if (typeof window !== "undefined") {
+    try {
+      const saved = localStorage.getItem("scoops_admin_store");
+      if (saved && stores.find((s) => s.id === saved && s.isActive)) return saved;
+    } catch {}
+  }
+  const realStore = stores.find((s) => s.isActive && s.id !== "demo");
+  return realStore?.id || stores.find((s) => s.isActive)?.id || "";
+}
+
 export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
-  const [selectedStore, setSelectedStore] = useState(stores.find((s) => s.isActive)?.id || "");
+  const [selectedStore, setSelectedStore] = useState(getInitialStore);
   const [activeTab, setActiveTab] = useState<TabFilter>("pending");
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [autoPrint, setAutoPrint] = useState(true);
@@ -470,11 +483,14 @@ export default function AdminOrdersPage() {
     };
   }, [fetchOrders]);
 
-  // [PERF] 매장 변경 시 상태 리셋
+  // [PERF] 매장 변경 시 상태 리셋 + localStorage 저장 (다음 로드 시 같은 매장)
   useEffect(() => {
     isFirstLoad.current = true;
     prevOrderIds.current = new Set();
     ordersRef.current = [];
+    if (selectedStore && typeof window !== "undefined") {
+      try { localStorage.setItem("scoops_admin_store", selectedStore); } catch {}
+    }
   }, [selectedStore]);
 
   // 관리자 기기 표시 + 브라우저 알림 권한

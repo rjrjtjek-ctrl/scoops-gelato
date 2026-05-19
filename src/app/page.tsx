@@ -245,12 +245,13 @@ export default function HomePage() {
         </motion.div>
 
         {/* 마진 테이블 + 월 수익 시뮬레이션 */}
-        <div className="grid lg:grid-cols-5 gap-6">
+        {/* grid-cols-1 명시 — 기본 grid가 min-content로 컬럼 펼침을 방지 (모바일 가로넘침 fix) */}
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
           {/* 왼쪽: 마진 테이블 (3/5) */}
           <motion.div
             initial="hidden" whileInView="visible" viewport={{ once: true }}
             variants={fadeUp}
-            className="lg:col-span-3 bg-white/[0.07] backdrop-blur-sm rounded-2xl border border-white/10 overflow-hidden"
+            className="min-w-0 lg:col-span-3 bg-white/[0.07] backdrop-blur-sm rounded-2xl border border-white/10 overflow-hidden"
           >
             <div className="px-3 md:px-6 py-4 border-b border-white/10">
               <h3 className="text-white font-bold text-base">가맹점 전 품목 마진표</h3>
@@ -297,7 +298,7 @@ export default function HomePage() {
           <motion.div
             initial="hidden" whileInView="visible" viewport={{ once: true }}
             variants={fadeUp}
-            className="lg:col-span-2 flex flex-col gap-5"
+            className="min-w-0 lg:col-span-2 flex flex-col gap-5"
           >
             {/* 월 순수익 카드 */}
             <div className="bg-gradient-to-br from-[#A68B5B] to-[#8B7348] rounded-2xl p-6 md:p-7 text-center relative overflow-hidden">

@@ -40,7 +40,7 @@ export async function GET() {
     const todayStr = getKSTToday();
     const rows = await supabaseSelect<Array<{
       id: string; path: string; device: string; browser: string;
-      ip: string; session_id: string | null; created_at: string;
+      ip: string; session_id: string | null; referrer: string | null; created_at: string;
     }>>("visit_logs", `order=created_at.desc&limit=2000`);
 
     // 일별 통계
@@ -127,6 +127,15 @@ export async function GET() {
       .slice(0, 10)
       .map(([isp, count]) => ({ isp, count }));
 
+    // 최근 방문 목록 (개별 페이지뷰 — 최근 40건)
+    const recentVisits = rows.slice(0, 40).map((r) => ({
+      path: r.path,
+      device: r.device,
+      browser: r.browser,
+      referrer: r.referrer || "direct",
+      time: r.created_at,
+    }));
+
     return NextResponse.json({
       totalVisits: rows.length,
       todayVisits: todayRows.length,
@@ -138,6 +147,7 @@ export async function GET() {
       regionStats: regionArray,
       cityStats: cityArray,
       ispStats: ispArray,
+      recentVisits,
     });
   } catch (err) {
     console.error("[analytics] GET 실패:", err);

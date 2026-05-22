@@ -34,6 +34,7 @@ interface GeoData {
   regionStats: { region: string; count: number }[];
   cityStats: { city: string; count: number }[];
   ispStats: { isp: string; count: number }[];
+  recentVisits?: { path: string; device: string; browser: string; referrer: string; time: string }[];
 }
 
 /* ── 공통 카드 컴포넌트 ── */
@@ -376,7 +377,7 @@ export default function AdminPage() {
               </div>
             )}
 
-            {/* 최근 방문 */}
+            {/* 최근 방문 — GitHub 세션 우선, 없으면 Supabase 개별 방문(geoData) 사용 */}
             <Card>
               <SectionTitle title="최근 방문자" sub="실시간 방문 기록" action={<button onClick={() => setActiveTab("visitors")} className="text-[11px] text-[#1B4332] font-semibold hover:underline">전체 →</button>} />
               {a?.recentSessions.length ? (
@@ -396,6 +397,18 @@ export default function AdminPage() {
                     </div>
                   ))}
                 </div>
+              ) : geoData?.recentVisits?.length ? (
+                <div className="divide-y divide-gray-50">
+                  {geoData.recentVisits.slice(0, 8).map((v, i) => (
+                    <div key={i} className="flex items-center gap-3 py-2.5">
+                      <span className="text-base">{dIcon[v.device] || "💻"}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[13px] text-gray-700 truncate font-medium">{pi(v.path)} {p(v.path)}</p>
+                        <p className="text-[11px] text-gray-400">{fmtTime(v.time)} · {v.browser} · {v.referrer === "direct" ? "직접 접속" : v.referrer}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               ) : <p className="text-gray-300 text-sm py-6 text-center">아직 방문 기록이 없어요</p>}
             </Card>
 
@@ -403,11 +416,16 @@ export default function AdminPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <Card>
                 <SectionTitle title="인기 페이지" sub="조회수 기준" />
-                {a?.topPages.length ? (
-                  <div className="space-y-2.5">
-                    {a.topPages.slice(0, 5).map((tp, i) => {
-                      const max = a.topPages[0]?.views || 1;
-                      return (
+                {(() => {
+                  // GitHub 세션 topPages 우선, 없으면 Supabase pageStats(geoData) 사용
+                  const pages = a?.topPages.length
+                    ? a.topPages.slice(0, 5).map(tp => ({ page: tp.page, views: tp.views }))
+                    : (geoData?.pageStats || []).slice(0, 5).map(ps => ({ page: ps.path, views: ps.count }));
+                  if (!pages.length) return <p className="text-gray-300 text-xs py-4 text-center">데이터 없음</p>;
+                  const max = pages[0]?.views || 1;
+                  return (
+                    <div className="space-y-2.5">
+                      {pages.map((tp, i) => (
                         <div key={tp.page}>
                           <div className="flex items-center justify-between mb-1">
                             <span className="text-[12px] text-gray-600"><span className="text-gray-300 mr-1.5">{i + 1}</span>{pi(tp.page)} {p(tp.page)}</span>
@@ -415,45 +433,55 @@ export default function AdminPage() {
                           </div>
                           <div className="h-1 bg-gray-100 rounded-full overflow-hidden"><div className="h-full bg-gradient-to-r from-[#1B4332] to-[#40916C] rounded-full transition-all" style={{ width: `${(tp.views / max) * 100}%` }} /></div>
                         </div>
-                      );
-                    })}
-                  </div>
-                ) : <p className="text-gray-300 text-xs py-4 text-center">데이터 없음</p>}
+                      ))}
+                    </div>
+                  );
+                })()}
               </Card>
 
               <Card>
                 <SectionTitle title="접속 기기" sub="어떤 기기로 들어왔나" />
-                {a?.deviceBreakdown.length ? (
-                  <div className="space-y-3">
-                    {a.deviceBreakdown.map((d) => {
-                      const total = a.deviceBreakdown.reduce((s, x) => s + x.count, 0);
-                      const pct = Math.round((d.count / total) * 100);
-                      return (
-                        <div key={d.device} className="flex items-center gap-3">
-                          <div className="w-9 h-9 bg-gray-50 rounded-lg flex items-center justify-center flex-shrink-0"><span className="text-base">{dIcon[d.device] || "💻"}</span></div>
-                          <div className="flex-1">
-                            <div className="flex justify-between text-[12px] mb-1">
-                              <span className="text-gray-600 font-medium">{dName[d.device] || d.device}</span>
-                              <span className="font-bold text-[#1B4332]">{pct}%</span>
+                {(() => {
+                  // GitHub 세션 deviceBreakdown 우선, 없으면 Supabase deviceStats(geoData) 사용
+                  const devices = a?.deviceBreakdown.length
+                    ? a.deviceBreakdown.map(d => ({ device: d.device, count: d.count }))
+                    : Object.entries(geoData?.deviceStats || {}).map(([device, count]) => ({ device, count }));
+                  const browsers = (a?.browserBreakdown && a.browserBreakdown.length)
+                    ? a.browserBreakdown.map(b => ({ browser: b.browser, count: b.count }))
+                    : Object.entries(geoData?.browserStats || {}).map(([browser, count]) => ({ browser, count })).sort((x, y) => y.count - x.count);
+                  if (!devices.length) return <p className="text-gray-300 text-xs py-4 text-center">데이터 없음</p>;
+                  const total = devices.reduce((s, x) => s + x.count, 0) || 1;
+                  return (
+                    <div className="space-y-3">
+                      {devices.map((d) => {
+                        const pct = Math.round((d.count / total) * 100);
+                        return (
+                          <div key={d.device} className="flex items-center gap-3">
+                            <div className="w-9 h-9 bg-gray-50 rounded-lg flex items-center justify-center flex-shrink-0"><span className="text-base">{dIcon[d.device] || "💻"}</span></div>
+                            <div className="flex-1">
+                              <div className="flex justify-between text-[12px] mb-1">
+                                <span className="text-gray-600 font-medium">{dName[d.device] || d.device}</span>
+                                <span className="font-bold text-[#1B4332]">{pct}%</span>
+                              </div>
+                              <div className="h-1 bg-gray-100 rounded-full overflow-hidden"><div className="h-full bg-gradient-to-r from-[#1B4332] to-[#40916C] rounded-full" style={{ width: `${pct}%` }} /></div>
                             </div>
-                            <div className="h-1 bg-gray-100 rounded-full overflow-hidden"><div className="h-full bg-gradient-to-r from-[#1B4332] to-[#40916C] rounded-full" style={{ width: `${pct}%` }} /></div>
+                            <span className="text-[11px] text-gray-400 w-8 text-right flex-shrink-0">{d.count}</span>
                           </div>
-                          <span className="text-[11px] text-gray-400 w-8 text-right flex-shrink-0">{d.count}명</span>
+                        );
+                      })}
+                      {browsers.length > 0 && (
+                        <div className="pt-2 border-t border-gray-50">
+                          <p className="text-[10px] text-gray-400 mb-1.5">브라우저</p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {browsers.map((b) => (
+                              <span key={b.browser} className="text-[10px] bg-gray-50 text-gray-600 px-2 py-1 rounded-lg"><strong className="text-[#1B4332]">{b.count}</strong> {b.browser}</span>
+                            ))}
+                          </div>
                         </div>
-                      );
-                    })}
-                    {(a?.browserBreakdown || []).length > 0 && (
-                      <div className="pt-2 border-t border-gray-50">
-                        <p className="text-[10px] text-gray-400 mb-1.5">브라우저</p>
-                        <div className="flex flex-wrap gap-1.5">
-                          {a.browserBreakdown.map((b) => (
-                            <span key={b.browser} className="text-[10px] bg-gray-50 text-gray-600 px-2 py-1 rounded-lg"><strong className="text-[#1B4332]">{b.count}</strong> {b.browser}</span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ) : <p className="text-gray-300 text-xs py-4 text-center">데이터 없음</p>}
+                      )}
+                    </div>
+                  );
+                })()}
               </Card>
             </div>
 

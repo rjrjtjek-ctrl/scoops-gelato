@@ -86,6 +86,9 @@ export default function AdminOrdersPage() {
   const [pwaStats, setPwaStats] = useState<{ total: number; todayCount: number; recent: { timestamp: string; device: string }[] } | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [printError, setPrintError] = useState<string | null>(null);
+  // [BUGFIX 2026-05-22] 폴링 콜백의 window.open()은 사용자 제스처가 없어 Chrome이 팝업 차단함
+  // → 사용자 클릭으로 미리 팝업을 띄워두고(printerPrimed) 재사용하면 차단 회피
+  const [printerPrimed, setPrinterPrimed] = useState(false);
   const [printQueue, setPrintQueue] = useState<{ order: Order; copy: "kitchen" | "customer" }[]>([]);
   const [realtimeConnected, setRealtimeConnected] = useState(false);
   const prevOrderCount = useRef(0);
@@ -189,6 +192,36 @@ export default function AdminOrdersPage() {
 
   // popup 방식 인쇄 — 별도 창에서 print()하므로 메인 페이지 블로킹 없음
   // [PERF] 팝업 재사용 + print() 1번으로 주방용+손님용 2장 출력
+  // [BUGFIX 2026-05-22] 사용자 클릭(제스처)으로 인쇄 팝업을 미리 띄워둠
+  // 폴링 콜백에서 여는 팝업은 제스처가 없어 차단되므로, 미리 열어두고 재사용
+  const primePrinter = useCallback(() => {
+    let w = printWinRef.current;
+    if (!w || w.closed) {
+      w = window.open("", "scoops_receipt", "width=380,height=560");
+      printWinRef.current = w;
+    }
+    if (w && !w.closed) {
+      try {
+        w.document.open();
+        w.document.write(
+          `<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"><title>스쿱스 영수증 프린터</title></head>` +
+          `<body style="font-family:sans-serif;padding:24px;text-align:center;color:#1B4332;background:#FAFAF5">` +
+          `<div style="font-size:48px">🖨️</div>` +
+          `<h2 style="margin:8px 0">프린터 연결됨</h2>` +
+          `<p style="color:#666;line-height:1.6">이 창을 <b>닫지 마세요</b>.<br>주문이 들어오면 이 창에서<br>영수증이 자동으로 인쇄됩니다.</p>` +
+          `<p style="color:#aaa;font-size:12px;margin-top:20px">최소화하거나 뒤로 보내도 됩니다.</p>` +
+          `</body></html>`
+        );
+        w.document.close();
+      } catch { /* 무시 */ }
+      setPrinterPrimed(true);
+      setPrintError(null);
+    } else {
+      setPrinterPrimed(false);
+      setPrintError("⛔ 팝업이 차단되었습니다. 주소창 오른쪽의 팝업 차단 아이콘 → '항상 허용'으로 바꾼 뒤 다시 눌러주세요.");
+    }
+  }, []);
+
   // Win7/Chrome 109에서 window.open()이 느리므로 팝업을 닫지 않고 재사용
   const printViaPopup = useCallback((html: string): Promise<void> => {
     return new Promise<void>((resolve) => {
@@ -200,11 +233,12 @@ export default function AdminOrdersPage() {
           printWinRef.current = printWin;
         }
         if (!printWin || printWin.closed) {
-          // 팝업 차단됨 — 큰 경고 + 알림 소리 + 브라우저 알림
-          setPrintError("⛔ 팝업 차단됨! 영수증 인쇄 불가. 주소창의 팝업 차단 아이콘을 클릭하여 허용 후 새로고침해주세요.");
+          // 팝업 차단됨/닫힘 — primed 해제하고 큰 경고 + 알림 소리 + 브라우저 알림
+          setPrinterPrimed(false);
+          setPrintError("⛔ 영수증 인쇄 불가! 상단 '프린터 연결' 버튼을 다시 눌러주세요. (팝업 창이 닫혔거나 차단됨)");
           try { audioRef.current?.play().catch(() => {}); } catch {}
           if (typeof Notification !== "undefined" && Notification.permission === "granted") {
-            new Notification("⛔ 영수증 인쇄 실패", { body: "팝업 차단을 해제하고 새로고침해주세요!" });
+            new Notification("⛔ 영수증 인쇄 실패", { body: "관리자 화면에서 '프린터 연결'을 다시 눌러주세요!" });
           }
           resolve();
           return;
@@ -599,6 +633,19 @@ export default function AdminOrdersPage() {
               {realtimeConnected ? <Wifi size={12} /> : <WifiOff size={12} />}
               {realtimeConnected ? "실시간" : "폴링"}
             </span>
+            {/* [BUGFIX] 프린터 연결 버튼 — 사용자 제스처로 인쇄 팝업 미리 띄움 (팝업 차단 회피) */}
+            <button
+              onClick={primePrinter}
+              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+                printerPrimed
+                  ? "bg-green-500/25 text-green-200"
+                  : "bg-red-500/30 text-red-200 animate-pulse"
+              }`}
+              title={printerPrimed ? "프린터 연결됨 (팝업 창 유지 중)" : "클릭하여 영수증 인쇄 팝업을 연결하세요"}
+            >
+              <Printer size={14} />
+              {printerPrimed ? "프린터 연결됨" : "프린터 연결"}
+            </button>
             <button
               onClick={() => setAutoPrint(!autoPrint)}
               className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
@@ -653,6 +700,20 @@ export default function AdminOrdersPage() {
             <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
           </button>
         </div>
+
+        {/* [BUGFIX 2026-05-22] 자동인쇄 ON인데 프린터 미연결 — 큰 경고 + 원클릭 연결 */}
+        {autoPrint && !printerPrimed && (
+          <button
+            onClick={primePrinter}
+            className="w-full bg-red-50 border-2 border-red-300 rounded-xl p-4 mb-4 flex items-center justify-center gap-3 hover:bg-red-100 transition-colors animate-pulse"
+          >
+            <Printer size={22} className="text-red-600 flex-shrink-0" />
+            <div className="text-left">
+              <p className="text-sm font-bold text-red-700">🖨️ 영수증 자동인쇄가 아직 연결되지 않았습니다</p>
+              <p className="text-xs text-red-600 mt-0.5">여기를 한 번 눌러주세요 → 인쇄 팝업이 열리면 자동 출력됩니다 (창은 닫지 마세요)</p>
+            </div>
+          </button>
+        )}
 
         {/* [FIX2/7] 인쇄 오류 알림 배너 */}
         {printError && (

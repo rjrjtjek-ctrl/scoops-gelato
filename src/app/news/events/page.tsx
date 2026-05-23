@@ -65,7 +65,7 @@ export default function EventsPage() {
         <div className="max-w-[1000px] mx-auto px-6 md:px-12">
           <div className="space-y-6">
             {events.map((ev) => (
-              <div key={ev.id} className="flex flex-col md:flex-row gap-6 p-6 bg-bg-cream rounded-2xl group cursor-pointer hover:shadow-sm transition-shadow">
+              <div key={ev.id} className="flex flex-col md:flex-row gap-6 p-6 bg-bg-cream rounded-2xl">
                 {/* 썸네일 */}
                 <div className="w-full md:w-48 aspect-[3/2] md:aspect-square rounded-xl bg-bg-warm flex items-center justify-center shrink-0 overflow-hidden">
                   <Image src="/images/logo_symbol.png" alt="" width={50} height={50} className="opacity-10" />
@@ -78,7 +78,7 @@ export default function EventsPage() {
                     </span>
                     <span className="text-xs text-text-light">{ev.period}</span>
                   </div>
-                  <h3 className="text-lg font-medium text-brand-primary mb-2 group-hover:text-brand-accent transition-colors">
+                  <h3 className="text-lg font-medium text-brand-primary mb-2">
                     {ev.title}
                   </h3>
                   <p className="text-sm text-text-body leading-relaxed">{ev.desc}</p>

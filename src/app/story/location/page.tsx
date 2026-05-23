@@ -1,5 +1,8 @@
 import SubNav from "@/components/SubNav";
 
+const HQ_ADDRESS = "충청북도 청주시 서원구 1순환로672번길 35";
+const ADDR_Q = encodeURIComponent(HQ_ADDRESS);
+
 export default function LocationPage() {
   return (
     <main className="pt-[80px]">
@@ -19,17 +22,36 @@ export default function LocationPage() {
       <section className="bg-bg-white section-padding">
         <div className="max-w-[1200px] mx-auto px-6 md:px-12">
           <div className="grid md:grid-cols-2 gap-16">
-            {/* 지도 영역 */}
-            <div className="bg-bg-cream rounded-2xl overflow-hidden aspect-square md:aspect-auto flex items-center justify-center">
-              <div className="text-center p-8">
-                <div className="w-16 h-16 rounded-full bg-brand-primary/10 flex items-center justify-center mx-auto mb-4">
-                  <svg className="w-8 h-8 text-brand-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                </div>
-                <p className="text-sm text-text-body">지도 영역</p>
-                <p className="text-xs text-text-light mt-1">카카오맵 / 네이버맵 연동 예정</p>
+            {/* 지도 영역 — Google 지도 임베드(키 불필요) + 길찾기 버튼 */}
+            <div className="flex flex-col gap-4">
+              <div className="bg-bg-cream rounded-2xl overflow-hidden aspect-square md:aspect-[4/3] relative">
+                <iframe
+                  title="스쿱스젤라또 본사 위치"
+                  src={`https://maps.google.com/maps?q=${ADDR_Q}&hl=ko&z=17&output=embed`}
+                  className="absolute inset-0 w-full h-full border-0"
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  allowFullScreen
+                />
+              </div>
+              {/* 길찾기 버튼 (카카오맵·네이버맵) */}
+              <div className="grid grid-cols-2 gap-3">
+                <a
+                  href={`https://map.kakao.com/?q=${ADDR_Q}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 py-3 rounded-xl bg-[#FEE500] text-[#3C1E1E] text-sm font-semibold hover:brightness-95 transition"
+                >
+                  카카오맵 길찾기
+                </a>
+                <a
+                  href={`https://map.naver.com/p/search/${ADDR_Q}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 py-3 rounded-xl bg-[#03C75A] text-white text-sm font-semibold hover:brightness-95 transition"
+                >
+                  네이버맵 길찾기
+                </a>
               </div>
             </div>
 

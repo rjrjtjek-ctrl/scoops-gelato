@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseInsert, supabaseSelect } from "@/lib/supabase-client";
+import { supabaseInsert, supabaseSelect, supabaseCount } from "@/lib/supabase-client";
 
 // 봇 필터링
 const BOT_PATTERN = /bot|crawl|spider|slurp|Googlebot|Bingbot|Yandex|Baidu|DuckDuckBot|facebookexternalhit|LinkedInBot|Twitterbot|WhatsApp|Bytespider|GPTBot|ClaudeBot|SemrushBot|AhrefsBot|MJ12bot|DotBot|PetalBot|YandexBot|Sogou|Exabot|ia_archiver|archive\.org|HeadlessChrome|PhantomJS|Selenium|puppeteer/i;
@@ -42,6 +42,13 @@ export async function GET() {
       id: string; path: string; device: string; browser: string;
       ip: string; session_id: string | null; referrer: string | null; created_at: string;
     }>>("visit_logs", `order=created_at.desc&limit=2000`);
+
+    // 정확한 전체 누적 개수 (2000 limit에 영향받지 않는 진짜 총계)
+    let trueTotal = rows.length;
+    try {
+      const c = await supabaseCount("visit_logs");
+      if (c > 0) trueTotal = c;
+    } catch { /* 실패 시 rows.length 사용 */ }
 
     // 일별 통계
     const dailyStats: Record<string, number> = {};
@@ -137,7 +144,7 @@ export async function GET() {
     }));
 
     return NextResponse.json({
-      totalVisits: rows.length,
+      totalVisits: trueTotal,
       todayVisits: todayRows.length,
       todayUniqueVisitors: todayUniqueIPs,
       dailyStats: dailyArray,

@@ -39,6 +39,19 @@ export async function supabaseSelect<T>(
   return data as T;
 }
 
+// 정확한 행 개수 조회 (Content-Range 헤더 사용 — limit 영향 없음)
+export async function supabaseCount(table: string, query: string = ""): Promise<number> {
+  const url = `${restUrl(table)}?${query}${query ? "&" : ""}select=id`;
+  const res = await fetch(url, {
+    headers: { ...headers(), Prefer: "count=exact", Range: "0-0" },
+    cache: "no-store",
+  });
+  // Content-Range 형식: "0-0/2984" → 마지막 숫자가 전체 개수
+  const range = res.headers.get("content-range") || "";
+  const total = range.split("/")[1];
+  return total && total !== "*" ? parseInt(total, 10) : 0;
+}
+
 export async function supabaseInsert<T>(
   table: string,
   rows: Record<string, unknown> | Record<string, unknown>[]

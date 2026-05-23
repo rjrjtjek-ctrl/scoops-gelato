@@ -62,7 +62,6 @@ export default function AdminPage() {
   const [geoData, setGeoData] = useState<GeoData | null>(null);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState<"home" | "visitors" | "journey" | "tools">("home");
-  const [expandedSession, setExpandedSession] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [orderSummary, setOrderSummary] = useState<{
@@ -197,10 +196,9 @@ export default function AdminPage() {
 
   const a = analytics;
   const todayStr = new Date().toISOString().split("T")[0];
-  const todaySessions = a?.recentSessions.filter(s => s.startAt.startsWith(todayStr)) || [];
-  const todayBounce = todaySessions.length > 0 ? Math.round((todaySessions.filter(s => s.isBounce).length / todaySessions.length) * 100) : 0;
-  const avgDur = a?.recentSessions.length ? Math.round(a.recentSessions.reduce((s, x) => s + x.durationSec, 0) / a.recentSessions.length) : 0;
-  const pagesPerVisit = a?.recentSessions.length ? (a.recentSessions.reduce((s, x) => s + x.pageCount, 0) / a.recentSessions.length).toFixed(1) : "—";
+  // 모바일 비율 (Supabase deviceStats 기준)
+  const devTotal = geoData?.deviceStats ? Object.values(geoData.deviceStats).reduce((s, x) => s + x, 0) : 0;
+  const mobilePct = devTotal > 0 ? Math.round(((geoData?.deviceStats?.mobile || 0) / devTotal) * 100) : "—";
 
   return (
     <div className="min-h-screen bg-[#F5F6F8] flex flex-col md:flex-row">
@@ -295,13 +293,13 @@ export default function AdminPage() {
               <p className="text-xs text-gray-400 mt-1">{new Date().toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric", weekday: "long" })} 기준</p>
             </div>
 
-            {/* 핵심 지표 */}
+            {/* 핵심 지표 — 전부 Supabase(geoData) 기준 */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               {[
-                { label: "오늘 방문자", val: geoData?.todayUniqueVisitors ?? a?.todayUniqueVisitors ?? "—", unit: "명", icon: "👤", accent: false },
-                { label: "페이지 조회", val: geoData?.todayVisits ?? a?.todayVisits ?? "—", unit: "회", icon: "📄", accent: false },
-                { label: "바로 나간 비율", val: todayBounce, unit: "%", icon: "🚪", accent: todayBounce > 50 },
-                { label: "평균 머문 시간", val: fmtDur(avgDur), unit: "", icon: "⏱️", accent: avgDur > 0 && avgDur < 15 },
+                { label: "오늘 방문자", val: geoData?.todayUniqueVisitors ?? "—", unit: "명", icon: "👤", accent: false },
+                { label: "오늘 페이지 조회", val: geoData?.todayVisits ?? "—", unit: "회", icon: "📄", accent: false },
+                { label: "전체 누적 조회", val: geoData?.totalVisits ?? "—", unit: "회", icon: "📈", accent: false },
+                { label: "모바일 비율", val: mobilePct, unit: "%", icon: "📱", accent: false },
               ].map((c, i) => (
                 <Card key={i}>
                   <div className="flex items-center justify-between mb-3">
@@ -542,36 +540,41 @@ export default function AdminPage() {
             </div>
             )}
 
-            {/* 일별 추이 */}
+            {/* 일별 추이 — GitHub 세션 우선, 없으면 Supabase 일별 페이지뷰(geoData) */}
             <Card>
-              <SectionTitle title="일별 방문 추이" sub="최근 14일" />
-              {a?.dailyTrend.length ? (
-                <div className="flex items-end gap-1 h-28 md:h-36">
-                  {a.dailyTrend.slice(0, 14).reverse().map((d) => {
-                    const max = Math.max(...a.dailyTrend.map((x) => x.sessions), 1);
-                    const h = d.sessions > 0 ? Math.max((d.sessions / max) * 100, 8) : 4;
-                    const isToday = d.date === todayStr;
-                    return (
-                      <div key={d.date} className="flex-1 flex flex-col items-center gap-0.5">
-                        {d.sessions > 0 && <span className="text-[9px] font-bold text-gray-500">{d.sessions}</span>}
-                        <div className={`w-full rounded-t-sm transition-all ${isToday ? "bg-[#D4A574]" : d.sessions > 0 ? "bg-[#1B4332]" : "bg-gray-100"}`} style={{ height: `${h}%` }} />
-                        <span className={`text-[8px] ${isToday ? "text-[#D4A574] font-bold" : "text-gray-400"}`}>{d.date.slice(8)}일</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : <p className="text-gray-300 text-xs py-8 text-center">데이터가 쌓이면 그래프가 나와요</p>}
+              <SectionTitle title="일별 방문 추이" sub="최근 14일 · 페이지 조회수" />
+              {(() => {
+                const trend = a?.dailyTrend.length
+                  ? a.dailyTrend.slice(0, 14).map(d => ({ date: d.date, count: d.sessions }))
+                  : (geoData?.dailyStats || []).slice(0, 14).map(d => ({ date: d.date, count: d.count }));
+                if (!trend.length) return <p className="text-gray-300 text-xs py-8 text-center">데이터가 쌓이면 그래프가 나와요</p>;
+                const max = Math.max(...trend.map(x => x.count), 1);
+                return (
+                  <div className="flex items-end gap-1 h-28 md:h-36">
+                    {trend.slice().reverse().map((d) => {
+                      const h = d.count > 0 ? Math.max((d.count / max) * 100, 8) : 4;
+                      const isToday = d.date === todayStr;
+                      return (
+                        <div key={d.date} className="flex-1 flex flex-col items-center gap-0.5">
+                          {d.count > 0 && <span className="text-[9px] font-bold text-gray-500">{d.count}</span>}
+                          <div className={`w-full rounded-t-sm transition-all ${isToday ? "bg-[#D4A574]" : d.count > 0 ? "bg-[#1B4332]" : "bg-gray-100"}`} style={{ height: `${h}%` }} />
+                          <span className={`text-[8px] ${isToday ? "text-[#D4A574] font-bold" : "text-gray-400"}`}>{d.date.slice(8)}일</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
             </Card>
 
-            {/* 전체 누적 */}
+            {/* 전체 누적 — Supabase(geoData) 우선 */}
             <div className="bg-gradient-to-r from-[#1B4332] to-[#2D6A4F] rounded-2xl p-5 text-white">
               <p className="text-[11px] text-white/50 mb-3 font-medium">전체 누적 통계</p>
-              <div className="grid grid-cols-4 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 {[
-                  { v: a?.totalVisits ?? 0, l: "페이지 조회" },
-                  { v: a?.totalSessions ?? 0, l: "총 방문" },
-                  { v: `${a?.bounceRate ?? 0}%`, l: "바로나감" },
-                  { v: pagesPerVisit, l: "방문당 페이지" },
+                  { v: geoData?.totalVisits ?? a?.totalVisits ?? 0, l: "전체 페이지 조회" },
+                  { v: geoData?.todayVisits ?? a?.todaySessions ?? 0, l: "오늘 조회" },
+                  { v: geoData?.todayUniqueVisitors ?? 0, l: "오늘 순방문자" },
                 ].map((c, i) => (
                   <div key={i} className="text-center">
                     <p className="text-lg md:text-xl font-extrabold">{c.v}</p>
@@ -586,160 +589,125 @@ export default function AdminPage() {
           {activeTab === "visitors" && <>
             <div>
               <h1 className="text-xl md:text-2xl font-bold text-[#1B4332]">방문 기록</h1>
-              <p className="text-xs text-gray-400 mt-0.5">터치하면 이동 경로를 상세히 볼 수 있어요</p>
+              <p className="text-xs text-gray-400 mt-0.5">최근 방문자들이 어떤 페이지를 봤는지 시간순으로 보여드려요</p>
             </div>
 
+            {/* 요약 지표 (Supabase 기준) */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {[
-                { l: "전체 방문", v: a?.totalSessions ?? 0 },
-                { l: "전체 조회", v: a?.totalVisits ?? 0 },
-                { l: "바로나감", v: `${a?.bounceRate ?? 0}%` },
-                { l: "오늘 방문", v: a?.todaySessions ?? 0 },
+                { l: "전체 페이지 조회", v: geoData?.totalVisits ?? 0 },
+                { l: "오늘 조회", v: geoData?.todayVisits ?? 0 },
+                { l: "오늘 순방문자", v: geoData?.todayUniqueVisitors ?? 0 },
+                { l: "최근 기록 수", v: geoData?.recentVisits?.length ?? 0 },
               ].map((c, i) => (
-                <Card key={i}><p className="text-[10px] text-gray-400 mb-1">{c.l}</p><p className="text-xl font-extrabold text-[#1B4332]">{c.v}</p></Card>
+                <Card key={i}><p className="text-[10px] text-gray-400 mb-1">{c.l}</p><p className="text-xl font-extrabold text-[#1B4332]">{c.v}<span className="text-xs font-medium text-gray-400 ml-0.5">{i < 3 ? (i === 2 ? "명" : "회") : "건"}</span></p></Card>
               ))}
             </div>
 
+            {/* 최근 방문 목록 (개별 페이지뷰 — 시간순) */}
             <Card className="!p-0 overflow-hidden">
-              {a?.recentSessions.length ? (
+              {geoData?.recentVisits?.length ? (
                 <div className="divide-y divide-gray-50">
-                  {a.recentSessions.map((s) => (
-                    <div key={s.sid}>
-                      <button onClick={() => setExpandedSession(expandedSession === s.sid ? null : s.sid)}
-                        className="w-full flex items-center gap-2 md:gap-3 px-4 py-3.5 text-left hover:bg-gray-50/70 active:bg-gray-50 transition-colors">
-                        <span className="text-base flex-shrink-0">{dIcon[s.device] || "💻"}</span>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-[13px] text-gray-700 truncate font-medium">{s.pages.map(x => p(x.page)).join(" → ")}</p>
-                          <p className="text-[11px] text-gray-400">{fmtTime(s.startAt)} · {s.browser}</p>
-                        </div>
-                        <div className="flex items-center gap-1.5 flex-shrink-0">
-                          <span className="text-[11px] text-[#1B4332] font-semibold">{fmtDur(s.durationSec)}</span>
-                          {s.isBounce && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-red-50 text-red-500 font-medium">바로나감</span>}
-                          <span className={`text-[10px] text-gray-300 transition-transform duration-200 ${expandedSession === s.sid ? "rotate-180" : ""}`}>▾</span>
-                        </div>
-                      </button>
-                      {expandedSession === s.sid && (
-                        <div className="bg-[#FAFBFC] px-4 py-4 border-t border-gray-100">
-                          <div className="flex flex-wrap gap-x-6 gap-y-1 mb-4 text-[11px]">
-                            <span><span className="text-gray-400">IP</span> <span className="font-mono text-gray-600">{s.ip}</span></span>
-                            <span><span className="text-gray-400">유입</span> {s.referrer === "direct" ? "직접 접속" : s.referrer || "직접 접속"}</span>
-                            <span><span className="text-gray-400">기기</span> {dName[s.device] || s.device}</span>
-                          </div>
-                          <div className="relative pl-4">
-                            <div className="absolute left-[7px] top-1 bottom-1 w-px bg-gray-200" />
-                            {s.pages.map((step, i) => (
-                              <div key={i} className="relative flex items-start gap-3 pb-3 last:pb-0">
-                                <div className={`w-3.5 h-3.5 rounded-full border-2 flex-shrink-0 z-10 mt-0.5 ${
-                                  i === 0 ? "bg-green-500 border-green-500" : i === s.pages.length - 1 ? "bg-red-500 border-red-500" : "bg-white border-[#1B4332]"}`} />
-                                <div className="flex-1 flex flex-wrap items-center gap-1.5">
-                                  <span className="text-[12px] font-medium text-gray-700">{pi(step.page)} {p(step.page)}</span>
-                                  <span className="text-[10px] text-gray-400">{new Date(step.enterAt).toLocaleTimeString("ko-KR", { timeZone: "Asia/Seoul", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false })}</span>
-                                  {step.dwellSec > 0 && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-600 font-medium">{fmtDur(step.dwellSec)}</span>}
-                                  {i === 0 && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-green-50 text-green-600 font-medium">입장</span>}
-                                  {i === s.pages.length - 1 && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-50 text-red-500 font-medium">나감</span>}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
+                  {geoData.recentVisits.map((v, i) => (
+                    <div key={i} className="flex items-center gap-3 px-4 py-3">
+                      <span className="text-base flex-shrink-0">{dIcon[v.device] || "💻"}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[13px] text-gray-700 truncate font-medium">{pi(v.path)} {p(v.path)}</p>
+                        <p className="text-[11px] text-gray-400">
+                          {fmtTime(v.time)} · {dName[v.device] || v.device} · {v.browser}
+                          {v.referrer && v.referrer !== "direct" && !v.referrer.includes("scoopsgelato") ? " · 외부유입" : ""}
+                        </p>
+                      </div>
+                      <span className="text-[11px] text-gray-300 flex-shrink-0">{i + 1}</span>
                     </div>
                   ))}
                 </div>
               ) : <p className="text-gray-300 text-sm py-12 text-center">아직 방문 기록이 없어요</p>}
             </Card>
+            <p className="text-[11px] text-gray-400 text-center">※ 최근 100건의 페이지 방문을 시간순으로 표시합니다. (관리자 기기·봇 제외)</p>
           </>}
 
           {/* ============ 페이지 분석 ============ */}
           {activeTab === "journey" && <>
             <div>
               <h1 className="text-xl md:text-2xl font-bold text-[#1B4332]">페이지 분석</h1>
-              <p className="text-xs text-gray-400 mt-0.5">어떤 페이지가 잘 되고 있고, 어디가 문제인지 확인하세요</p>
+              <p className="text-xs text-gray-400 mt-0.5">어떤 페이지를 많이 보고, 어디서 들어오는지 확인하세요</p>
             </div>
 
-            {/* 이탈 + 이동 경로 */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <Card>
-                <SectionTitle title="🚪 많이 나가는 페이지" sub="이 페이지에서 사이트를 떠나는 비율" />
-                {a?.exitPages.length ? (
-                  <div className="space-y-3">
-                    {a.exitPages.map((ep) => (
-                      <div key={ep.page}>
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-[12px] text-gray-600">{pi(ep.page)} {p(ep.page)}</span>
-                          <span className={`text-[12px] font-bold ${ep.exitRate > 50 ? "text-red-500" : ep.exitRate > 30 ? "text-amber-500" : "text-green-600"}`}>{ep.exitRate}%</span>
-                        </div>
-                        <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                          <div className={`h-full rounded-full ${ep.exitRate > 50 ? "bg-red-400" : ep.exitRate > 30 ? "bg-amber-400" : "bg-green-400"}`} style={{ width: `${ep.exitRate}%` }} />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : <p className="text-gray-300 text-xs py-6 text-center">데이터 없음</p>}
-              </Card>
-
-              <Card>
-                <SectionTitle title="🔀 이동 경로 패턴" sub="방문자들이 주로 이동하는 순서" />
-                {a?.journeyFlows.length ? (
-                  <div className="space-y-2">
-                    {a.journeyFlows.slice(0, 7).map((f, i) => (
-                      <div key={i} className="flex items-center gap-2 text-[12px]">
-                        <span className="text-gray-300 w-4 flex-shrink-0">{i + 1}</span>
-                        <span className="bg-gray-50 px-2 py-1 rounded-lg text-gray-700 font-medium">{p(f.from)}</span>
-                        <span className="text-gray-300">→</span>
-                        <span className="bg-gray-50 px-2 py-1 rounded-lg text-gray-700 font-medium">{p(f.to)}</span>
-                        <span className="ml-auto font-bold text-[#1B4332]">{f.count}회</span>
-                      </div>
-                    ))}
-                  </div>
-                ) : <p className="text-gray-300 text-xs py-6 text-center">데이터 없음</p>}
-              </Card>
-            </div>
-
-            {/* 성적표 */}
+            {/* 페이지별 조회 순위 (Supabase pageStats) */}
             <Card>
-              <SectionTitle title="📋 페이지별 성적표" sub="각 페이지의 조회수, 이탈률, 체류시간" />
-              {a?.topPages.length ? (
+              <SectionTitle title="📋 페이지별 조회 순위" sub="조회수 많은 순" />
+              {geoData?.pageStats?.length ? (
                 <div className="space-y-2.5">
-                  {a.topPages.map((tp) => (
-                    <div key={tp.page} className="bg-[#FAFBFC] rounded-xl p-3.5">
-                      <div className="flex items-center justify-between mb-2.5">
-                        <span className="text-[13px] font-semibold text-gray-800">{pi(tp.page)} {p(tp.page)}</span>
-                        {tp.exitRate > 50 ? <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-50 text-red-600 font-medium">개선 필요</span>
-                        : tp.exitRate > 30 ? <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 font-medium">보통</span>
-                        : <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-50 text-green-600 font-medium">좋음</span>}
+                  {geoData.pageStats.slice(0, 12).map((ps, i) => {
+                    const max = geoData.pageStats[0]?.count || 1;
+                    return (
+                      <div key={ps.path}>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-[12px] text-gray-600"><span className="text-gray-300 mr-1.5">{i + 1}</span>{pi(ps.path)} {p(ps.path)}</span>
+                          <span className="text-[12px] font-bold text-[#1B4332]">{ps.count}회</span>
+                        </div>
+                        <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden"><div className="h-full bg-gradient-to-r from-[#1B4332] to-[#40916C] rounded-full" style={{ width: `${(ps.count / max) * 100}%` }} /></div>
                       </div>
-                      <div className="grid grid-cols-3 gap-2 text-center">
-                        <div><p className="text-[15px] font-bold text-[#1B4332]">{tp.views}</p><p className="text-[10px] text-gray-400">조회수</p></div>
-                        <div><p className={`text-[15px] font-bold ${tp.exitRate > 50 ? "text-red-500" : "text-[#1B4332]"}`}>{tp.exitRate}%</p><p className="text-[10px] text-gray-400">나간 비율</p></div>
-                        <div><p className="text-[15px] font-bold text-[#1B4332]">{fmtDur(tp.avgDwell)}</p><p className="text-[10px] text-gray-400">평균 머묾</p></div>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : <p className="text-gray-300 text-xs py-6 text-center">데이터 없음</p>}
             </Card>
 
-            {/* 날짜별 */}
+            {/* 유입 경로 + 기기 (Supabase) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <Card>
+                <SectionTitle title="📡 통신사 / 유입" sub="ISP 분포" />
+                {geoData?.ispStats?.length ? (
+                  <div className="space-y-2">
+                    {geoData.ispStats.slice(0, 8).map((isp) => {
+                      const max = geoData.ispStats[0]?.count || 1;
+                      return (
+                        <div key={isp.isp} className="flex items-center gap-2">
+                          <span className="text-[11px] text-gray-600 w-24 truncate">{isp.isp}</span>
+                          <div className="flex-1 bg-gray-100 rounded-full h-3 overflow-hidden"><div className="bg-[#2D6A4F] h-full rounded-full" style={{ width: `${(isp.count / max) * 100}%` }} /></div>
+                          <span className="text-[11px] font-bold text-gray-700 w-7 text-right">{isp.count}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : <p className="text-gray-300 text-xs py-6 text-center">데이터 없음</p>}
+              </Card>
+
+              <Card>
+                <SectionTitle title="📱 브라우저 분포" sub="어떤 앱/브라우저로 접속" />
+                {geoData?.browserStats && Object.keys(geoData.browserStats).length ? (
+                  <div className="space-y-2">
+                    {Object.entries(geoData.browserStats).sort(([, x], [, y]) => y - x).slice(0, 8).map(([browser, count]) => {
+                      const max = Math.max(...Object.values(geoData.browserStats), 1);
+                      return (
+                        <div key={browser} className="flex items-center gap-2">
+                          <span className="text-[11px] text-gray-600 w-24 truncate">{browser}</span>
+                          <div className="flex-1 bg-gray-100 rounded-full h-3 overflow-hidden"><div className="bg-[#A68B5B] h-full rounded-full" style={{ width: `${(count / max) * 100}%` }} /></div>
+                          <span className="text-[11px] font-bold text-gray-700 w-7 text-right">{count}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : <p className="text-gray-300 text-xs py-6 text-center">데이터 없음</p>}
+              </Card>
+            </div>
+
+            {/* 날짜별 (Supabase dailyStats) */}
             <Card>
-              <SectionTitle title="📅 날짜별 기록" />
-              {a?.dailyTrend.length ? (
+              <SectionTitle title="📅 날짜별 조회수" sub="최근 30일" />
+              {geoData?.dailyStats?.length ? (
                 <div className="overflow-x-auto -mx-1">
-                  <table className="w-full text-[12px] min-w-[380px]">
+                  <table className="w-full text-[12px] min-w-[280px]">
                     <thead><tr className="border-b border-gray-200 text-gray-400">
                       <th className="text-left py-2 px-2 font-medium">날짜</th>
-                      <th className="text-center py-2 px-2 font-medium">방문</th>
-                      <th className="text-center py-2 px-2 font-medium">조회</th>
-                      <th className="text-center py-2 px-2 font-medium">바로나감</th>
-                      <th className="text-center py-2 px-2 font-medium">머묾</th>
+                      <th className="text-right py-2 px-2 font-medium">페이지 조회수</th>
                     </tr></thead>
-                    <tbody>{a.dailyTrend.map((d) => (
+                    <tbody>{geoData.dailyStats.map((d) => (
                       <tr key={d.date} className="border-b border-gray-50 hover:bg-gray-50/50">
-                        <td className="py-2.5 px-2 text-gray-600 font-medium">{d.date.slice(5)}</td>
-                        <td className="py-2.5 px-2 text-center font-bold text-[#1B4332]">{d.sessions}</td>
-                        <td className="py-2.5 px-2 text-center text-gray-500">{d.pageViews}</td>
-                        <td className="py-2.5 px-2 text-center text-gray-500">{d.bounceCount}</td>
-                        <td className="py-2.5 px-2 text-center text-gray-500">{fmtDur(d.avgDurationSec)}</td>
+                        <td className="py-2.5 px-2 text-gray-600 font-medium">{d.date.slice(5)}{d.date === todayStr ? " (오늘)" : ""}</td>
+                        <td className="py-2.5 px-2 text-right font-bold text-[#1B4332]">{d.count}</td>
                       </tr>
                     ))}</tbody>
                   </table>

@@ -127,8 +127,8 @@ export async function GET() {
       .slice(0, 10)
       .map(([isp, count]) => ({ isp, count }));
 
-    // 최근 방문 목록 (개별 페이지뷰 — 최근 40건)
-    const recentVisits = rows.slice(0, 40).map((r) => ({
+    // 최근 방문 목록 (개별 페이지뷰 — 최근 100건)
+    const recentVisits = rows.slice(0, 100).map((r) => ({
       path: r.path,
       device: r.device,
       browser: r.browser,

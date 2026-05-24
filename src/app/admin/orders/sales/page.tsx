@@ -83,24 +83,43 @@ export default function SalesPage() {
       dailyMap[dk] = (dailyMap[dk] || 0) + o.totalAmount;
 
       for (const it of o.items || []) {
-        const isGelato = Array.isArray(it.selectedFlavors) && it.selectedFlavors.length > 0;
         const sub = it.subtotal || 0;
+        const name = it.itemName || "";
+        const opt = (it.optionName || "").trim();
+        // 젤라또/소르베또 구분 — itemName 기준 (실데이터는 selected_flavors가 비어있는 경우 많음)
+        const isGelato = /가지맛|젤라또|소르베또/.test(name);
+
         if (isGelato) {
           gelatoRev += sub;
-          // 메뉴: "1가지맛" 식으로 그룹 (itemName에서 가지수 추출)
-          const m = it.itemName.match(/(\d가지맛)/);
-          const key = m ? m[1] : it.itemName;
+          // 메뉴 키: 가지수로 정규화 ("EAT NOW 1가지맛", "젤라또 (1가지맛)" → "젤라또 1가지맛")
+          const cm = `${name} ${opt}`.match(/(\d)\s*가지맛/);
+          const key = cm ? `젤라또 ${cm[1]}가지맛` : "젤라또/소르베또";
           menuMap[key] = menuMap[key] || { qty: 0, revenue: 0 };
           menuMap[key].qty += it.quantity;
           menuMap[key].revenue += sub;
-          // 맛별 카운트 (저장 형식이 string 또는 {name} 둘 다 가능 — 방어적 처리)
-          for (const f of it.selectedFlavors! as unknown[]) {
-            const fname = typeof f === "string" ? f : (f as { name?: string })?.name;
-            if (fname) flavorMap[fname] = (flavorMap[fname] || 0) + it.quantity;
+
+          // 맛 추출: selected_flavors 우선, 없으면 option_name 파싱
+          let flavors: string[] = [];
+          const sf = it.selectedFlavors as unknown[] | undefined;
+          if (Array.isArray(sf) && sf.length > 0) {
+            flavors = sf.map((f) => {
+              if (typeof f === "string") {
+                // JSON 문자열일 수 있음: '{"id":"g1","name":"생명쌀"}'
+                if (f.startsWith("{")) { try { return JSON.parse(f).name || ""; } catch { return f; } }
+                return f;
+              }
+              return (f as { name?: string })?.name || "";
+            }).filter(Boolean);
+          } else if (opt && !/가지맛|\(/.test(opt)) {
+            // option_name이 맛 목록 (라벨 "N가지맛"/괄호 제외)
+            flavors = opt.split(",").map((s) => s.trim()).filter(Boolean);
+          }
+          for (const fn of flavors) {
+            flavorMap[fn] = (flavorMap[fn] || 0) + it.quantity;
           }
         } else {
           drinkRev += sub;
-          const key = it.itemName;
+          const key = name;
           drinkMap[key] = drinkMap[key] || { qty: 0, revenue: 0 };
           drinkMap[key].qty += it.quantity;
           drinkMap[key].revenue += sub;
@@ -296,7 +315,7 @@ export default function SalesPage() {
                   {stats.topDrinks.map((d, i) => (
                     <div key={d.name} className="flex items-center justify-between py-1.5 border-b border-gray-50 last:border-0">
                       <span className="text-[13px] text-gray-700"><span className="text-gray-300 mr-1.5">{i + 1}</span>{d.name}</span>
-                      <span className="text-[13px] text-gray-500"><strong className="text-[#1B4332]">{d.qty}잔</strong> · {won(d.revenue)}</span>
+                      <span className="text-[13px] text-gray-500"><strong className="text-[#1B4332]">{d.qty}개</strong> · {won(d.revenue)}</span>
                     </div>
                   ))}
                 </div>

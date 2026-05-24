@@ -19,6 +19,7 @@ import {
   Trash2,
   Smartphone,
   BarChart3,
+  TrendingUp,
   Wifi,
   WifiOff,
 } from "lucide-react";
@@ -665,7 +666,10 @@ export default function AdminOrdersPage() {
             >
               {soundEnabled ? <Volume2 size={18} /> : <VolumeX size={18} className="text-white/40" />}
             </button>
-            <Link href="/admin/orders/analytics" className="p-2 rounded-lg hover:bg-white/10 transition" title="분석">
+            <Link href="/admin/orders/sales" className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[#A68B5B]/25 text-[#E8D5B5] hover:bg-[#A68B5B]/35 transition text-xs font-bold" title="판매 분석 — 무엇이 얼마나 팔렸나">
+              <TrendingUp size={14} /> 판매분석
+            </Link>
+            <Link href="/admin/orders/analytics" className="p-2 rounded-lg hover:bg-white/10 transition" title="유입/전환 분석">
               <BarChart3 size={18} />
             </Link>
             <Link href="/admin/orders/history" className="p-2 rounded-lg hover:bg-white/10 transition" title="주문 이력">

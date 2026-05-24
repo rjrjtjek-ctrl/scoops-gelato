@@ -175,6 +175,45 @@ export async function GET(req: NextRequest) {
         }
       }
 
+      // [판매분석] 기간 조회 — ?from=YYYY-MM-DD&to=YYYY-MM-DD (포함 범위)
+      const from = searchParams.get("from");
+      const to = searchParams.get("to");
+      if (from && to && process.env.NEXT_PUBLIC_SUPABASE_URL) {
+        try {
+          const rows = await supabaseSelect<any[]>(
+            "orders",
+            `store_id=eq.${storeId}&created_at=gte.${from}T00:00:00.000Z&created_at=lte.${to}T23:59:59.999Z&select=*,order_items(*)&order=created_at.desc&limit=5000`
+          );
+          const orders = rows.map((r: any) => ({
+            id: r.id,
+            storeId: r.store_id,
+            orderNumber: r.order_number,
+            orderType: r.order_type,
+            status: r.status,
+            paymentStatus: r.payment_status,
+            paymentMethod: r.payment_method || null,
+            totalAmount: r.total_amount,
+            memo: r.memo || undefined,
+            customerPhone: r.customer_phone || undefined,
+            items: (r.order_items || []).map((i: any) => ({
+              id: i.id,
+              orderId: i.order_id,
+              itemName: i.item_name,
+              optionName: i.option_name,
+              quantity: i.quantity,
+              unitPrice: i.unit_price,
+              subtotal: i.subtotal,
+              selectedFlavors: i.selected_flavors || undefined,
+            })),
+            createdAt: r.created_at,
+            updatedAt: r.updated_at,
+          }));
+          return NextResponse.json({ orders }, { headers: noCacheHeaders });
+        } catch {
+          // 실패 시 아래 기본 조회로 폴백
+        }
+      }
+
       const orders = await ds.getOrders(
         storeId,
         status as "pending" | "confirmed" | "preparing" | "ready" | "completed" | "cancelled" | undefined

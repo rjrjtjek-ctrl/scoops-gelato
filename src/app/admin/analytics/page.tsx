@@ -316,7 +316,7 @@ export default function AdminPage() {
             {/* 주문 현황 */}
             {orderSummary && (
               <Card>
-                <SectionTitle title="오늘 QR 주문 현황" sub="전체 매장 합산" action={<Link href="/admin/orders" className="text-[11px] text-[#1B4332] font-semibold hover:underline">주문 관리 →</Link>} />
+                <SectionTitle title="오늘 QR 주문 현황" sub="전체 매장 합산" action={<Link href="/admin/orders/sales" className="text-[11px] text-[#1B4332] font-semibold hover:underline">판매 분석 →</Link>} />
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
                   <div className="bg-[#1B4332]/5 rounded-xl p-3">
                     <p className="text-[11px] text-gray-400">오늘 주문</p>

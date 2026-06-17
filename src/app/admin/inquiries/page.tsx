@@ -137,6 +137,20 @@ function InquiriesContent() {
       </header>
 
       <main className="max-w-6xl mx-auto px-4 md:px-6 py-4 md:py-6">
+        {/* 카톡 알림 실패 배너 — 한 건이라도 있으면 표시 */}
+        {inquiries.some((i) => !i.kakaoSent) && (
+          <button
+            onClick={() => router.push("/admin/kakao-reauth")}
+            className="w-full bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4 flex items-center gap-3 hover:bg-amber-100 transition text-left"
+          >
+            <div className="w-10 h-10 bg-[#FEE500] rounded-xl flex items-center justify-center flex-shrink-0 text-xl">💬</div>
+            <div className="flex-1">
+              <p className="text-sm font-bold text-amber-800">카카오 알림이 작동하지 않고 있습니다</p>
+              <p className="text-xs text-amber-600 mt-0.5">여기를 누르면 3단계로 재연결할 수 있어요 →</p>
+            </div>
+          </button>
+        )}
+
         {filteredInquiries.length === 0 ? (
           <div className="bg-white rounded-2xl p-8 md:p-12 text-center">
             <p className="text-gray-400 text-base md:text-lg">

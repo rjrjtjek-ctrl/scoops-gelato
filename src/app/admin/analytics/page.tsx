@@ -365,10 +365,13 @@ export default function AdminPage() {
                   </Card>
                 )}
                 {kakaoFailCount > 0 && (
-                  <Card className="bg-amber-50 border-amber-100" onClick={() => router.push("/admin/inquiries?filter=kakao-fail")}>
+                  <Card className="bg-amber-50 border-amber-100" onClick={() => router.push("/admin/kakao-reauth")}>
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center flex-shrink-0"><span className="text-lg">⚠️</span></div>
-                      <div className="flex-1"><p className="text-sm font-bold text-amber-700">카톡 전송 실패 {kakaoFailCount}건</p><p className="text-[11px] text-amber-500">직접 연락이 필요해요</p></div>
+                      <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center flex-shrink-0"><span className="text-lg">💬</span></div>
+                      <div className="flex-1">
+                        <p className="text-sm font-bold text-amber-700">카톡 알림 {kakaoFailCount}건 실패</p>
+                        <p className="text-[11px] text-amber-500">→ 카카오 알림 재연결하기</p>
+                      </div>
                     </div>
                   </Card>
                 )}

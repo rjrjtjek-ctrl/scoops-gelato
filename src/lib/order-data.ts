@@ -68,7 +68,8 @@ export const menuItems: MenuItem[] = [
   { id: "sb2", categoryId: "cat2", name: "레몬", description: "리얼 레몬즙을 넣은 상큼상큼한 레몬 소르베또", badge: "BEST", isActive: true, sortOrder: 2 },
   { id: "sb3", categoryId: "cat2", name: "자몽블랙티", description: "향긋한 블랙티향에 상큼한 자몽알갱이가 톡톡 박히는 매력만점 소르베또", badge: null, isActive: true, sortOrder: 3 },
   { id: "sb4", categoryId: "cat2", name: "토마토", description: "빨갛게 잘 익은 토마토를 감칠맛 가득 넣은 매력 만점 토마토 소르베또", badge: null, isActive: true, sortOrder: 4 },
-  { id: "sb5", categoryId: "cat2", name: "귤", description: "상큼한 귤 과즙과 은은한 단맛이 입안에서 톡톡 터지는 산뜻한 소르베또", badge: null, isActive: true, sortOrder: 5 },
+  { id: "sb5", categoryId: "cat2", name: "귤", description: "상큼한 귤 과즙과 은은한 단맛이 입안에서 톡톡 터지는 산뜻한 소르베또", badge: null, isActive: false, sortOrder: 5 },
+  { id: "sb6", categoryId: "cat2", name: "자두", description: "새콤달콤한 자두 과육을 통째로 갈아 넣어, 한 스푼에 계절이 담기는 상큼한 소르베또", badge: "BEST", isActive: true, sortOrder: 6 },
 
   // ---- 위스키 9종 ----
   { id: "w1", categoryId: "cat3", name: "달모어 12y", nameEn: "Dalmore 12y", description: "달모어 12년", badge: "추천", image: "/images/drinks/dalmore-12.webp", isActive: true, sortOrder: 1 },
@@ -308,8 +309,8 @@ export const drinkDescriptions: Record<string, DrinkDescription> = {
     palate: "과일의 상큼함과 부드러운 단맛, 가벼운 바디",
     finish: "깔끔하고 상큼한 마무리",
     recommend: "도수가 낮아 부담 없어요. 식전주나 디저트와 함께 가볍게 즐기기 좋습니다.",
-    gelatoPairing: "귤 소르베또 — 상큼한 과일 리큐르와 귤 소르베또의 산뜻한 페어링",
-    gelatoPairingId: "sb5",
+    gelatoPairing: "자두 소르베또 — 새콤한 자두 소르베또와 과일 리큐르의 자연스러운 산뜻함",
+    gelatoPairingId: "sb6",
   },
   lq3: {
     origin: "한국", type: "리큐르", abv: "21%",

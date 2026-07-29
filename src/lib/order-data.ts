@@ -61,7 +61,8 @@ export const menuItems: MenuItem[] = [
   { id: "g12", categoryId: "cat1", name: "딸기치즈케이크", description: "필라델피아 치즈케이크를 듬뿍 넣고 딸기의 달콤함까지 더한 완벽 밸런스 젤라또", badge: null, isActive: true, sortOrder: 12 },
   { id: "g13", categoryId: "cat1", name: "크림치즈블루베리", description: "100% 크림치즈의 찰진 식감과 상큼달달 블루베리잼을 함께 느낄 수 있는 젤라또", badge: null, isActive: true, sortOrder: 13 },
   { id: "g14", categoryId: "cat1", name: "바나나", description: "남녀노소 누구나 좋아하는 하얀색 바나나의 달콤한 맛이 매력인 젤라또", badge: null, isActive: true, sortOrder: 14 },
-  { id: "g15", categoryId: "cat1", name: "흑임자", description: "검은깨를 통째로 갈아 넣어 깊이 남아 특하게 고소한 젤라또", badge: null, isActive: true, sortOrder: 15 },
+  { id: "g15", categoryId: "cat1", name: "흑임자", description: "검은깨를 통째로 갈아 넣어 깊이 남아 특하게 고소한 젤라또", badge: null, isActive: false, sortOrder: 15 },
+  { id: "g16", categoryId: "cat1", name: "천도복숭아", description: "잘 익은 천도복숭아 과육을 통째로 갈아 넣어, 여름 향기가 입안에서 부드럽게 퍼지는 젤라또", badge: "BEST", isActive: true, sortOrder: 16 },
 
   // ---- 소르베또 5종 ----
   { id: "sb1", categoryId: "cat2", name: "패션후르츠", description: "패션후르츠의 식감과 맛이 생생하게 살아있는 패션후르츠 소르베또", badge: "BEST", isActive: true, sortOrder: 1 },
@@ -72,15 +73,15 @@ export const menuItems: MenuItem[] = [
   { id: "sb6", categoryId: "cat2", name: "자두", description: "새콤달콤한 자두 과육을 통째로 갈아 넣어, 한 스푼에 계절이 담기는 상큼한 소르베또", badge: "BEST", isActive: true, sortOrder: 6 },
 
   // ---- 위스키 9종 ----
-  { id: "w1", categoryId: "cat3", name: "달모어 12y", nameEn: "Dalmore 12y", description: "달모어 12년", badge: "추천", image: "/images/drinks/dalmore-12.webp", isActive: true, sortOrder: 1 },
+  { id: "w1", categoryId: "cat3", name: "달모어 12y", nameEn: "Dalmore 12y", description: "달모어 12년", badge: "추천", image: "/images/drinks/dalmore-12.webp", isActive: false, sortOrder: 1 },
   { id: "w2", categoryId: "cat3", name: "글렌피딕 12y", nameEn: "Glenfiddich 12y", description: "글렌피딕 12년", badge: null, image: "/images/drinks/glenfiddich-12.webp", isActive: true, sortOrder: 2 },
   { id: "w3", categoryId: "cat3", name: "글렌리벳 12y", nameEn: "Glenlivet 12y", description: "글렌리벳 12년", badge: null, image: "/images/drinks/glenlivet-12.webp", isActive: true, sortOrder: 3 },
-  { id: "w4", categoryId: "cat3", name: "글렌드로낙 12y", nameEn: "GlenDronach 12y", description: "글렌드로낙 12년", badge: null, image: "/images/drinks/glendronach.png", isActive: true, sortOrder: 4 },
+  { id: "w4", categoryId: "cat3", name: "글렌드로낙 12y", nameEn: "GlenDronach 12y", description: "글렌드로낙 12년", badge: null, image: "/images/drinks/glendronach.png", isActive: false, sortOrder: 4 },
   { id: "w5", categoryId: "cat3", name: "발베니 12y", nameEn: "Balvenie 12y", description: "발베니 12년", badge: null, image: "/images/drinks/balvenie.png", isActive: true, sortOrder: 5 },
   { id: "w6", categoryId: "cat3", name: "글렌알라키 8y", nameEn: "GlenAllachie 8y", description: "글렌알라키 8년", badge: "NEW", image: "/images/drinks/glenallachie.jpg", isActive: true, sortOrder: 6 },
   { id: "w7", categoryId: "cat3", name: "보모어", nameEn: "Bowmore", description: "보모어", badge: null, image: "/images/drinks/bowmore.png", isActive: true, sortOrder: 7 },
-  { id: "w8", categoryId: "cat3", name: "조니워커 블랙", nameEn: "Johnnie Walker Black", description: "조니워커 블랙라벨", badge: null, image: "/images/drinks/johnnie-walker-black.jpg", isActive: true, sortOrder: 8 },
-  { id: "w9", categoryId: "cat3", name: "닛카 프롬 더 배럴", nameEn: "Nikka From The Barrel", description: "닛카 위스키 프롬 더 배럴", badge: null, image: "/images/drinks/nikka.png", isActive: true, sortOrder: 9 },
+  { id: "w8", categoryId: "cat3", name: "조니워커 블랙", nameEn: "Johnnie Walker Black", description: "조니워커 블랙라벨", badge: null, image: "/images/drinks/johnnie-walker-black.jpg", isActive: false, sortOrder: 8 },
+  { id: "w9", categoryId: "cat3", name: "닛카 프롬 더 배럴", nameEn: "Nikka From The Barrel", description: "닛카 위스키 프롬 더 배럴", badge: null, image: "/images/drinks/nikka.png", isActive: false, sortOrder: 9 },
   { id: "w10", categoryId: "cat3", name: "맥캘란 12y 더블캐스크", nameEn: "Macallan 12y Double Cask", description: "맥캘란 12년 더블캐스크 싱글몰트", badge: "NEW", image: "/images/drinks/macallan-12.jpg", isActive: true, sortOrder: 10 },
 
   // ---- 와인 3종 ----

@@ -28,7 +28,7 @@ function PhoneForm({ variant = "dark" }: { variant?: "dark" | "light" }) {
     if (nums.length < 10) return;
     setLoading(true);
     try {
-      await fetch("/api/franchise", {
+      const res = await fetch("/api/franchise", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -40,6 +40,7 @@ function PhoneForm({ variant = "dark" }: { variant?: "dark" | "light" }) {
           message: "가맹비 0원 랜딩페이지에서 신청",
         }),
       });
+      if (!res.ok) { alert("전송 실패. 1811-0259로 전화해주세요."); return; }
       setSubmitted(true);
     } catch {
       alert("전송 실패. 1811-0259로 전화해주세요.");

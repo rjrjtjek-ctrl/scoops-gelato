@@ -51,27 +51,26 @@ export async function GET(req: NextRequest) {
           <p class="success">토큰이 성공적으로 발급되었습니다.</p>
 
           <div class="box">
-            <h3>1단계: 아래 토큰을 .env.local에 입력하세요</h3>
-            <p><strong>Access Token:</strong></p>
-            <div class="token">${tokenData.access_token}</div>
-            <br>
-            <p><strong>Refresh Token:</strong></p>
-            <div class="token">${tokenData.refresh_token || "없음"}</div>
+            <h3>📋 1단계: 아래 Refresh Token을 복사하세요</h3>
+            <p><strong>Refresh Token (이것만 복사하면 됩니다):</strong></p>
+            <div class="token">${tokenData.refresh_token || "없음 — 재시도 필요"}</div>
+            <p style="font-size:12px;color:#888;margin-top:8px;">Access Token은 자동 발급되므로 저장 안 해도 됩니다.</p>
           </div>
 
           <div class="box">
-            <h3>2단계: .env.local 파일 수정</h3>
-            <p>scoops-gelato/.env.local 파일을 열고 아래처럼 입력:</p>
-            <div class="token">
-KAKAO_ACCESS_TOKEN=${tokenData.access_token}
-KAKAO_REFRESH_TOKEN=${tokenData.refresh_token || ""}
-            </div>
+            <h3>🚀 2단계: Vercel 환경변수 업데이트 (실서비스)</h3>
+            <p class="step">① <a href="https://vercel.com/dashboard" target="_blank">vercel.com/dashboard</a> 접속 → scoops-gelato 프로젝트</p>
+            <p class="step">② Settings → Environment Variables</p>
+            <p class="step">③ <strong>KAKAO_REFRESH_TOKEN</strong> 찾아서 Edit</p>
+            <p class="step">④ 위 1단계의 Refresh Token 값으로 교체 후 Save</p>
+            <p class="step">⑤ Deployments 탭 → 최신 배포 ⋯ → Redeploy</p>
           </div>
 
           <div class="box">
-            <h3>3단계: 서버 재시작</h3>
-            <p>터미널에서 서버를 껐다 다시 켜주세요 (Ctrl+C → npm run dev)</p>
-            <p>이제 가맹 문의가 들어오면 카카오톡으로 알림이 옵니다!</p>
+            <h3>✅ 3단계: 확인</h3>
+            <p>재배포 완료 후, 홈페이지에서 가맹 문의를 한 건 넣어보세요.</p>
+            <p>카카오톡 "나에게 보내기"로 알림이 오면 성공입니다!</p>
+            <p style="font-size:12px;color:#888;margin-top:8px;">⚠️ Refresh Token은 약 2개월간 유효합니다. 알림이 또 안 오면 이 과정을 반복하세요.</p>
           </div>
         </body>
         </html>

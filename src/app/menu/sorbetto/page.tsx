@@ -20,8 +20,8 @@ export default function SorbettoPage() {
           <p className="text-[12px] tracking-[0.2em] text-brand-secondary uppercase mb-4">Sorbetto</p>
           <h1 className="text-3xl md:text-5xl font-light text-brand-primary mb-6">소르베또</h1>
           <p className="text-text-body max-w-[600px] mx-auto leading-relaxed">
-            유제품 없이 과일 본연의 맛을 살린 청량한 이탈리안 소르베또.
-            비건 고객도 부담 없이 즐기실 수 있습니다.
+            과일 본연의 맛을 살린 청량한 이탈리안 소르베또.
+            젤라또보다 가볍고 상큼한 여운을 즐기실 수 있습니다.
           </p>
         </div>
       </section>
@@ -59,9 +59,9 @@ export default function SorbettoPage() {
           <h2 className="text-2xl md:text-3xl font-light text-brand-primary mb-8">소르베또가 특별한 이유</h2>
           <div className="grid md:grid-cols-3 gap-8">
             {[
-              { title: "100% 과일", desc: "신선한 제철 과일을 그대로 사용하여 과일 본연의 맛과 향을 담았습니다." },
-              { title: "비건 프렌들리", desc: "유제품·달걀 없이 만들어 비건 고객분들도 안심하고 드실 수 있습니다." },
-              { title: "저칼로리", desc: "젤라또 대비 칼로리가 낮아 가볍게 즐기기 좋은 건강한 디저트입니다." },
+              { title: "제철 과일 중심", desc: "신선한 제철 과일을 아낌없이 사용해 과일 본연의 맛과 향을 담았습니다." },
+              { title: "청량한 여운", desc: "젤라또보다 유지방이 적어 상큼하고 깔끔한 뒷맛이 특징입니다." },
+              { title: "가벼운 디저트", desc: "젤라또 대비 칼로리가 낮아 식후에도 부담 없이 즐기기 좋습니다." },
             ].map((f, i) => (
               <div key={i} className="p-6 bg-bg-white rounded-2xl">
                 <div className="w-12 h-12 rounded-full bg-brand-primary/10 flex items-center justify-center mx-auto mb-4">
@@ -71,6 +71,19 @@ export default function SorbettoPage() {
                 <p className="text-sm text-text-body leading-relaxed">{f.desc}</p>
               </div>
             ))}
+          </div>
+
+          {/* 알레르기 안내 */}
+          <div className="mt-12 max-w-[700px] mx-auto text-left bg-bg-white border border-brand-primary/15 rounded-2xl p-6 md:p-8">
+            <p className="text-[12px] tracking-[0.2em] text-brand-secondary uppercase mb-3">Allergen Notice</p>
+            <h3 className="text-base md:text-lg font-medium text-brand-primary mb-3">알레르기 안내</h3>
+            <p className="text-sm text-text-body leading-relaxed">
+              스쿱스 소르베또는 젤라또와 <strong className="text-brand-primary">동일한 설비에서 제조</strong>되며,
+              레시피에 <strong className="text-brand-primary">소량의 유제품(분유)</strong>이 포함되어 있습니다.
+              <br className="hidden md:block" />
+              유제품·달걀 등에 알레르기가 있으신 고객님께는 권해드리지 않으며,
+              드시기 전 매장 직원에게 문의해 주세요.
+            </p>
           </div>
         </div>
       </section>

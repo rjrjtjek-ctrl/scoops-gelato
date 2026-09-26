@@ -1,11 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sendKakaoNotification } from "@/lib/kakao";
-import { saveInquiry } from "@/lib/inquiries";
+import { saveInquiry, getInquiries } from "@/lib/inquiries";
+
+// 대시보드 카운트용 — 미읽음 문의 수 반환
+export async function GET(req: NextRequest) {
+  try {
+    const url = new URL(req.url);
+    if (url.searchParams.get("count") === "true") {
+      const inquiries = await getInquiries();
+      const unread = inquiries.filter((i) => !i.read).length;
+      return NextResponse.json({ count: unread, total: inquiries.length });
+    }
+    return NextResponse.json({ error: "count 파라미터가 필요합니다." }, { status: 400 });
+  } catch {
+    return NextResponse.json({ count: 0, total: 0 });
+  }
+}
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { name, phone, email, region, message } = body;
+    // DB의 name/email/region 컬럼이 NOT NULL이므로 누락 시 빈 문자열로 기본값 처리
+    // (홈 마진요청 폼은 phone/message만 전송 → 예전에는 여기서 500 발생 후 리드 유실)
+    const { name = "", phone, email = "", region = "", message } = body;
 
     // 유효성 검사 — 전화번호만 필수 (랜딩페이지는 전화번호만 받음)
     if (!phone) {

@@ -33,7 +33,11 @@ export default function FranchisePage() {
     if (!region) newErrors.region = "희망 지역을 선택해주세요";
     if (Object.keys(newErrors).length > 0) { setErrors(newErrors); return; }
     setErrors({}); setLoading(true);
-    try { await fetch("/api/franchise", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name, phone, email, region, message }) }); setSubmitted(true); } catch { alert("전송 중 오류가 발생했습니다."); } finally { setLoading(false); }
+    try {
+      const res = await fetch("/api/franchise", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name, phone, email, region, message }) });
+      if (!res.ok) { alert("전송에 실패했습니다. 잠시 후 다시 시도하시거나 1811-0259로 연락주세요."); return; }
+      setSubmitted(true);
+    } catch { alert("전송 중 오류가 발생했습니다. 1811-0259로 연락주세요."); } finally { setLoading(false); }
   };
   const ic = "w-full px-5 py-3.5 border border-black/10 bg-bg-cream text-sm text-text-dark rounded-xl focus:border-brand-secondary focus:ring-1 focus:ring-brand-secondary/20 outline-none transition-all placeholder:text-text-muted";
 
@@ -287,8 +291,8 @@ export default function FranchisePage() {
     <section className="py-6 bg-bg-white">
       <div className="max-w-[1400px] mx-auto px-6 md:px-12">
         <div className="bg-bg-cream rounded-xl p-5 border border-black/5 text-center">
-          <p className="text-sm text-text-body leading-[1.8]">본 가맹사업은 공정거래위원회에 정보공개서가 등록되어 있습니다.</p>
-          <p className="text-sm text-brand-primary font-semibold mt-1">정보공개서 등록번호: 추후 안내 예정</p>
+          <p className="text-sm text-text-body leading-[1.8]">정보공개서 등록을 준비 중이며, 등록 완료 후 가맹계약 체결 전에 서면으로 제공해 드립니다.</p>
+          <p className="text-sm text-text-light mt-1">가맹사업거래의 공정화에 관한 법률에 따라 정보공개서 제공 후 14일이 지난 뒤 계약을 체결합니다.</p>
         </div>
       </div>
     </section>

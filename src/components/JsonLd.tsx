@@ -171,7 +171,7 @@ export default function JsonLd() {
       {
         "@type": "MenuSection",
         name: "소르베또",
-        description: "유제품 없이 과일 본연의 맛을 살린 소르베또",
+        description: "과일 본연의 맛을 살린 청량한 이탈리안 소르베또 (소량의 유제품 포함)",
       },
       {
         "@type": "MenuSection",

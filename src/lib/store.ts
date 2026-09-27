@@ -1,5 +1,8 @@
-// 서버 사이드 인메모리 데이터 스토어
-// 프로덕션에서는 DB(Supabase, PlanetScale 등)로 교체 권장
+// 서버 사이드 데이터 스토어
+// 고객의 소리(customer_posts)는 Supabase에 영구 저장 (콜드스타트 유실 방지)
+// 나머지(가맹문의 더미, 방문로그)는 아직 인메모리 — 실제 데이터는 별도 시스템 사용
+
+import { supabaseSelect, supabaseInsert, supabaseUpdate } from "./supabase-client";
 
 export interface CustomerPost {
   id: string;
@@ -38,58 +41,30 @@ const globalStore = globalThis as unknown as {
   __visitLogs?: VisitLog[];
 };
 
-// 더미 고객 글
-const defaultCustomerPosts: CustomerPost[] = [
-  {
-    id: "c1",
-    category: "매장 이용",
-    author: "김*현",
-    title: "청주본점 서비스가 너무 좋아요",
-    content: "처음 방문했는데 직원분이 맛을 하나하나 추천해주셔서 좋았어요. 피스타치오 젤라또 최고입니다!",
-    status: "답변완료",
-    reply: "소중한 후기 감사합니다! 앞으로도 좋은 서비스로 보답하겠습니다.",
-    createdAt: "2026-03-15T10:30:00",
-  },
-  {
-    id: "c2",
-    category: "메뉴",
-    author: "이*수",
-    title: "소르베또 종류가 더 다양했으면",
-    content: "과일 소르베또를 좋아하는데 계절마다 바뀌는 메뉴가 있었으면 좋겠어요. 딸기 소르베또 출시 부탁드립니다!",
-    status: "답변완료",
-    reply: "좋은 의견 감사합니다! 봄 시즌 딸기 소르베또를 준비 중입니다.",
-    createdAt: "2026-03-12T14:20:00",
-  },
-  {
-    id: "c3",
-    category: "매장 이용",
-    author: "박*진",
-    title: "여의도점 분위기 좋아요",
-    content: "인테리어가 새로워졌더라구요. 깔끔하고 따뜻한 느낌이라 커피 마시며 쉬기 좋습니다.",
-    status: "답변완료",
-    reply: "방문해주셔서 감사합니다! 편안한 공간이 되도록 노력하겠습니다.",
-    createdAt: "2026-03-08T16:45:00",
-  },
-  {
-    id: "c4",
-    category: "가맹",
-    author: "최*아",
-    title: "가맹 상담 후기",
-    content: "가맹 상담 받았는데 친절하게 설명해주셔서 좋았습니다. 좋은 결과 있었으면 좋겠네요.",
-    status: "답변완료",
-    reply: "상담해주셔서 감사합니다. 좋은 결과 함께 만들어가겠습니다!",
-    createdAt: "2026-03-05T11:00:00",
-  },
-  {
-    id: "c5",
-    category: "기타",
-    author: "정*민",
-    title: "기프트카드 있나요?",
-    content: "선물용으로 기프트카드가 있으면 좋겠습니다. 친구 생일선물로 주고 싶어요.",
-    status: "확인중",
-    createdAt: "2026-02-28T09:15:00",
-  },
-];
+// ── customer_posts DB 매핑 (snake_case ↔ CustomerPost) ──
+interface DbCustomerPost {
+  id: string;
+  category: string;
+  author: string;
+  title: string;
+  content: string;
+  status: "확인중" | "답변완료";
+  reply: string | null;
+  created_at: string;
+}
+
+function dbToCustomerPost(row: DbCustomerPost): CustomerPost {
+  return {
+    id: row.id,
+    category: row.category,
+    author: row.author,
+    title: row.title,
+    content: row.content,
+    status: row.status,
+    reply: row.reply || undefined,
+    createdAt: row.created_at,
+  };
+}
 
 // 더미 가맹문의
 const defaultFranchiseInquiries: FranchiseInquiry[] = [
@@ -117,33 +92,41 @@ const defaultFranchiseInquiries: FranchiseInquiry[] = [
   },
 ];
 
-export function getCustomerPosts(): CustomerPost[] {
-  if (!globalStore.__customerPosts) {
-    globalStore.__customerPosts = [...defaultCustomerPosts];
-  }
-  return globalStore.__customerPosts;
+export async function getCustomerPosts(): Promise<CustomerPost[]> {
+  const rows = await supabaseSelect<DbCustomerPost[]>(
+    "customer_posts",
+    "order=created_at.desc&limit=500"
+  );
+  return rows.map(dbToCustomerPost);
 }
 
-export function addCustomerPost(post: Omit<CustomerPost, "id" | "status" | "createdAt">): CustomerPost {
-  const posts = getCustomerPosts();
-  const newPost: CustomerPost = {
-    ...post,
-    id: "c" + Date.now(),
+export async function addCustomerPost(
+  post: Omit<CustomerPost, "id" | "status" | "createdAt">
+): Promise<CustomerPost> {
+  const newId = "c" + Date.now();
+  const now = new Date().toISOString();
+  const rows = await supabaseInsert<DbCustomerPost[]>("customer_posts", {
+    id: newId,
+    category: post.category,
+    author: post.author,
+    title: post.title,
+    content: post.content,
     status: "확인중",
-    createdAt: new Date().toISOString(),
-  };
-  posts.unshift(newPost);
-  return newPost;
+    reply: null,
+    created_at: now,
+  });
+  if (rows && rows.length > 0) return dbToCustomerPost(rows[0]);
+  // INSERT는 됐지만 응답 본문이 비어있는 경우 대비
+  return { ...post, id: newId, status: "확인중", createdAt: now };
 }
 
-export function replyToCustomerPost(id: string, reply: string): CustomerPost | null {
-  const posts = getCustomerPosts();
-  const post = posts.find((p) => p.id === id);
-  if (post) {
-    post.reply = reply;
-    post.status = "답변완료";
-    return post;
-  }
+export async function replyToCustomerPost(id: string, reply: string): Promise<CustomerPost | null> {
+  const rows = await supabaseUpdate<DbCustomerPost[]>(
+    "customer_posts",
+    `id=eq.${id}`,
+    { reply, status: "답변완료" }
+  );
+  if (rows && rows.length > 0) return dbToCustomerPost(rows[0]);
   return null;
 }
 
